@@ -20,6 +20,7 @@ Repositorio en **Fase 0** (documentación arquitectónica). Sin código de aplic
 | [ROADMAP.md](./ROADMAP.md) | Fases y criterios de aceptación |
 | [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md) | Tareas para agentes |
 | [TESTING_STRATEGY.md](./TESTING_STRATEGY.md) | Calidad y harness |
+| [fixtures/six-suspects/EXPERIENCE_DESIGN.md](./fixtures/six-suspects/EXPERIENCE_DESIGN.md) | Diseño primera experiencia |
 | [ADR/](./ADR/) | Decisiones arquitectónicas |
 
 ## Próximo paso

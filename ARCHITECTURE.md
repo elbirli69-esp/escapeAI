@@ -117,9 +117,46 @@ sequenceDiagram
 **Nota privacidad:** el broadcast global de Realtime **no** debe incluir pistas privadas. Patrón MVP:
 
 1. Evento público: “puzzle X resuelto”, “fase cambió”.
-2. Cliente recibe señal → `GET /api/sessions/:id/view` con token → servidor devuelve vista filtrada.
+2. Cliente recibe señal → `POST /api/sessions/:id/resume` con token → vista filtrada.
 
 Alternativa Fase 2.1: canal Realtime por `playerId` con JWT de scope limitado.
+
+## Seguridad y aislamiento (cerrado)
+
+### Superficie de ataque MVP
+
+| Vector | Mitigación |
+|--------|------------|
+| Cliente falsifica `playerId` en body | Ignorar body; identidad solo desde token |
+| DevTools / otra pestaña | Proyección servidor; tests de aislamiento |
+| Supabase anon lee JSON | Sin políticas SELECT en tablas de partida |
+| LLM inyecta SQL | GM sin SQL; tools → comandos tipados |
+| Scraping invite_code | Códigos 128-bit; rate limit join |
+
+### Qué puede consultar cada actor
+
+| Actor | Fuente | Contenido |
+|-------|--------|-----------|
+| Jugador | `PlayerViewDTO` | Público + rol propio + pistas propias/compartidas + inventario autorizado |
+| Host | `HostViewDTO` + Supabase auth | Progreso agregado; no pistas privadas no compartidas |
+| Motor (servidor) | `GameDefinition` + estado completo | Incluye soluciones |
+| LLM GM | `GMContext` | Slice público + `PlayerViewDTO` del interlocutor |
+
+### Pipeline de lectura (View / Resume)
+
+```text
+token → player_id
+→ load state (snapshot + replay)
+→ projectPlayerView(state, definition, player_id)
+→ assert DTO passes PlayerViewDTOSchema + leak scanner tests
+→ JSON response
+```
+
+**Leak scanner (CI):** tests fijan estado con pistas A/B; vista de A no contiene substring de contenido B privado.
+
+### Assets
+
+PDF/imagen/QR: URLs firmadas con TTL corto; path no adivinable; QR one-shot opcional ligado a `session_id` + puzzle P2.
 
 ## Persistencia
 

@@ -18,12 +18,17 @@ Fases secuenciales. **No avanzar** si los criterios de aceptación de la fase an
 | Fixture | `fixtures/six-suspects/` (stub JSON válido mínimo al inicio) |
 | CI | lint, typecheck, unit tests motor |
 
-**Criterios de aceptación**
+**Criterios de aceptación (cerrados)**
 
-- [ ] `pnpm test` ejecuta tests del motor
-- [ ] Migraciones aplican en Supabase local/dev
-- [ ] Documentación enlazada desde README
-- [ ] Fixture pasa validación Zod
+- [ ] Monorepo pnpm: `apps/web`, `packages/game-engine`, `packages/shared` compilable
+- [ ] `pnpm test` ejecuta Vitest en `game-engine` (≥1 test placeholder verde)
+- [ ] Schemas Zod en `shared` exportan tipos de `GAME_ENGINE_SPEC.md` (subset: status, command, event)
+- [ ] Migración `0001_core.sql` incluye: `game_sessions.last_event_seq`, `command_responses`, tablas núcleo
+- [ ] `SessionCommandService` **stub** documentado en código con comentario ref a `MULTIPLAYER_SPEC.md` (implementación completa Fase 2)
+- [ ] Fixture `fixtures/six-suspects/game-definition.stub.json` pasa `GameDefinitionSchema`
+- [ ] CI: typecheck + test en PR
+- [ ] README enlaza docs + `EXPERIENCE_DESIGN.md`
+- [ ] ADR-0009 presente
 
 **Dependencias:** ninguna.
 

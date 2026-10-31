@@ -94,27 +94,105 @@ Headers:
 ## Idempotencia
 
 - Cliente genera `idempotencyKey` UUID por acción de usuario.
-- BD: `UNIQUE(session_id, idempotency_key)` en `game_events` o tabla `command_dedup`.
-- Reintento de red devuelve **misma** respuesta almacenada.
+- Tabla **`command_responses`** (ver `DATA_MODEL.md`): `UNIQUE(session_id, idempotency_key)` → respuesta HTTP cacheada.
+- Reintento de red devuelve **misma** respuesta sin re-ejecutar motor (ni incrementar `seq`).
+
+---
+
+## Transacción PostgreSQL (operación crítica)
+
+Toda mutación de partida pasa por **`SessionCommandService.execute`** en una **única transacción** serializable por fila de sesión.
+
+### Columnas auxiliares en `game_sessions`
+
+| Columna | Uso |
+|---------|-----|
+| `last_event_seq` | bigint, último seq asignado (default 0) |
+| `snapshot_json` | estado materializado del motor |
+| `snapshot_event_seq` | seq hasta el cual el snapshot es válido |
+
+### Pasos (orden fijo)
+
+```text
+BEGIN;
+  1. SELECT game_sessions ... WHERE id = $sessionId FOR UPDATE;
+  2. Idempotencia: SELECT command_responses WHERE session_id AND idempotency_key;
+       → si existe: COMMIT; return cached;
+  3. AuthZ (servidor, antes de motor):
+       - token → player_id; token_version; session_id match;
+       - comando permitido para actor (host vs player);
+  4. Cargar GameDefinition (game_versions.definition_json) — solo servidor;
+  5. Reconstruir estado:
+       - si snapshot_event_seq < last_event_seq: replay eventos (seq > snapshot_event_seq);
+       - else: deserialize snapshot_json;
+  6. Validación de estado (motor):
+       - status permite comando (ej. SUBMIT solo en running);
+       - fase/puzzle no locked; dependencias;
+  7. Validación de respuesta (motor, si SUBMIT/COOP):
+       - permisos rol/slot; estrategia determinista; NO expone solución al cliente;
+  8. applyCommand → { newState, events[] };
+  9. Para cada evento emitido:
+       - last_event_seq := last_event_seq + 1; asignar seq al evento;
+       - INSERT game_events (session_id, seq, type, payload_json, actor_player_id, idempotency_key solo en primero);
+  10. Actualizar puzzle_states / player_clues / inventory tablas derivadas (cache);
+  11. UPDATE game_sessions SET snapshot_json, snapshot_event_seq = last_event_seq,
+        status, phase_id, timer fields, last_event_seq;
+  12. INSERT command_responses (session_id, idempotency_key, http_status, body_json);
+COMMIT;
+  13. Post-commit (fuera de TX): broadcast Realtime signal { seq, status, phaseId };
+  14. Construir PlayerViewDTO / HostViewDTO desde newState (strip secrets);
+  15. return { seq, eventsPublic, view };
+```
+
+**Reglas**
+
+- Pasos 1–12 son atómicos. Si el motor rechaza → `ROLLBACK`, sin fila en `command_responses` (el cliente puede reintentar con **nueva** idempotency key si fue error lógico, o la misma si hubo timeout de red tras commit — ver abajo).
+- `payload_json` en eventos **nunca** incluye respuestas correctas ni contenido de pistas ajenas.
+- Host usa cookie Supabase; **no** pasa por guest token pero misma TX y lock.
+
+### Idempotencia vs timeout
+
+| Escenario | Comportamiento |
+|-----------|----------------|
+| Cliente reenvía misma key | Paso 2 devuelve `body_json` cacheado |
+| Commit OK, respuesta HTTP perdida | Reintento misma key → misma respuesta (paso 2) |
+| Error 422 validación | No cache (opcional cache negativo 60s para evitar spam) |
 
 ---
 
 ## Concurrencia
 
-### Lock por sesión
+### Serialización
 
-Transacción:
+`FOR UPDATE` en `game_sessions` garantiza **un comando activo por sesión**. Dos HTTP concurrentes se encolan a nivel Postgres; no hay merge optimista en el cliente.
 
-```sql
-SELECT * FROM game_sessions WHERE id = $1 FOR UPDATE;
--- leer snapshot + events since snapshot
--- applyCommand en memoria
--- INSERT events con seq = prev + 1
--- UPDATE snapshot
-COMMIT;
-```
+### Ejemplo: dos jugadores, misma prueba, mismo instante
 
-Dos respuestas simultáneas al mismo puzzle: **serializadas**; la segunda ve estado actualizado (puzzle ya solved → error amigable o no-op).
+**Contexto:** P1 `scene_observation` público; A y B envían `SUBMIT_PUZZLE_ANSWER` con respuesta correcta `reloj roto`.
+
+| Orden | Transacción A | Transacción B |
+|-------|---------------|---------------|
+| T0 | `FOR UPDATE` adquiere lock | espera lock |
+| T1 | Valida: puzzle available | (espera) |
+| T2 | Correcto → `puzzle.solved`, seq=41 | (espera) |
+| T3 | COMMIT; lock libre | adquiere lock |
+| T4 | — | Replay incluye solved P1 |
+| T5 | — | Valida: puzzle ya solved → `EngineError: PUZZLE_ALREADY_SOLVED` **o** idempotente no-op si misma respuesta duplicada del mismo player (config: mismo player re-submit = 200 no-op; otro player = 200 con view actualizada sin nuevo evento) |
+
+**Decisión cerrada:** solo **un** evento `puzzle.solved` por puzzle. Segundo jugador recibe **200** con `view` actualizada y lista de eventos vacía o `puzzle.already_solved` en payload público; **no** segundo punto de progreso.
+
+### Cooperación (distintos puzzles)
+
+A en P5 coop y B en P4 cifrado: serializados pero independientes; estado tras A visible en replay de B.
+
+---
+
+## Seguridad de lectura (View API)
+
+Ver `ARCHITECTURE.md` § Seguridad y `TESTING_STRATEGY.md` § Aislamiento. Resumen:
+
+- Solo `GET /view` y respuestas de comando incluyen datos de jugador; nunca definición completa.
+- Realtime **no** transporta pistas ni soluciones.
 
 ### Cooperación multi-jugador
 
@@ -168,17 +246,55 @@ Comando `COOP_PUZZLE_CONTRIBUTE` mergea; validación final cuando `minDistinctPl
 - Cliente muestra estimación; **eventos** `timer.paused/resumed` autoritativos.
 - Eventos programados (`timedEvents`) evaluados por job cron cada 30s o en cada comando (MVP: en cada comando + host tick).
 
-### Reconexión
+### Reconexión (procedimiento cerrado)
 
-1. Cliente pierde Realtime → polling `GET view` cada 3s en running
-2. Reconecta Realtime → subscribe `session:{id}:signal`
-3. `POST /api/sessions/:id/presence` `{ online: true }` opcional
-4. Token inválido → pantalla “enlace expirado” (host puede regenerar slot)
+**Principio:** el estado autoritativo siempre se obtiene por **HTTPS + proyección servidor**. Realtime es opcional y **sin buffer histórico**; no se “recuperan” señales perdidas.
+
+Cliente persiste en `sessionStorage`: `playerToken`, `sessionId`, `lastSeq` (hint UI).
+
+#### Al volver a entrar (misma pestaña o nueva)
+
+```http
+POST /api/sessions/:sessionId/resume
+Authorization: Bearer <playerToken>
+Body: { "clientLastSeq": 42 }  // informativo
+```
+
+**Servidor (sin Realtime):**
+
+1. Validar token + `token_version` + sesión no `cancelled`.
+2. Carga lectura: snapshot + replay eventos hasta `last_event_seq` (sin lock salvo mantenimiento).
+3. `projectPlayerView(state, definition, playerId)`.
+4. Calcular `timer` autoritativo en servidor.
+5. Responder:
+
+```typescript
+{
+  seq: number;              // last_event_seq actual
+  serverTime: string;       // ISO
+  view: PlayerViewDTO;
+  publicEvents: GameEvent[]; // eventos con seq > clientLastSeq y tipo público
+}
+```
+
+6. `UPDATE players SET connection_status = 'online', last_seen_at = now()`.
+
+#### Cliente tras resume
+
+1. Reemplazar estado local con `view`; fijar `lastSeq = seq`.
+2. Suscribir Realtime `session:{id}:signal` (si disponible).
+3. En cada señal con `seq > lastSeq`: llamar **`resume`** de nuevo (MVP).
+4. Fallback: polling `resume` cada 3s si Realtime caído >10s.
+
+**Garantías:** pistas privadas vienen de BD vía proyección; eventos Realtime perdidos no afectan si se llama a `resume` al abrir.
+
+#### Token inválido / revocado
+
+HTTP 401 → “Sesión expirada”; host regenera token (`POST .../players/:id/rotate-token`).
 
 ### Recuperación tras reinicio servidor
 
-- Estado = `snapshot` + replay events donde `seq > snapshot_event_seq`.
-- Tests deben cubrir replay idéntico.
+Idéntico a `resume`: snapshot + replay en Postgres; ningún estado en memoria de proceso.
 
 ---
 

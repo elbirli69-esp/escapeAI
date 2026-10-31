@@ -372,7 +372,7 @@ Registro en motor: `registerCustomRule("suspects_alibi_match", handler)`.
 
 ---
 
-## Proyecciones (vistas)
+## Proyecciones (vistas) — contrato cerrado
 
 ```typescript
 function projectPlayerView(
@@ -384,10 +384,73 @@ function projectPlayerView(
 function projectHostView(
   state: GameSessionState,
   definition: GameDefinition
-): HostViewDTO; // sin soluciones, sí estados puzzles
+): HostViewDTO;
 ```
 
-Strip de campos: `validation`, `solution`, pistas no asignadas.
+### PlayerViewDTO (lo único que recibe un jugador)
+
+```typescript
+export const PlayerViewDTOSchema = z.object({
+  sessionId: z.string().uuid(),
+  seq: z.number().int(),
+  status: SessionStatusSchema,
+  phaseId: z.string(),
+  timer: z.object({ remainingSec: z.number().int(), paused: z.boolean() }),
+  me: z.object({
+    playerId: z.string().uuid(),
+    displayName: z.string(),
+    role: z.object({
+      id: z.string(),
+      name: z.string(),
+      description: z.string(), // pública + privada merged solo para este rol
+    }).nullable(),
+    objectives: z.array(z.string()),
+  }),
+  team: z.array(z.object({
+    playerId: z.string().uuid(),
+    displayName: z.string(),
+    roleName: z.string().nullable(), // solo nombres públicos de rol
+    online: z.boolean(),
+  })),
+  clues: z.array(z.object({
+    clueId: z.string(),
+    title: z.string(),
+    content: z.string(),
+    visibility: z.enum(["private", "shared", "public"]),
+  })), // solo instancias asignadas a este player OR shared/public
+  puzzles: z.array(z.object({
+    puzzleId: z.string(),
+    type: PuzzleTypeSchema,
+    title: z.string(),
+    status: z.enum(["locked", "available", "in_progress", "solved"]),
+    presentation: PresentationRefSchema,
+    // NUNCA: validation, solution, progressiveHints text completo hasta unlock
+    hintsAvailable: z.number().int(), // cuenta, no texto futuro
+  })),
+  inventory: z.object({
+    mine: z.record(z.string(), z.number()),
+    shared: z.record(z.string(), z.number()),
+  }),
+  narrativeFeed: z.array(z.object({ id: z.string(), text: z.string(), at: z.string() })),
+});
+```
+
+### Reglas de filtrado (obligatorias en tests)
+
+| Dato | Regla |
+|------|-------|
+| `validation` / respuesta correcta | **Nunca** en DTO |
+| Pista privada de otro jugador | **Nunca** aunque `game_events` exista |
+| Pista `shared` | Visible si `player_clues.visibility` ∈ {shared, public} para cualquier holder |
+| Rol secreto ajeno | Solo `roleName` público en `team` |
+| Puzzle locked | Solo id/title/status locked; sin presentation que filtre solución |
+| Progressive hints | Texto solo tras evento `hint.granted` para ese player/puzzle |
+
+### HostViewDTO
+
+Igual que agregado de puzzles (estados, intentos), jugadores, timer, fases; **sin** soluciones ni contenido de pistas privadas no compartidas.
+
+Strip global en servidor: `validation`, `solution`, `definition_json` completo.
 
 ---
 

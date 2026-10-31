@@ -143,17 +143,56 @@ type GMContext = {
 };
 ```
 
-### Herramientas (function calling → comandos)
+### Herramientas GM (catálogo cerrado)
 
-| Tool | Comando motor / efecto |
-|------|------------------------|
-| `emit_narration` | `GM_EMIT_NARRATION` |
-| `trigger_timed_event` | `GM_TRIGGER_TIMED_EVENT` (solo ids en definition) |
-| `grant_progressive_hint` | `GRANT_HINT` si puzzle tiene hints restantes |
-| `record_interrogation_note` | flag narrativo, no valida puzzle |
-| `suggest_pause` | notificación host, no auto-pause |
+El LLM **solo** puede invocar estas tools. El adaptador `packages/ai-gm` valida y traduce a `GameCommand`. **No** hay tool genérica `run_sql`, `get_player_clues`, `set_puzzle_solved`, ni acceso directo a `definition_json` completo.
 
-Implementación: LLM devuelve tool call → adaptador valida → `applyCommand`.
+| Tool | Parámetros | Comando motor | Permisos / restricciones |
+|------|------------|---------------|---------------------------|
+| `emit_narration` | `{ text: string, audience: "all" \| "player", visibility?: "in_character" }` | `GM_EMIT_NARRATION` | Texto ≤800 chars; no incluir soluciones ni pistas no reveladas en contexto |
+| `trigger_timed_event` | `{ eventId: string }` | `GM_TRIGGER_TIMED_EVENT` | `eventId` ∈ `definition.narrative.timedEvents`; no repetir si flag ya set |
+| `grant_progressive_hint` | `{ puzzleId: string, hintIndex?: number }` | `GM_GRANT_HINT` | Puzzle no `solved`; hintIndex < definidos; solo hints ya desbloqueados por reglas (intentos/tiempo) |
+| `set_narrative_flag` | `{ flag: string, value: boolean }` | `GM_SET_FLAG` | `flag` ∈ allowlist derivada de definition (no flags libres) |
+| `npc_dialogue_line` | `{ npcId: string, line: string }` | ninguno directo | Solo SSE al cliente; **no** muta estado; npcId debe ser el del contexto |
+| `register_interrogation_keyword_hit` | `{ keywordId: string }` | `GM_INTERROGATION_HIT` | Solo si puzzle P6 activo y actor es interrogator; keywordId ∈ definition |
+| `suggest_host_pause` | `{ reason: string }` | ninguno | Notificación interna host dashboard; no pausa auto |
+
+**Prohibido al LLM (enforce + tests):**
+
+- Ejecutar SQL o llamar Supabase client
+- Solicitar datos de otro `playerId`
+- Tool calls fuera del catálogo
+- Más de 3 tools por turno de conversación
+- `grant_progressive_hint` que contenga literalmente la solución (validador string compare con validation.answer hash)
+
+### Flujo tool → motor
+
+```mermaid
+sequenceDiagram
+  participant LLM
+  participant Adapter as ai-gm adapter
+  participant API as SessionCommandService
+  participant GE as game-engine
+
+  LLM->>Adapter: tool_call(name, args)
+  Adapter->>Adapter: schema validate + allowlist
+  Adapter->>API: GameCommand authorized=true
+  API->>GE: applyCommand (same TX as players)
+  GE-->>API: events / error
+  Adapter-->>LLM: tool result (success/failure message)
+```
+
+Chat NPC (`npc_dialogue_line`) no pasa por TX de puzzles salvo keyword hit explícito vía `register_interrogation_keyword_hit`.
+
+### Comandos motor adicionales (solo GM autorizado)
+
+```typescript
+z.object({ type: z.literal("GM_GRANT_HINT"), puzzleId: z.string(), hintId: z.string() }),
+z.object({ type: z.literal("GM_SET_FLAG"), flag: z.string(), value: z.boolean() }),
+z.object({ type: z.literal("GM_INTERROGATION_HIT"), keywordId: z.string() }),
+```
+
+Implementación: LLM devuelve tool call → adaptador → mismo `SessionCommandService` que jugadores.
 
 ### Interrogatorio (MVP Seis sospechosos)
 

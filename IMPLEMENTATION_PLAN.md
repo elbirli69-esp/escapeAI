@@ -23,24 +23,32 @@ Convención: `[P]` paralelizable; `[S]` secuencial.
 
 ---
 
-## Fase 1 — Game Engine
+## Fase 1 — Game Engine (lista exacta de inicio)
 
-| ID | Tarea | Deps |
-|----|-------|------|
-| 1.1 | Implementar `createInitialState` | 0.3 |
-| 1.2 | State machine transiciones + tests | 1.1 |
-| 1.3 | Validators: exact, normalized, multiple_choice | 1.1 |
-| 1.4 | Validators: ordering, combination | 1.3 |
-| 1.5 | Dependencies / unlocks engine | 1.2 |
-| 1.6 | Phase progression + conditions | 1.5 |
-| 1.7 | Timer pause/resume logic | 1.2 |
-| 1.8 | Commands handler map + permission checks | 1.2–1.7 |
-| 1.9 | `projectPlayerView` / `projectHostView` | 1.8 |
-| 1.10 | `replayEvents` + snapshot helper | 1.8 |
-| 1.11 | Register custom rule stub + test | 1.4 |
-| 1.12 | Expand fixture six-suspects (puzzles dummy) | 1.8 |
+**Precondición:** Fase 0 completa (criterios en `ROADMAP.md`).
 
-**Gate:** todos los tests 1.x verdes antes de Fase 2.
+| ID | Tarea | Entregable verificable | Deps |
+|----|-------|------------------------|------|
+| 1.1 | `createInitialState(definition, meta)` | test: 6 players lobby, puzzles locked | 0.3 |
+| 1.2 | `applyCommand` router + errores tipados | test: comando inválido → `EngineError` | 1.1 |
+| 1.3 | State machine `session.status` | tests tabla transiciones ADR lobby→completed | 1.2 |
+| 1.4 | Validators `exact`, `normalized`, `multiple_choice` | 3 tests por estrategia | 1.2 |
+| 1.5 | Validators `ordering`, `combination` | tests ordering + coop items | 1.4 |
+| 1.6 | Puzzle dependencies + `unlocks` | test: P2 locked hasta P1 solved | 1.5 |
+| 1.7 | Phase `entryCondition` + `phase.entered` | test: avance fase tras puzzle gate | 1.6 |
+| 1.8 | Timer `pause/resume/elapsed` | tests pausa no decrementa remaining | 1.3 |
+| 1.9 | Commands jugador: `SUBMIT_PUZZLE_ANSWER`, `SHARE_CLUE`, `COOP_PUZZLE_CONTRIBUTE`, `PLAYER_CLAIM_ROLE` | permisos rol/slot | 1.6–1.8 |
+| 1.10 | Commands host: `HOST_*` | tests actor hostUserId | 1.3 |
+| 1.11 | Commands GM: `GM_EMIT_NARRATION`, `GM_GRANT_HINT`, `GM_SET_FLAG`, `GM_TRIGGER_TIMED_EVENT`, `GM_INTERROGATION_HIT` | solo `authorized: true` en ctx tests | 1.9 |
+| 1.12 | `projectPlayerView` + `PlayerViewDTOSchema` | **leak test:** 2 players, clues aislados | 1.9 |
+| 1.13 | `projectHostView` sin pistas privadas | leak test host | 1.12 |
+| 1.14 | `replayEvents` + `buildSnapshot` | test: replay === incremental apply | 1.11 |
+| 1.15 | Custom rule `timeline_order_v1` (Seis sospechosos) | test fixture orden | 1.5 |
+| 1.16 | `game-definition.stub.json` → 7 puzzles ids alineados con `EXPERIENCE_DESIGN.md` | Zod valid | 1.12 |
+
+**Gate Fase 1:** 1.1–1.16 verdes; cobertura branches críticos ≥90% en `state machine`, `validators`, `projections`.
+
+**No incluido en Fase 1:** HTTP, Postgres, Realtime (Fase 2).
 
 ---
 

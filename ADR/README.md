@@ -10,5 +10,6 @@
 | [0006](./0006-deterministic-puzzles-no-llm-validation.md) | Puzzles deterministas |
 | [0007](./0007-ai-gm-tool-gateway.md) | AI GM vía tools |
 | [0008](./0008-presentation-separation.md) | Presentación físico/digital |
+| [0009](./0009-closed-product-decisions.md) | Cierre decisiones MVP |
 
 Formato: contexto → decisión → alternativas → consecuencias.

@@ -32,7 +32,18 @@ Conclusión: **greenfield**. La Fase 0 puede definir estructura, contratos y mod
 | PWA mobile-first | Microservicios |
 | 1 PDF imprimible + 1 prueba QR | Catálogo masivo de plantillas |
 
-## Riesgos principales
+## Riesgos pendientes (post-cierre)
+
+| Riesgo | Estado | Acción |
+|--------|--------|--------|
+| Fuga pistas/soluciones | Mitigado en diseño | Leak scanner CI + playtest Fase 3 |
+| Carreras multiplayer | Mitigado en diseño | TX documentada; tests simultáneos Fase 2 |
+| Coste GM IA | Abierto operativo | Presupuesto Fase 5; script fallback Fase 3 |
+| Calidad narrativa IA | Abierto producto | Playtest; Creator Fase 4 |
+| Límites Supabase Realtime | Bajo en MVP | Monitor; ADR-003 escalado |
+| Complejidad fixture Seis sospechosos | Medio | `fixtures/six-suspects/EXPERIENCE_DESIGN.md` |
+
+## Riesgos principales (histórico)
 
 | Riesgo | Impacto | Mitigación |
 |--------|---------|------------|
@@ -44,16 +55,22 @@ Conclusión: **greenfield**. La Fase 0 puede definir estructura, contratos y mod
 | Supabase RLS mal configurada | Crítico | Jugadores solo vía API con service role; RLS para organizador |
 | Scope creep (IA Creator antes del motor) | Alto | Roadmap: motor → multiplayer → experiencia manual → IA |
 
-## Decisiones pendientes (no bloqueantes)
+## Decisiones arquitectónicas definitivas (cerradas)
 
-Estas decisiones tienen **hipótesis por defecto** documentadas en ADR; se pueden revisar tras Fase 2:
+Ver [ADR-0009](./ADR/0009-closed-product-decisions.md).
 
-1. **Hosting:** Vercel (app) + Supabase (Postgres, Realtime, Storage) vs. todo en un VPS.
-2. **Auth organizador:** Supabase Auth vs. Clerk (marketplace Vercel).
-3. **Cola de jobs IA:** Inngest / Vercel Workflow vs. tabla `jobs` + worker ligero.
-4. **PDF:** `@react-pdf/renderer` vs. Puppeteer/Chromium (solo si layout complejo).
+| Tema | Decisión |
+|------|----------|
+| Hosting | **Vercel** + **Supabase** (Postgres, Realtime, Storage, Auth) |
+| Auth organizador | **Supabase Auth** |
+| Jobs IA async | Tabla **`creator_jobs`** + worker invocado por cron Vercel / route protegida |
+| PDF MVP | **`@react-pdf/renderer`** |
+| Organizador en partida | **Solo Host Dashboard** (no slot jugador en MVP) |
+| Concurrencia sesión | **`FOR UPDATE`** + `last_event_seq` + **`command_responses`** |
+| Reconexión | **`POST /resume`** autoritativo; Realtime opcional |
+| Roles en Seis sospechosos | **3 roles × 2 jugadores**; 6 pistas privadas (1/slot) |
 
-## Decisiones ya tomadas (para arrancar)
+## Decisiones ya tomadas (núcleo técnico)
 
 Ver `ADR/` y `ARCHITECTURE.md`. Resumen:
 

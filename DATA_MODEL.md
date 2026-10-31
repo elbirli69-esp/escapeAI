@@ -98,7 +98,8 @@ Unique: `(experience_id, version)`.
 | timer_paused_at | timestamptz nullable | |
 | timer_elapsed_sec | int | acumulado pausas |
 | snapshot_json | jsonb nullable | estado materializado |
-| snapshot_event_seq | bigint | último evento en snapshot |
+| snapshot_event_seq | bigint | último evento incluido en snapshot |
+| last_event_seq | bigint | último seq asignado (default 0) |
 | settings_json | jsonb | flags host |
 | created_at | timestamptz | |
 
@@ -172,18 +173,26 @@ Log append-only.
 | type | text | |
 | payload_json | jsonb | sin secretos en claro si se replican |
 | actor_player_id | uuid nullable | |
-| idempotency_key | text nullable | UNIQUE(session_id, idempotency_key) |
 | created_at | timestamptz | |
 
 Índice: `(session_id, seq)`.
 
-Generación de `seq`: `INSERT ... RETURNING` dentro de transacción con lock de sesión.
+Generación de `seq`: incremento atómico de `game_sessions.last_event_seq` dentro de transacción con `FOR UPDATE` (ver `MULTIPLAYER_SPEC.md`).
 
-### `command_dedup`
+### `command_responses`
 
-Opcional si no se usa constraint en events.
+Cache de idempotencia (respuesta HTTP completa).
 
-| session_id, idempotency_key | PK | response_json, created_at |
+| Columna | Tipo | Notas |
+|---------|------|-------|
+| session_id | uuid FK | |
+| idempotency_key | text | |
+| http_status | int | |
+| body_json | jsonb | `{ seq, events, view }` redactado igual que respuesta live |
+| created_at | timestamptz | |
+| PRIMARY KEY | (session_id, idempotency_key) | |
+
+TTL opcional: purge >24h tras `session.status` terminal.
 
 ### `ai_interactions`
 

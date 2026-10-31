@@ -23,7 +23,7 @@ La IA (Creator / GM) se conecta **después** de validar diversión y fiabilidad 
 | Jugadores | 6 |
 | Duración | 60 min (timer servidor) |
 | Pruebas | 7 (tipos mixtos del motor) |
-| Roles | 3 activos con pistas diferenciadas (6 roles definidos, 3 asignados por partida — configurable en fixture) |
+| Roles | 3 roles × 2 jugadores (Investigador, Criptógrafo, Interrogador) — ver `fixtures/six-suspects/EXPERIENCE_DESIGN.md` |
 | Pistas privadas | 6 |
 | Cooperativas | 2 |
 | NPC IA | 1 sospechoso (Fase 5; MVP manual puede usar diálogo scriptado sin LLM hasta Fase 5) |
