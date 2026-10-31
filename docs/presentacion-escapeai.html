@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>escapeAI — Presentación del producto</title>
+  <style>
+    :root {
+      --bg: #0a0b12;
+      --surface: rgba(255, 255, 255, 0.06);
+      --border: rgba(255, 255, 255, 0.12);
+      --text: #eef0f8;
+      --muted: #9aa3b8;
+      --accent: #7c5cff;
+      --accent2: #00d4aa;
+      --gold: #f0c14b;
+      --danger: #ff6b8a;
+      --slide-count: 10;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    .bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(124, 92, 255, 0.25), transparent),
+        radial-gradient(ellipse 70% 50% at 90% 80%, rgba(0, 212, 170, 0.15), transparent),
+        radial-gradient(ellipse 50% 40% at 50% 50%, rgba(240, 193, 75, 0.08), transparent),
+        var(--bg);
+      animation: pulseBg 12s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulseBg {
+      to { filter: hue-rotate(15deg) brightness(1.05); }
+    }
+
+    .grid-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      opacity: 0.04;
+      background-image:
+        linear-gradient(var(--text) 1px, transparent 1px),
+        linear-gradient(90deg, var(--text) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      background: rgba(10, 11, 18, 0.75);
+    }
+
+    .logo {
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: -0.02em;
+    }
+
+    .logo span { color: var(--accent2); }
+
+    .header-meta {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .progress-wrap {
+      flex: 1;
+      max-width: 280px;
+      margin: 0 1rem;
+      height: 4px;
+      background: var(--surface);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 99px;
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    main {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .slides {
+      height: 100%;
+      display: flex;
+      transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .slide {
+      min-width: 100%;
+      height: 100%;
+      padding: 2rem 2.5rem 5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      opacity: 0.35;
+      transform: scale(0.97);
+      transition: opacity 0.5s, transform 0.5s;
+    }
+
+    .slide.active {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .slide-inner {
+      max-width: 920px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      line-height: 1.1;
+      margin-bottom: 0.75rem;
+      background: linear-gradient(135deg, var(--text), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    h2 {
+      font-size: clamp(1.5rem, 3vw, 2.2rem);
+      margin-bottom: 0.5rem;
+      color: var(--gold);
+    }
+
+    .subtitle {
+      font-size: 1.15rem;
+      color: var(--muted);
+      max-width: 640px;
+      line-height: 1.55;
+      margin-bottom: 1.5rem;
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .tag {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 0.35rem 0.65rem;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--accent2);
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .card {
+      padding: 1.1rem 1.2rem;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      backdrop-filter: blur(8px);
+      transition: transform 0.25s, border-color 0.25s;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(124, 92, 255, 0.5);
+    }
+
+    .card h3 {
+      font-size: 0.95rem;
+      margin-bottom: 0.4rem;
+      color: var(--text);
+    }
+
+    .card p {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .phase-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+    }
+
+    .phase-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), #5a3fd4);
+      display: grid;
+      place-items: center;
+      color: white;
+      font-size: 0.85rem;
+    }
+
+    ul.checklist {
+      list-style: none;
+      margin-top: 1rem;
+    }
+
+    ul.checklist li {
+      position: relative;
+      padding-left: 1.5rem;
+      margin-bottom: 0.55rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    ul.checklist li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.45rem;
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      background: var(--accent2);
+      box-shadow: 0 0 8px var(--accent2);
+    }
+
+    .timeline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin: 1.25rem 0;
+    }
+
+    .timeline button {
+      flex: 1 1 calc(14% - 0.35rem);
+      min-width: 72px;
+      padding: 0.65rem 0.4rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .timeline button:hover,
+    .timeline button.current {
+      color: var(--text);
+      border-color: var(--accent);
+      background: rgba(124, 92, 255, 0.15);
+    }
+
+    .flow {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      font-size: 0.75rem;
+    }
+
+    .flow span {
+      padding: 0.4rem 0.7rem;
+      border-radius: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+
+    .flow .arrow { color: var(--accent2); border: none; background: none; }
+
+    .mvp-hero {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    @media (max-width: 768px) {
+      .mvp-hero { grid-template-columns: 1fr; }
+      .slide { padding: 1.25rem 1rem 4.5rem; }
+      .timeline button { min-width: 56px; }
+    }
+
+    .stat-ring {
+      width: 160px;
+      height: 160px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .stat-ring svg {
+      transform: rotate(-90deg);
+      width: 100%;
+      height: 100%;
+    }
+
+    .stat-ring circle.bg { fill: none; stroke: var(--surface); stroke-width: 8; }
+    .stat-ring circle.fg {
+      fill: none;
+      stroke: url(#grad);
+      stroke-width: 8;
+      stroke-linecap: round;
+      stroke-dasharray: 283;
+      stroke-dashoffset: 70;
+      animation: ring 2s ease-out forwards;
+    }
+
+    @keyframes ring {
+      from { stroke-dashoffset: 283; }
+      to { stroke-dashoffset: 70; }
+    }
+
+    .stat-label {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--gold);
+    }
+
+    .stat-label small { font-size: 0.65rem; color: var(--muted); font-weight: 400; }
+
+    nav.controls {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      padding: 0.85rem 1rem;
+      background: rgba(10, 11, 18, 0.9);
+      border-top: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+    }
+
+    nav.controls button {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: background 0.2s, transform 0.15s;
+    }
+
+    nav.controls button:hover { background: rgba(124, 92, 255, 0.25); }
+    nav.controls button:active { transform: scale(0.95); }
+
+    .dots {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 200px;
+    }
+
+    .dots button {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      border: none;
+      background: var(--border);
+      cursor: pointer;
+      padding: 0;
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    .dots button.active {
+      background: var(--accent2);
+      transform: scale(1.25);
+    }
+
+    .hint {
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    .arch-diagram {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .arch-box {
+      text-align: center;
+      padding: 1rem 0.5rem;
+      border-radius: 12px;
+      border: 1px dashed var(--border);
+      font-size: 0.78rem;
+      animation: fadeUp 0.6s ease backwards;
+    }
+
+    .arch-box:nth-child(2) { animation-delay: 0.1s; }
+    .arch-box:nth-child(3) { animation-delay: 0.2s; }
+    .arch-box strong { display: block; color: var(--accent2); margin-bottom: 0.25rem; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .reveal { opacity: 0; transform: translateY(16px); }
+    .slide.active .reveal {
+      animation: fadeUp 0.55s ease forwards;
+    }
+    .slide.active .reveal.d1 { animation-delay: 0.08s; }
+    .slide.active .reveal.d2 { animation-delay: 0.16s; }
+    .slide.active .reveal.d3 { animation-delay: 0.24s; }
+  </style>
+</head>
+<body>
+  <div class="bg" aria-hidden="true"></div>
+  <div class="grid-overlay" aria-hidden="true"></div>
+
+  <div class="app">
+    <header>
+      <div class="logo">escape<span>AI</span></div>
+      <div class="progress-wrap" aria-hidden="true">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <div class="header-meta"><span id="slideCounter">1</span> / <span id="slideTotal">10</span></div>
+    </header>
+
+    <main id="main">
+      <div class="slides" id="slides">
+        <!-- 0 Vision -->
+        <section class="slide active" data-title="Visión">
+          <div class="slide-inner">
+            <div class="tag-row reveal">
+              <span class="tag">SaaS</span>
+              <span class="tag">Multiplayer</span>
+              <span class="tag">IA</span>
+              <span class="tag">PWA</span>
+            </div>
+            <h1 class="reveal d1">Aventuras escape room personalizadas con IA</h1>
+            <p class="subtitle reveal d2">
+              Plataforma para que un organizador cree experiencias a medida y un grupo de amigos, familia o equipo las juegue en tiempo real — presencial o remota — sin que los participantes necesiten cuenta.
+            </p>
+            <div class="cards reveal d3">
+              <div class="card">
+                <h3>No es un PDF de acertijos</h3>
+                <p>Sois protagonistas: pistas repartidas, roles, cooperación y un Game Master IA que adapta el ritmo sin romper las reglas.</p>
+              </div>
+              <div class="card">
+                <h3>Organizador paga</h3>
+                <p>Crea y publica la aventura. Los jugadores entran por enlace o QR de forma gratuita.</p>
+              </div>
+              <div class="card">
+                <h3>Primer público</h3>
+                <p>Friends &amp; Parties — arquitectura preparada para pareja, familia y empresa.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 1 Diferenciación -->
+        <section class="slide" data-title="Diferenciación">
+          <div class="slide-inner">
+            <h2 class="reveal">Qué nos hace distintos</h2>
+            <p class="subtitle reveal d1">Siete pilares de producto que el motor debe soportar desde el diseño.</p>
+            <ul class="checklist reveal d2">
+              <li>Participantes protagonistas de la historia personalizada</li>
+              <li>Información distribuida entre jugadores (pistas privadas)</li>
+              <li>Cooperación necesaria para avanzar</li>
+              <li>Personajes NPC conversacionales (IA)</li>
+              <li>Game Master IA que dirige la aventura</li>
+              <li>Historia que reacciona a decisiones del grupo</li>
+              <li>Mezcla de elementos digitales y físicos (PDF, QR, objetos)</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- 2 MVP -->
+        <section class="slide" data-title="MVP">
+          <div class="slide-inner mvp-hero">
+            <div>
+              <h2 class="reveal">MVP jugable</h2>
+              <p class="subtitle reveal d1"><em>El caso de los seis sospechosos</em> — contenido manual primero; IA conectada después de demostrar diversión y fiabilidad técnica.</p>
+              <ul class="checklist reveal d2">
+                <li>6 jugadores · ~60 minutos</li>
+                <li>7 pruebas · 3 roles (×2 jugadores)</li>
+                <li>6 pistas privadas · 2 cooperativas</li>
+                <li>1 PDF · 1 prueba QR · final ramificado</li>
+                <li>Presencial y remoto con el mismo motor</li>
+              </ul>
+            </div>
+            <div class="reveal d3">
+              <div class="stat-ring">
+                <svg viewBox="0 0 100 100">
+                  <defs>
+                    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" style="stop-color:#7c5cff"/>
+                      <stop offset="100%" style="stop-color:#00d4aa"/>
+                    </linearGradient>
+                  </defs>
+                  <circle class="bg" cx="50" cy="50" r="45"/>
+                  <circle class="fg" cx="50" cy="50" r="45"/>
+                </svg>
+                <div class="stat-label">6<small>jugadores</small></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3 Arquitectura -->
+        <section class="slide" data-title="Arquitectura">
+          <div class="slide-inner">
+            <h2 class="reveal">Arquitectura pragmática</h2>
+            <p class="subtitle reveal d1">Monolito modular · TypeScript · Next.js PWA · PostgreSQL (Supabase) · servidor autoritativo</p>
+            <div class="arch-diagram reveal d2">
+              <div class="arch-box"><strong>Player / Host PWA</strong>Enlace guest · vistas filtradas</div>
+              <div class="arch-box"><strong>Next.js API</strong>Comandos · TX Postgres · motor</div>
+              <div class="arch-box"><strong>game-engine</strong>Determinista · sin IA directa</div>
+            </div>
+            <div class="cards reveal d3" style="margin-top:1rem">
+              <div class="card"><h3>IA Creator</h3><p>Generación offline → GameDefinition validado (Fase 4).</p></div>
+              <div class="card"><h3>IA Game Master</h3><p>Solo tools → comandos validados (Fase 5).</p></div>
+              <div class="card"><h3>Realtime</h3><p>Señal ligera + resume HTTPS; sin filtrar secretos.</p></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4 Roadmap intro -->
+        <section class="slide" data-title="Roadmap">
+          <div class="slide-inner">
+            <h2 class="reveal">Roadmap por fases</h2>
+            <p class="subtitle reveal d1">Incrementos verificables. No avanzar si la fase anterior no cumple criterios de aceptación.</p>
+            <div class="flow reveal d2">
+              <span>F0 Foundation</span><span class="arrow">→</span>
+              <span>F1 Engine</span><span class="arrow">→</span>
+              <span>F2 Multiplayer</span><span class="arrow">→</span>
+              <span>F3 Seis sospechosos</span><span class="arrow">→</span>
+              <span>F4–6 IA &amp; negocio</span>
+            </div>
+            <p class="subtitle reveal d3" style="margin-top:1.25rem;font-size:0.9rem">
+              Usa la línea de fases abajo o ← → para explorar cada fase en detalle.
+            </p>
+            <div class="timeline reveal d3" id="phaseJump"></div>
+          </div>
+        </section>
+
+        <!-- 5-10 Phases detail slides -->
+        <section class="slide" data-phase="0" data-title="Fase 0">
+          <div class="slide-inner">
+            <div class="phase-badge reveal"><span class="phase-num">0</span> Architecture Foundation</div>
+            <h2 class="reveal d1">Cimientos</h2>
+            <p class="subtitle reveal d2">Repo implementable: monorepo pnpm, Zod shared, migraciones Supabase, fixture stub, CI.</p>
+            <ul class="checklist reveal d3">
+              <li>apps/web + packages/game-engine + packages/shared</li>
+              <li>0001_core.sql (last_event_seq, command_responses)</li>
+              <li>SessionCommandService stub · ADR-0009</li>
+              <li>game-definition.stub.json válido</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="slide" data-phase="1" data-title="Fase 1">
+          <div class="slide-inner">
+            <div class="phase-badge reveal"><span class="phase-num">1</span> Game Engine</div>
+            <h2 class="reveal d1">Motor determinista</h2>
+            <p class="subtitle reveal d2">Sin UI: state machine, puzzles, fases, timer, replay, proyecciones sin fugas.</p>
+            <ul class="checklist reveal d3">
+              <li>Validadores exact, normalized, ordering, cooperation…</li>
+              <li>Comandos jugador, host y GM (authorized)</li>
+              <li>PlayerViewDTO + leak tests</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="slide" data-phase="2" data-title="Fase 2">
+          <div class="slide-inner">
+            <div class="phase-badge reveal"><span class="phase-num">2</span> Multiplayer</div>
+            <h2 class="reveal d1">Tiempo real fiable</h2>
+            <p class="subtitle reveal d2">Invite · guest token · Command API idempotente · resume · Realtime señal · Host + Player PWA.</p>
+            <ul class="checklist reveal d3">
+              <li>FOR UPDATE + secuencia de eventos</li>
+              <li>Harness 6 jugadores concurrentes</li>
+              <li>Reconexión sin depender de historial Realtime</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="slide" data-phase="3" data-title="Fase 3">
+          <div class="slide-inner">
+            <div class="phase-badge reveal"><span class="phase-num">3</span> Primera experiencia</div>
+            <h2 class="reveal d1">Seis sospechosos</h2>
+            <p class="subtitle reveal d2">JSON completo, PDF, QR, UI mobile-first, playtest real — demostrar que el producto divierte.</p>
+            <ul class="checklist reveal d3">
+              <li>7 pruebas · NPC (script → IA en Fase 5)</li>
+              <li>Final según decisiones · sin soluciones en DevTools</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="slide" data-phase="4" data-title="Fase 4">
+          <div class="slide-inner">
+            <div class="phase-badge reveal"><span class="phase-num">4</span> AI Creator</div>
+            <h2 class="reveal d1">Del briefing a la aventura</h2>
+            <p class="subtitle reveal d2">Pipeline por etapas: narrativa, puzzles, multiplayer design, assets, validación Zod, Creator Studio.</p>
+            <ul class="checklist reveal d3">
+              <li>Presupuesto tokens · regeneración parcial</li>
+              <li>Publish bloqueado si estructura inválida</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="slide" data-phase="5" data-title="Fase 5">
+          <div class="slide-inner">
+            <div class="phase-badge reveal"><span class="phase-num">5</span> AI Game Master</div>
+            <h2 class="reveal d1">GM con límites</h2>
+            <p class="subtitle reveal d2">Chat SSE · NPC · hints progresivos · catálogo cerrado de tools — nunca SQL ni estado directo.</p>
+            <ul class="checklist reveal d3">
+              <li>Contexto redactado por jugador</li>
+              <li>Tests anti-fuga de pistas ajenas</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="slide" data-phase="6" data-title="Fase 6">
+          <div class="slide-inner">
+            <div class="phase-badge reveal"><span class="phase-num">6</span> Monetización</div>
+            <h2 class="reveal d1">Negocio sostenible</h2>
+            <p class="subtitle reveal d2">Pagos, planes, cuotas IA Creator/GM, analítica de uso.</p>
+            <ul class="checklist reveal d3">
+              <li>Organizador paga por crear · jugadores gratis</li>
+              <li>Depende de Fases 4–5 según gating</li>
+            </ul>
+            <p class="subtitle reveal" style="margin-top:1.5rem;color:var(--accent2);font-size:1rem">
+              Gracias · escapeAI · Documentación completa en el repositorio
+            </p>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <nav class="controls" aria-label="Navegación">
+      <button type="button" id="btnPrev" aria-label="Anterior">←</button>
+      <div class="dots" id="dots"></div>
+      <button type="button" id="btnNext" aria-label="Siguiente">→</button>
+      <span class="hint">← → · swipe</span>
+    </nav>
+  </div>
+
+  <script>
+    (function () {
+      const slidesEl = document.getElementById("slides");
+      const slides = Array.from(document.querySelectorAll(".slide"));
+      const total = slides.length;
+      const progressBar = document.getElementById("progressBar");
+      const slideCounter = document.getElementById("slideCounter");
+      const slideTotal = document.getElementById("slideTotal");
+      const dotsEl = document.getElementById("dots");
+      const phaseJump = document.getElementById("phaseJump");
+
+      slideTotal.textContent = total;
+
+      let index = 0;
+      let touchStartX = 0;
+
+      slides.forEach((_, i) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.setAttribute("aria-label", "Ir a slide " + (i + 1));
+        b.addEventListener("click", () => go(i));
+        dotsEl.appendChild(b);
+      });
+
+      for (let p = 0; p <= 6; p++) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = "F" + p;
+        b.addEventListener("click", () => {
+          const target = slides.findIndex((s) => s.dataset.phase === String(p));
+          if (target >= 0) go(target);
+        });
+        phaseJump.appendChild(b);
+      }
+
+      function go(i) {
+        if (i < 0 || i >= total) return;
+        index = i;
+        slidesEl.style.transform = "translateX(-" + index * 100 + "%)";
+        slides.forEach((s, j) => s.classList.toggle("active", j === index));
+        dotsEl.querySelectorAll("button").forEach((d, j) => d.classList.toggle("active", j === index));
+        progressBar.style.width = ((index + 1) / total * 100) + "%";
+        slideCounter.textContent = index + 1;
+        phaseJump.querySelectorAll("button").forEach((b) => {
+          const p = b.textContent.replace("F", "");
+          const slide = slides[index];
+          b.classList.toggle("current", slide.dataset.phase === p);
+        });
+      }
+
+      document.getElementById("btnPrev").addEventListener("click", () => go(index - 1));
+      document.getElementById("btnNext").addEventListener("click", () => go(index + 1));
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowRight" || e.key === " ") { e.preventDefault(); go(index + 1); }
+        if (e.key === "ArrowLeft") { e.preventDefault(); go(index - 1); }
+        if (e.key === "Home") go(0);
+        if (e.key === "End") go(total - 1);
+      });
+
+      main.addEventListener("touchstart", (e) => { touchStartX = e.changedTouches[0].screenX; }, { passive: true });
+      main.addEventListener("touchend", (e) => {
+        const dx = e.changedTouches[0].screenX - touchStartX;
+        if (Math.abs(dx) > 50) go(dx < 0 ? index + 1 : index - 1);
+      }, { passive: true });
+
+      go(0);
+    })();
+  </script>
+</body>
+</html>
