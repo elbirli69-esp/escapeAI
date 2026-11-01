@@ -461,6 +461,7 @@
     .slide.visible .use-case-step:nth-child(3) { animation-delay: 0.28s; }
     .slide.visible .use-case-step:nth-child(4) { animation-delay: 0.38s; }
     .slide.visible .use-case-step:nth-child(5) { animation-delay: 0.48s; }
+    .slide.visible .use-case-step:nth-child(6) { animation-delay: 0.58s; }
 
     @keyframes stepIn {
       to { opacity: 1; transform: translateX(0); }
@@ -798,6 +799,303 @@
       50% { filter: brightness(1.35); }
     }
 
+    /* —— Historia Sara · escenas —— */
+    .slide.story::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      opacity: 0.55;
+      pointer-events: none;
+    }
+
+    .slide.story-1::before {
+      background: radial-gradient(ellipse 70% 50% at 70% 30%, rgba(124, 92, 255, 0.2), transparent),
+        radial-gradient(ellipse 50% 40% at 20% 80%, rgba(240, 193, 75, 0.12), transparent);
+    }
+
+    .slide.story-2::before {
+      background: radial-gradient(ellipse 80% 60% at 50% 100%, rgba(180, 90, 40, 0.25), transparent),
+        radial-gradient(ellipse 40% 30% at 10% 20%, rgba(240, 193, 75, 0.15), transparent);
+    }
+
+    .slide.story-3::before {
+      background: radial-gradient(circle at 80% 20%, rgba(0, 212, 170, 0.12), transparent),
+        radial-gradient(circle at 20% 70%, rgba(124, 92, 255, 0.18), transparent);
+    }
+
+    .slide.story-4::before {
+      background: linear-gradient(160deg, rgba(40, 28, 18, 0.5) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 40% at 50% 50%, rgba(240, 193, 75, 0.08), transparent);
+    }
+
+    .slide.story-5::before {
+      background: radial-gradient(ellipse 50% 50% at 30% 40%, rgba(0, 212, 170, 0.2), transparent),
+        radial-gradient(ellipse 50% 50% at 80% 60%, rgba(124, 92, 255, 0.15), transparent);
+    }
+
+    .slide.story-6::before {
+      background: radial-gradient(ellipse 70% 50% at 50% 30%, rgba(240, 193, 75, 0.15), transparent),
+        radial-gradient(ellipse 40% 60% at 80% 80%, rgba(255, 107, 138, 0.1), transparent);
+    }
+
+    .scene-label {
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 0.35rem;
+    }
+
+    .story-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      align-items: center;
+      margin-top: 0.75rem;
+    }
+
+    @media (max-width: 768px) {
+      .story-grid { grid-template-columns: 1fr; }
+    }
+
+    .scene-visual {
+      position: relative;
+      min-height: 200px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: linear-gradient(145deg, rgba(20, 18, 28, 0.9), rgba(30, 24, 18, 0.85));
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+    }
+
+    .scene-visual .lamp {
+      position: absolute;
+      top: -20px;
+      right: 20%;
+      width: 120px;
+      height: 120px;
+      background: radial-gradient(circle, rgba(255, 200, 120, 0.35), transparent 70%);
+      filter: blur(8px);
+      animation: lampFlicker 4s ease-in-out infinite;
+    }
+
+    @keyframes lampFlicker {
+      0%, 100% { opacity: 0.9; }
+      50% { opacity: 1; transform: scale(1.05); }
+    }
+
+    .phone-ui {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      width: 100px;
+      padding: 8px;
+      border-radius: 12px;
+      border: 2px solid rgba(255,255,255,0.15);
+      background: #12121a;
+      font-size: 0.55rem;
+      color: var(--accent2);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+
+    .phone-ui .bar {
+      height: 4px;
+      border-radius: 2px;
+      background: var(--accent);
+      margin-top: 4px;
+      width: 70%;
+      animation: barPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes barPulse {
+      0%, 100% { width: 50%; }
+      50% { width: 85%; }
+    }
+
+    .doc-stack {
+      position: absolute;
+      left: 16px;
+      bottom: 20px;
+      width: 72px;
+      height: 90px;
+      background: #e8e0d0;
+      border-radius: 2px;
+      transform: rotate(-6deg);
+      box-shadow: 2px 2px 0 #c4b8a8, 8px 12px 24px rgba(0,0,0,0.4);
+    }
+
+    .doc-stack::after {
+      content: "CONFIDENCIAL";
+      position: absolute;
+      bottom: 8px;
+      left: 4px;
+      font-size: 0.45rem;
+      color: #8b0000;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    .envelope {
+      position: absolute;
+      top: 30%;
+      left: 28%;
+      width: 56px;
+      height: 36px;
+      background: #d4c4a8;
+      border-radius: 2px;
+      transform: rotate(8deg);
+      opacity: 0.9;
+    }
+
+    .qr-tile {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      width: 44px;
+      height: 44px;
+      background: repeating-linear-gradient(90deg, #fff 0 4px, #111 4px 8px);
+      border-radius: 4px;
+      opacity: 0.85;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      margin-left: 0.35rem;
+      vertical-align: middle;
+    }
+
+    .badge-mvp { background: rgba(0, 212, 170, 0.25); color: var(--accent2); border: 1px solid var(--accent2); }
+    .badge-future { background: rgba(124, 92, 255, 0.2); color: #c4b5ff; border: 1px solid rgba(124, 92, 255, 0.5); }
+
+    .host-list {
+      list-style: none;
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+
+    .host-list li {
+      padding: 0.35rem 0 0.35rem 1.25rem;
+      position: relative;
+    }
+
+    .host-list li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: var(--accent2);
+      font-size: 0.75rem;
+    }
+
+    .info-layer {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+
+    .layer {
+      padding: 0.65rem 0.85rem;
+      border-radius: 10px;
+      border-left: 3px solid;
+      font-size: 0.85rem;
+      background: var(--surface);
+    }
+
+    .layer-public { border-color: var(--accent2); }
+    .layer-private { border-color: var(--accent); }
+    .layer-shared { border-color: var(--gold); }
+
+    .layer strong { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.2rem; }
+
+    .moment-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.65rem;
+      margin-top: 0.75rem;
+    }
+
+    .moment {
+      padding: 0.75rem;
+      border-radius: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .moment em { color: var(--text); font-style: normal; }
+
+    .remote-hero {
+      border: 1px solid rgba(0, 212, 170, 0.4);
+      border-radius: 16px;
+      padding: 1rem 1.15rem;
+      background: linear-gradient(135deg, rgba(0, 212, 170, 0.08), rgba(124, 92, 255, 0.06));
+    }
+
+    .remote-hero h3 {
+      font-size: 1rem;
+      color: var(--accent2);
+      margin-bottom: 0.5rem;
+    }
+
+    .split-mvp {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    @media (max-width: 768px) {
+      .split-mvp { grid-template-columns: 1fr; }
+      .moment-grid { grid-template-columns: 1fr; }
+    }
+
+    .split-col {
+      padding: 1rem;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+    }
+
+    .split-col.mvp { border-color: rgba(0, 212, 170, 0.35); }
+    .split-col.future { border-color: rgba(124, 92, 255, 0.35); opacity: 0.92; }
+
+    .split-col h3 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.65rem;
+    }
+
+    .split-col.mvp h3 { color: var(--accent2); }
+    .split-col.future h3 { color: #c4b5ff; }
+
+    .split-col ul {
+      list-style: none;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .split-col li { margin-bottom: 0.35rem; padding-left: 0.85rem; text-indent: -0.85rem; }
+    .split-col.mvp li::before { content: "● "; color: var(--accent2); }
+    .split-col.future li::before { content: "◇ "; color: #c4b5ff; }
+
+    .chapter-title {
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      line-height: 1.15;
+      margin-bottom: 0.75rem;
+      color: var(--text);
+    }
+
+    .chapter-title span { color: var(--gold); }
+
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 0.01ms !important;
@@ -822,7 +1120,7 @@
     <div class="progress-wrap" aria-hidden="true">
       <div class="progress-bar" id="progressBar"></div>
     </div>
-    <div class="header-meta"><span id="slideCounter">1</span> / <span id="slideTotal">14</span></div>
+    <div class="header-meta"><span id="slideCounter">1</span> / <span id="slideTotal">22</span></div>
   </header>
 
   <section class="slide" data-title="Visión">
@@ -1055,36 +1353,169 @@
     </div>
   </section>
 
-  <section class="slide" data-title="Caso de uso">
+  <section class="slide story story-1" data-title="Sara — capítulo">
     <div class="slide-inner">
-      <h2 class="reveal">Caso de uso con el MVP</h2>
-      <p class="subtitle reveal d1"><strong style="color:var(--text)">Cumpleaños de Sara — cena en casa con 5 amigos + Sara (6 jugadores)</strong></p>
-      <div class="use-case reveal d2">
-        <div class="use-case-step">
-          <span class="num">1</span>
-          <p><strong>Marcos</strong> prepara la partida. En la versión completa, sube fotos del grupo y anécdotas de Sara; la IA teje la trama. En el MVP usa la aventura «Seis sospechosos», pensada para demostrar el formato.</p>
+      <p class="scene-label reveal">Caso de uso · MVP</p>
+      <h2 class="chapter-title reveal d1">La noche de <span>Sara</span></h2>
+      <p class="subtitle reveal d2" style="max-width:720px">
+        Marcos no alquila una escape room: convierte la cena de cumpleaños en una <strong style="color:var(--text)">aventura compartida</strong> — salón, papeles, móviles, risas y un misterio de una hora. La tecnología potencia lo social; no lo sustituye.
+      </p>
+      <p class="subtitle reveal d3" style="font-size:0.95rem">
+        Aventura: «Seis sospechosos» · 6 jugadores (Sara + 5 amigos) · Leo juega <strong style="color:var(--accent2)">en remoto</strong>
+      </p>
+      <p class="scroll-hint reveal d3">Seis escenas ↓</p>
+    </div>
+  </section>
+
+  <section class="slide story story-1" data-title="Escena 1">
+    <div class="slide-inner story-grid">
+      <div>
+        <p class="scene-label reveal">Escena 1</p>
+        <h2 class="reveal d1">Preparar el misterio<span class="badge badge-mvp">MVP</span></h2>
+        <p class="subtitle reveal d2" style="margin-bottom:0.75rem">Por la tarde, Marcos entra en escapeAI y elige la aventura publicada.</p>
+        <ul class="host-list reveal d2">
+          <li>Crea la sala para 6 jugadores</li>
+          <li>Comparte enlace y QR de invitación</li>
+          <li>Descarga e imprime el dossier</li>
+          <li>Lee la guía: dónde colocar el QR del pasillo</li>
+          <li>Comprueba quién se ha unido — <em>sin prisa</em></li>
+        </ul>
+        <p class="subtitle reveal d3" style="font-size:0.85rem;margin-top:0.75rem">
+          <span class="badge badge-future">Próximamente IA</span> Subir fotos y anécdotas de Sara para generar una trama única.
+        </p>
+      </div>
+      <div class="scene-visual reveal d2" aria-hidden="true">
+        <div class="lamp"></div>
+        <div class="doc-stack"></div>
+        <div class="phone-ui">Host · 4/6<br/>Seis sospechosos<div class="bar"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide story story-2" data-title="Escena 2">
+    <div class="slide-inner story-grid">
+      <div class="scene-visual reveal" aria-hidden="true">
+        <div class="lamp"></div>
+        <div class="qr-tile"></div>
+        <div class="envelope"></div>
+        <div class="phone-ui">Unirse · Ana<br/>Sin instalar app</div>
+      </div>
+      <div>
+        <p class="scene-label reveal">Escena 2</p>
+        <h2 class="reveal d1">La casa es el escenario<span class="badge badge-mvp">MVP</span></h2>
+        <p class="subtitle reveal d2">Dossier y sobres en la mesa; QR en el pasillo. Al llegar, cada invitado escanea y entra en la <strong style="color:var(--text)">misma partida</strong> desde su móvil.</p>
+        <ul class="host-list reveal d3">
+          <li>PWA: enlace, sin tienda de apps</li>
+          <li>Marcos ve el lobby hasta que los seis están</li>
+          <li>La partida no empieza hasta que él pulsa iniciar</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide story story-3" data-title="Escena 3">
+    <div class="slide-inner story-grid">
+      <div>
+        <p class="scene-label reveal">Escena 3</p>
+        <h2 class="reveal d1">Cada uno guarda un secreto<span class="badge badge-mvp">MVP</span></h2>
+        <p class="subtitle reveal d2">Al iniciar, personaje y pistas privadas. La mesa estalla en preguntas: ¿qué sabes tú que yo no?</p>
+        <div class="info-layer reveal d3">
+          <div class="layer layer-public"><strong>Pública</strong> El crimen, la escena, pruebas ya resueltas por el grupo.</div>
+          <div class="layer layer-private"><strong>Privada</strong> Solo en el móvil del jugador — el resto no puede leerla.</div>
+          <div class="layer layer-shared"><strong>Compartida</strong> Lo que decidís revelar en voz alta durante la investigación.</div>
         </div>
-        <div class="use-case-step">
-          <span class="num">2</span>
-          <p><strong>Juego mixto:</strong> imprime el dossier y coloca un <strong>QR</strong> en el pasillo. Los invitados escanean el enlace al llegar — el misterio ya está en la casa, no solo en una app.</p>
+        <p class="subtitle reveal d3" style="font-size:0.85rem;margin-top:0.75rem">
+          <span class="badge badge-future">Próximamente IA</span> Referencias automáticas a la vida de Sara en la trama. En el MVP, la plantilla «Seis sospechosos» demuestra el formato.
+        </p>
+      </div>
+      <div class="scene-visual reveal d2" aria-hidden="true">
+        <div class="phone-ui" style="left:12px;right:auto">🔒 Coartada<br/>solo tú</div>
+        <div class="phone-ui" style="top:40%;right:20%">Escena<br/>todos</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide story story-4" data-title="Escena 4">
+    <div class="slide-inner">
+      <p class="scene-label reveal">Escena 4</p>
+      <h2 class="reveal d1">Mesa, papel y móvil<span class="badge badge-mvp">MVP</span></h2>
+      <p class="subtitle reveal d2">Los teléfonos son herramientas — el centro es la conversación.</p>
+      <div class="moment-grid reveal d3">
+        <div class="moment"><em>Alguien comparte</em> una pista; otro contradice con el dossier.</div>
+        <div class="moment"><em>Investigadores</em> ordenan la noche; cuatro de seis confirman.</div>
+        <div class="moment"><em>Dos jugadores</em> juntan fragmentos y abren la caja fuerte.</div>
+        <div class="moment"><em>Interrogador</em> enfrenta al sospechoso — el salón escucha.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide story story-5" data-title="Escena 5">
+    <div class="slide-inner">
+      <p class="scene-label reveal">Escena 5</p>
+      <h2 class="reveal d1">Leo, a 400 km, es el sexto<span class="badge badge-mvp">MVP</span></h2>
+      <div class="remote-hero reveal d2">
+        <h3>Jugador remoto — mismos derechos</h3>
+        <p style="color:var(--muted);font-size:0.9rem;line-height:1.5">
+          Leo abre el enlace, recibe <strong style="color:var(--text)">rol y pista privada</strong>, descarga el dossier, participa en votaciones y pruebas cooperativas. Ve la progresión sincronizada; no es espectador ni solo un PDF por email.
+        </p>
+      </div>
+      <div class="scene-visual reveal d3" style="margin-top:1rem;min-height:140px" aria-hidden="true">
+        <div class="phone-ui" style="left:50%;transform:translateX(-50%);bottom:20px">Leo · remoto<br/>En línea · coop ✓</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide story story-6" data-title="Escena 6">
+    <div class="slide-inner story-grid">
+      <div>
+        <p class="scene-label reveal">Escena 6 · ~60 min</p>
+        <h2 class="reveal d1">El veredicto<span class="badge badge-mvp">MVP</span></h2>
+        <p class="subtitle reveal d2">El grupo decide a quién acusan. El desenlace depende de lo que hicisteis — no de una sola contraseña.</p>
+        <ul class="host-list reveal d3">
+          <li>Resolución del misterio en pantalla compartida</li>
+          <li>Consecuencias según contradicciones detectadas</li>
+          <li>Sensación de «lo hemos vivido juntos»</li>
+        </ul>
+      </div>
+      <div class="scene-visual reveal d2" aria-hidden="true">
+        <div class="lamp"></div>
+        <div class="phone-ui" style="width:120px;right:50%;transform:translateX(50%)">Final<br/>¿Víctor?</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-title="MVP vs IA">
+    <div class="slide-inner">
+      <h2 class="reveal">Qué es MVP y qué viene después</h2>
+      <div class="split-mvp reveal d1">
+        <div class="split-col mvp">
+          <h3>MVP — Sara esta noche</h3>
+          <ul>
+            <li>Salas, enlace, QR, host y 6 jugadores</li>
+            <li>Roles, pistas privadas/públicas, compartir</li>
+            <li>7 pruebas, coop, timer, sync tiempo real</li>
+            <li>Remoto igual que presencial</li>
+            <li>Dossier + QR + PWA móvil</li>
+            <li>Final según estado de la partida</li>
+          </ul>
         </div>
-        <div class="use-case-step">
-          <span class="num">3</span>
-          <p>Tras la cena, cada móvil muestra un <strong>rol</strong> y una <strong>pista privada</strong>. Sara descubre que la historia nombra sitios que conocen — sensación de “esto es nuestro”.</p>
-        </div>
-        <div class="use-case-step">
-          <span class="num">4</span>
-          <p>Alternan <strong>papel en la mesa</strong> y <strong>pantalla</strong>: coartadas en voz alta, caja fuerte en equipo, sospechoso al que interrogar desde el móvil.</p>
-        </div>
-        <div class="use-case-step">
-          <span class="num">5</span>
-          <p>Final a los 60 minutos según lo que decidió el grupo — recuerdo compartido, no un puzzle genérico descargado.</p>
+        <div class="split-col future">
+          <h3>Evolución IA</h3>
+          <ul>
+            <li>Fotos y anécdotas del grupo</li>
+            <li>Trama y personajes personalizados</li>
+            <li>Pistas y acertijos a medida</li>
+            <li>Dossier generado automáticamente</li>
+            <li>Historia que se adapta al grupo</li>
+          </ul>
         </div>
       </div>
-      <p class="subtitle reveal d3" style="color:var(--accent2);margin-top:0.5rem">
-        Un amigo en <strong style="color:var(--accent2)">remoto</strong> recibe el PDF por chat y el QR en pantalla; misma partida, misma personalización de grupo.
+      <p class="subtitle reveal d2" style="margin-top:1rem;font-size:0.88rem">
+        Validación funcional para desarrollo: <strong style="color:var(--accent2)">docs/MVP_VALIDATION_SARA.md</strong> · Análisis: <strong style="color:var(--accent2)">docs/CASO_SARA_ANALISIS.md</strong>
       </p>
-      <p class="subtitle reveal d3" style="margin-top:1.5rem;font-size:0.9rem">escapeAI — documentación técnica en el repositorio del proyecto</p>
+      <p class="use-case-contrast reveal d3" style="margin-top:1rem">
+        <strong>Propuesta de valor:</strong> convertir una cena o cumpleaños en aventura mixta multijugador — hoy con «Seis sospechosos», mañana con vuestra historia generada por IA.
+      </p>
     </div>
   </section>
 
