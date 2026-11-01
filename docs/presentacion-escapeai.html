@@ -488,6 +488,65 @@
 
     .use-case-step strong { color: var(--text); }
 
+    .act-time {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 0.25rem;
+    }
+
+    .use-case-step .channels {
+      display: block;
+      margin-top: 0.35rem;
+      font-size: 0.78rem;
+      color: var(--accent2);
+    }
+
+    .use-case-contrast {
+      margin-top: 1.25rem;
+      padding: 1rem 1.15rem;
+      border-radius: 12px;
+      background: rgba(124, 92, 255, 0.1);
+      border: 1px solid rgba(124, 92, 255, 0.3);
+      font-size: 0.92rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .use-case-contrast strong { color: var(--text); }
+
+    .pillar-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .pillar {
+      padding: 0.9rem;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-size: 0.82rem;
+    }
+
+    .pillar h4 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent2);
+      margin-bottom: 0.35rem;
+    }
+
+    .pillar p { color: var(--muted); line-height: 1.4; }
+
+    @media (max-width: 768px) {
+      .pillar-row { grid-template-columns: 1fr; }
+    }
+
     .hero-pill {
       display: inline-block;
       margin-bottom: 1rem;
@@ -1063,9 +1122,6 @@
       slides.forEach((s) => observer.observe(s));
       slides[0].classList.add("visible");
       progressBar.style.width = (1 / total * 100) + "%";
-
-      window.addEventListener("scroll", onScrollParallax, { passive: true });
-      onScrollParallax();
     })();
   </script>
 </body>

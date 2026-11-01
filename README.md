@@ -22,6 +22,7 @@ Repositorio en **Fase 0** (documentación arquitectónica). Sin código de aplic
 | [TESTING_STRATEGY.md](./TESTING_STRATEGY.md) | Calidad y harness |
 | [fixtures/six-suspects/EXPERIENCE_DESIGN.md](./fixtures/six-suspects/EXPERIENCE_DESIGN.md) | Diseño primera experiencia |
 | [docs/presentacion-escapeai.html](./docs/presentacion-escapeai.html) | Presentación visual del producto (descargable, offline) |
+| [docs/prompt-caso-uso-escapeai.md](./docs/prompt-caso-uso-escapeai.md) | Prompt para redactar casos de uso completos |
 | [ADR/](./ADR/) | Decisiones arquitectónicas |
 
 ## Próximo paso
