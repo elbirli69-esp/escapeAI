@@ -291,6 +291,9 @@ export const GameCommandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("NARRATIVE_CHOICE"), playerId: z.string(), puzzleId: z.string(), choiceId: z.string() }),
   z.object({ type: z.literal("GM_EMIT_NARRATION"), authorized: z.literal(true), text: z.string(), visibility: z.enum(["all", "player"]) }),
   z.object({ type: z.literal("GM_TRIGGER_TIMED_EVENT"), authorized: z.literal(true), eventId: z.string() }),
+  z.object({ type: z.literal("GM_GRANT_HINT"), authorized: z.literal(true), puzzleId: z.string(), hintId: z.string() }),
+  z.object({ type: z.literal("GM_SET_FLAG"), authorized: z.literal(true), flag: z.string(), value: z.boolean() }),
+  z.object({ type: z.literal("GM_INTERROGATION_HIT"), authorized: z.literal(true), keywordId: z.string() }),
 ]);
 ```
 
@@ -480,4 +483,5 @@ export function replayEvents(
 
 ## Fixture de referencia
 
-`fixtures/six-suspects/game-definition.json` — experiencia MVP completa para tests de integración y multiplayer simulado.
+- `fixtures/six-suspects/EXPERIENCE_DESIGN.md` — diseño narrativo/mechanics cerrado
+- `fixtures/six-suspects/game-definition.json` — experiencia MVP (Fase 3)
