@@ -1452,6 +1452,205 @@
       50% { transform: translate(8px, -12px); opacity: 0.6; }
     }
 
+    /* —— Fase C: motion story-only —— */
+    .story-atmosphere {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      overflow: hidden;
+      opacity: 0;
+      transition: opacity 0.85s ease;
+    }
+
+    body.story-mode .story-atmosphere { opacity: 1; }
+
+    body.story-mode-enter .grain-overlay {
+      animation: grainFlash 0.9s ease forwards;
+    }
+
+    @keyframes grainFlash {
+      0% { opacity: 0; filter: contrast(1.4); }
+      35% { opacity: 1; }
+      100% { opacity: 1; filter: none; }
+    }
+
+    .story-ember {
+      position: absolute;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 210, 130, 0.9) 0%, rgba(255, 140, 60, 0.35) 45%, transparent 70%);
+      filter: blur(0.5px);
+      animation: emberRise var(--dur, 11s) ease-in-out infinite;
+      animation-delay: var(--delay, 0s);
+      opacity: 0;
+    }
+
+    body.story-mode .story-ember { opacity: 1; }
+
+    @keyframes emberRise {
+      0% { transform: translate(0, 0) scale(0.6); opacity: 0; }
+      12% { opacity: var(--peak, 0.55); }
+      88% { opacity: calc(var(--peak, 0.55) * 0.4); }
+      100% { transform: translate(var(--dx, 12px), -110vh) scale(0.2); opacity: 0; }
+    }
+
+    .story-smoke {
+      position: absolute;
+      width: min(42vw, 280px);
+      height: min(42vw, 280px);
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(80, 60, 45, 0.12) 0%, transparent 68%);
+      filter: blur(28px);
+      animation: smokeDrift 22s ease-in-out infinite;
+    }
+
+    .story-smoke-1 { left: -8%; bottom: 10%; animation-delay: 0s; }
+    .story-smoke-2 { right: -5%; top: 18%; animation-delay: -7s; animation-duration: 26s; }
+
+    @keyframes smokeDrift {
+      0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.35; }
+      50% { transform: translate(24px, -20px) scale(1.08); opacity: 0.55; }
+    }
+
+    .slide.story:not(.visible) .slide-inner {
+      opacity: 0.35;
+      transform: translateY(20px) scale(0.985);
+      filter: blur(3px);
+      transition: opacity 0.45s ease, transform 0.45s ease, filter 0.45s ease;
+    }
+
+    .slide.story.visible .slide-inner {
+      opacity: 1;
+      transform: none;
+      filter: none;
+      animation: storyPageIn 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    @keyframes storyPageIn {
+      from {
+        opacity: 0;
+        transform: translateY(28px) scale(0.97);
+        filter: blur(8px);
+      }
+      to {
+        opacity: 1;
+        transform: none;
+        filter: none;
+      }
+    }
+
+    .slide.story.visible .story-grid > div:not(.scene-visual) {
+      animation: storyTextIn 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
+    }
+
+    .slide.story.story-2.visible .story-grid > div:not(.scene-visual),
+    .slide.story.story-4.visible .story-grid > div:not(.scene-visual),
+    .slide.story.story-6.visible .story-grid > div:not(.scene-visual) {
+      animation-name: storyTextInAlt;
+    }
+
+    @keyframes storyTextIn {
+      from { opacity: 0; transform: translateX(-22px); }
+      to { opacity: 1; transform: none; }
+    }
+
+    @keyframes storyTextInAlt {
+      from { opacity: 0; transform: translateX(22px); }
+      to { opacity: 1; transform: none; }
+    }
+
+    .slide.story:not(.visible) .scene-visual {
+      opacity: 0;
+      transform: translateX(24px) rotate(0.8deg);
+    }
+
+    .slide.story.story-2:not(.visible) .scene-visual:first-child,
+    .slide.story.story-4:not(.visible) .scene-visual:first-child {
+      transform: translateX(-24px) rotate(-0.8deg);
+    }
+
+    .slide.story.visible .scene-visual {
+      animation: storyVisualIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+    }
+
+    @keyframes storyVisualIn {
+      from {
+        opacity: 0;
+        transform: translateX(32px) rotate(1.2deg) scale(0.96);
+      }
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    .slide.story.story-2.visible .scene-visual:first-child,
+    .slide.story.story-4.visible .scene-visual:first-child {
+      animation-name: storyVisualInLeft;
+    }
+
+    @keyframes storyVisualInLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-32px) rotate(-1.2deg) scale(0.96);
+      }
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    .slide.story.visible .fingerprint-watermark {
+      transform: translateY(calc(var(--story-shift, 0) * -0.8px));
+      transition: transform 0.2s ease-out;
+    }
+
+    .slide.story.visible .scene-visual .lamp {
+      animation: lampFlicker 3.2s ease-in-out infinite, lampWarmup 1.2s ease forwards;
+    }
+
+    @keyframes lampWarmup {
+      from { opacity: 0; transform: scale(0.7); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .slide.mystery-coda:not(.visible) .split-col {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+
+    .slide.mystery-coda.visible .split-col.mvp {
+      animation: codaCardIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+    }
+
+    .slide.mystery-coda.visible .split-col.future {
+      animation: codaCardIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.22s both;
+    }
+
+    @keyframes codaCardIn {
+      from { opacity: 0; transform: translateY(28px) rotate(-0.5deg); }
+      to { opacity: 1; transform: none; }
+    }
+
+    .slide.story.visible .scene-visual .doc-stack,
+    .slide.story.visible .scene-visual .envelope {
+      animation: propSettle 0.65s cubic-bezier(0.34, 1.2, 0.64, 1) 0.35s both;
+    }
+
+    @keyframes propSettle {
+      from { transform: rotate(-12deg) translateY(8px); opacity: 0; }
+      to { transform: rotate(-6deg) translateY(0); opacity: 1; }
+    }
+
+    .slide.story.visible .scene-visual .envelope {
+      animation-name: propSettleEnv;
+    }
+
+    @keyframes propSettleEnv {
+      from { transform: rotate(16deg) translateY(6px); opacity: 0; }
+      to { transform: rotate(8deg) translateY(0); opacity: 0.9; }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 0.01ms !important;
@@ -1472,6 +1671,21 @@
   <div class="grid-overlay" aria-hidden="true"></div>
   <div class="grain-overlay" aria-hidden="true"></div>
   <div class="vignette-overlay" aria-hidden="true"></div>
+  <div class="story-atmosphere" aria-hidden="true">
+    <div class="story-smoke story-smoke-1"></div>
+    <div class="story-smoke story-smoke-2"></div>
+    <div class="story-ember" style="left:8%;bottom:-5%;width:4px;height:4px;--dur:13s;--delay:0s;--dx:18px;--peak:0.5"></div>
+    <div class="story-ember" style="left:22%;bottom:-8%;width:3px;height:3px;--dur:10s;--delay:2.1s;--dx:-8px;--peak:0.4"></div>
+    <div class="story-ember" style="left:38%;bottom:-4%;width:5px;height:5px;--dur:15s;--delay:0.6s;--dx:22px;--peak:0.55"></div>
+    <div class="story-ember" style="left:52%;bottom:-10%;width:3px;height:3px;--dur:11s;--delay:3.4s;--dx:-14px;--peak:0.35"></div>
+    <div class="story-ember" style="left:66%;bottom:-6%;width:4px;height:4px;--dur:12s;--delay:1.2s;--dx:10px;--peak:0.48"></div>
+    <div class="story-ember" style="left:78%;bottom:-9%;width:6px;height:6px;--dur:14s;--delay:4s;--dx:-20px;--peak:0.42"></div>
+    <div class="story-ember" style="left:90%;bottom:-5%;width:3px;height:3px;--dur:9s;--delay:1.8s;--dx:6px;--peak:0.38"></div>
+    <div class="story-ember" style="left:14%;bottom:-12%;width:2px;height:2px;--dur:16s;--delay:5.2s;--dx:28px;--peak:0.3"></div>
+    <div class="story-ember" style="left:44%;bottom:-7%;width:4px;height:4px;--dur:11s;--delay:2.8s;--dx:-16px;--peak:0.45"></div>
+    <div class="story-ember" style="left:58%;bottom:-11%;width:5px;height:5px;--dur:13s;--delay:0.3s;--dx:12px;--peak:0.52"></div>
+    <div class="story-ember" style="left:84%;bottom:-8%;width:3px;height:3px;--dur:10s;--delay:3.9s;--dx:-10px;--peak:0.36"></div>
+  </div>
 
   <header>
     <div class="logo">escape<span>AI</span></div>
@@ -1913,7 +2127,7 @@
     </div>
   </section>
 
-  <!-- Motion brief: orbes + scroll-reveal + micro-loop en chips/roadmap/mixto; parallax suave; prefers-reduced-motion -->
+  <!-- Motion: orbes + scroll-reveal + Fase C story (partículas, page-in, parallax); prefers-reduced-motion -->
   <script>
     (function () {
       const slides = Array.from(document.querySelectorAll(".slide"));
@@ -1922,14 +2136,50 @@
       const slideCounter = document.getElementById("slideCounter");
       document.getElementById("slideTotal").textContent = total;
 
+      let bodyInStoryMode = false;
+      let enterFlashTimer = null;
+
+      function setStoryMode(on) {
+        document.body.classList.toggle("story-mode", on);
+        if (on && !bodyInStoryMode) {
+          document.body.classList.add("story-mode-enter");
+          clearTimeout(enterFlashTimer);
+          enterFlashTimer = setTimeout(() => {
+            document.body.classList.remove("story-mode-enter");
+          }, 950);
+        }
+        bodyInStoryMode = on;
+      }
+
+      const storyAtmosphere = document.querySelector(".story-atmosphere");
+
+      function updateStoryParallax() {
+        if (!document.body.classList.contains("story-mode")) return;
+        const vh = window.innerHeight || 1;
+        let avgShift = 0;
+        let count = 0;
+        document.querySelectorAll(".slide.story.visible, .slide.mystery-coda.visible").forEach((slide) => {
+          const rect = slide.getBoundingClientRect();
+          const centerOffset = (rect.top + rect.height * 0.5 - vh * 0.5) / vh;
+          const shift = Math.max(-1, Math.min(1, centerOffset)) * 18;
+          slide.style.setProperty("--story-shift", String(Math.round(shift * 10) / 10));
+          avgShift += shift;
+          count += 1;
+        });
+        if (storyAtmosphere && count) {
+          const drift = (avgShift / count) * 0.35;
+          storyAtmosphere.style.transform = "translateY(" + drift + "px)";
+        }
+      }
+
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
       const observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
             if (entry.isIntersecting) {
               entry.target.classList.add("visible");
               const i = slides.indexOf(entry.target);
-              const isStory = entry.target.classList.contains("story") || entry.target.classList.contains("mystery-coda");
-              document.body.classList.toggle("story-mode", isStory);
               if (i >= 0) {
                 slideCounter.textContent = i + 1;
                 progressBar.style.width = ((i + 1) / total * 100) + "%";
@@ -1942,6 +2192,11 @@
               entry.target.classList.remove("visible");
             }
           });
+          const anyStoryVisible = slides.some(
+            (s) => s.classList.contains("visible") && (s.classList.contains("story") || s.classList.contains("mystery-coda"))
+          );
+          setStoryMode(anyStoryVisible);
+          if (anyStoryVisible && !reducedMotion) updateStoryParallax();
         },
         { threshold: 0.42 }
       );
@@ -1949,6 +2204,22 @@
       slides.forEach((s) => observer.observe(s));
       slides[0].classList.add("visible");
       progressBar.style.width = (1 / total * 100) + "%";
+
+      if (!reducedMotion) {
+        let parallaxTick = false;
+        window.addEventListener(
+          "scroll",
+          () => {
+            if (parallaxTick) return;
+            parallaxTick = true;
+            requestAnimationFrame(() => {
+              updateStoryParallax();
+              parallaxTick = false;
+            });
+          },
+          { passive: true }
+        );
+      }
     })();
   </script>
 </body>

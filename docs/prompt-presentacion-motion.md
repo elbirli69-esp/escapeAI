@@ -21,3 +21,12 @@ Enriquecer `presentacion-escapeai.html` con movimiento **legible y premium**, si
 - Sin bottom nav; solo scroll snap.
 - Un solo archivo HTML.
 - Reducir animaciones si el usuario prefiere menos movimiento.
+
+## Fase C — misterio / Sara (story-only)
+
+1. **Atmósfera fija:** capa `.story-atmosphere` con humo difuso + brasas ascendentes (solo con `body.story-mode`).
+2. **Entrada al bloque:** flash suave de grano (`story-mode-enter`) la primera vez que entras en story.
+3. **Transición por slide:** page-in del `.slide-inner`, texto desde izquierda/derecha alternando en escenas pares, mockup `.scene-visual` con entrada lateral + lámpara warmup.
+4. **Props:** dossier y sobre con micro «settle» al entrar en viewport.
+5. **Cierre MVP vs IA:** columnas `.split-col` en cascada.
+6. **Parallax scroll:** `--story-shift` en slides story visibles + deriva leve de la atmósfera (desactivado con `prefers-reduced-motion`).
