@@ -106,7 +106,7 @@ export type ApplyResult = {
 
 export type OrchestratorResponse = {
   message: string;
-  source: "fallback" | "openai";
+  source: "fallback" | "openai" | "deepseek";
 };
 
 export type AiPuzzleContext = {

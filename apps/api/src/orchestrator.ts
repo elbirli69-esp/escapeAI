@@ -1,7 +1,8 @@
 import { toAiContext, type SessionRecord } from "@escapeai/escape-engine";
 import type { GameEvent } from "@escapeai/shared";
+import { resolveLlmConfig, type LlmProvider } from "./llm-config.js";
 
-export type OrchestratorSource = "fallback" | "openai";
+export type OrchestratorSource = "fallback" | LlmProvider;
 
 export type OrchestratorResult = {
   message: string;
@@ -25,19 +26,21 @@ export async function runOrchestrator(
   events: GameEvent[],
 ): Promise<OrchestratorResult> {
   const fallback = buildFallback(session, events);
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return fallback;
+  const llm = resolveLlmConfig();
+  if (!llm) return fallback;
 
   try {
     const { generateText } = await import("ai");
     const { createOpenAI } = await import("@ai-sdk/openai");
-    const openai = createOpenAI({ apiKey });
-    const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+    const client = createOpenAI({
+      apiKey: llm.apiKey,
+      baseURL: llm.baseURL,
+    });
     const context = toAiContext(session);
     const trigger = events[events.length - 1];
 
     const { text } = await generateText({
-      model: openai(model),
+      model: client(llm.model),
       system: [
         "Eres el narrador de un escape room en español.",
         "No reveles soluciones ni códigos concretos.",
@@ -60,7 +63,7 @@ export async function runOrchestrator(
     });
 
     const message = text.trim();
-    if (message) return { message, source: "openai" };
+    if (message) return { message, source: llm.provider };
   } catch (err) {
     console.warn("Orchestrator AI failed, using fallback:", err);
   }

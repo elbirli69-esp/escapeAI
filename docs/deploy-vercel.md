@@ -31,8 +31,10 @@ En **Project → Settings → Environment Variables**:
 | `KV_REST_API_URL` / `KV_REST_API_TOKEN` | **recomendado** | Lo que crea **Vercel Storage** al vincular Upstash (sin prefijo) |
 | `SESSION_TTL_SEC` | opcional | Por defecto `172800` (48 h) |
 | `SESSION_DATA_DIR` | solo local | Carpeta JSON en desarrollo |
-| `OPENAI_API_KEY` | opcional | Narración con IA |
-| `OPENAI_MODEL` | opcional | p. ej. `gpt-4o-mini` |
+| `DEEPSEEK_API_KEY` | opcional | Narrador (mismo patrón que **traveltoblog**) |
+| `OPENAI_BASE_URL` | con DeepSeek | `https://api.deepseek.com/v1` |
+| `OPENAI_MODEL` | con DeepSeek | `deepseek-chat` (o el modelo en traveltoblog) |
+| `OPENAI_API_KEY` | alternativa | OpenAI directa en lugar de DeepSeek |
 | `CORS_ORIGINS` | opcional | Dominio custom adicional |
 
 Vercel inyecta `VERCEL_URL` / `VERCEL_PROJECT_PRODUCTION_URL`; la API los usa para CORS.

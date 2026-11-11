@@ -8,6 +8,7 @@ import {
 import type { GameAction, GameEvent } from "@escapeai/shared";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { resolveLlmConfig } from "./llm-config.js";
 import { runOrchestrator } from "./orchestrator.js";
 import {
   createSessionStore,
@@ -35,11 +36,15 @@ export async function createApp(store?: SessionStore): Promise<Hono> {
 
   app.get("/health", (c) => {
     const storeMeta = getSessionStoreMeta();
+    const llm = resolveLlmConfig();
     return c.json({
       ok: true,
       persistence: storeMeta.kind,
       sessionTtlSec: storeMeta.ttlSec,
       runtime: process.env.VERCEL ? "vercel" : "node",
+      narrator: llm
+        ? { configured: true, provider: llm.provider, model: llm.model }
+        : { configured: false },
     });
   });
 

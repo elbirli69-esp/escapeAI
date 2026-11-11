@@ -38,8 +38,8 @@ El equipo **Rodrigo** puede tener **Deployment Protection** con SSO en `*.vercel
 
 ## D. Orquestador IA (opcional)
 
-1. `OPENAI_API_KEY` en Production (+ Preview si quieres probar en PR).
-2. `OPENAI_MODEL=gpt-4o-mini` (u otro).
+1. Copiar de **traveltoblog**: `DEEPSEEK_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL` → proyecto **escapeai** (Production + Preview).
+2. Redeploy; `GET /api/health` → `"narrator": { "configured": true, "provider": "deepseek" }`.
 3. Prueba: falla un puzzle y revisa una frase de narración en el diario + badge IA.
 
 ## E. Smoke test final
