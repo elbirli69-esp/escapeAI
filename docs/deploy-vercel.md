@@ -34,11 +34,18 @@ En **Project → Settings → Environment Variables**:
 
 Vercel inyecta `VERCEL_URL` / `VERCEL_PROJECT_PRODUCTION_URL`; la API los usa para CORS.
 
-## 3. Dominio custom
+## 3. Dominio custom y acceso público
 
-Igual que StorIAteller u otras apps:
+Proyecto creado en el **mismo equipo Vercel** que `traveltoblog` (StorIAteller).
 
-**Settings → Domains** → añade tu dominio y, si hace falta, `CORS_ORIGINS=https://tudominio.com`.
+URLs actuales de producción:
+
+- https://escapeai-rodrigo-cv.vercel.app
+- https://escapeai-self.vercel.app
+
+**SSO / Deployment Protection:** si el equipo tiene *Vercel Authentication* en `*.vercel.app` (como en otros proyectos del team), los visitantes anónimos no verán la app hasta que añadas un **dominio custom** o desactives la protección en **Project → Settings → Deployment Protection** para Production.
+
+Igual que StorIAteller: **Settings → Domains** → tu dominio + `CORS_ORIGINS=https://tudominio.com` si aplica.
 
 ## 4. Comprobar el deploy
 
