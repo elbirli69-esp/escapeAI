@@ -5,6 +5,7 @@
   "scripts": {
     "build": "pnpm -r run build",
     "test": "pnpm -r run test",
+    "validate-rooms": "pnpm --filter @escapeai/escape-content run validate-rooms",
     "dev": "pnpm --parallel --filter @escapeai/api --filter @escapeai/web run dev",
     "dev:api": "pnpm --filter @escapeai/api run dev",
     "dev:web": "pnpm --filter @escapeai/web run dev",
