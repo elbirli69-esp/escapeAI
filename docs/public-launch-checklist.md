@@ -5,9 +5,9 @@ Usa esta lista antes de compartir escapeAI fuera del equipo (misma línea que St
 ## A. Upstash Redis (sesiones)
 
 1. Vercel → proyecto **escapeai** → **Storage** → **Create Database** → **Upstash Redis** (o conecta una existente).
-2. Vincula la base al proyecto. Vercel suele crear automáticamente:
-   - `UPSTASH_REDIS_REST_URL`
-   - `UPSTASH_REDIS_REST_TOKEN`
+2. Vincula la base al proyecto (sin custom prefix). Vercel suele crear:
+   - `KV_REST_API_URL` y `KV_REST_API_TOKEN` (nombres actuales), o
+   - `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` si vienen de consola Upstash
 3. (Opcional) `SESSION_TTL_SEC` — por defecto **172800** (48 h). Debe cubrir `timeLimitSec` de la sala + margen.
 4. Redeploy **Production** tras guardar variables.
 5. Comprueba: `GET /api/health` → `"persistence": "redis"`.

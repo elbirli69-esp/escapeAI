@@ -38,11 +38,22 @@ export class RedisSessionStore implements SessionStore {
   }
 }
 
-export function createUpstashRedis(): Redis | undefined {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+/** REST creds from Upstash console or Vercel Storage (KV_* names). */
+export function readUpstashRestCredentials(): { url: string; token: string } | undefined {
+  const url =
+    process.env.UPSTASH_REDIS_REST_URL?.trim() ||
+    process.env.KV_REST_API_URL?.trim();
+  const token =
+    process.env.UPSTASH_REDIS_REST_TOKEN?.trim() ||
+    process.env.KV_REST_API_TOKEN?.trim();
   if (!url || !token) return undefined;
-  return new Redis({ url, token });
+  return { url, token };
+}
+
+export function createUpstashRedis(): Redis | undefined {
+  const creds = readUpstashRestCredentials();
+  if (!creds) return undefined;
+  return new Redis(creds);
 }
 
 export function sessionTtlSec(): number {
