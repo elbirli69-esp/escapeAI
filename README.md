@@ -41,6 +41,7 @@ pnpm dev
 - [Arquitectura](./docs/architecture.md)
 - [Diseñar salas (YAML)](./docs/authoring-rooms.md)
 - [Despliegue en Vercel](./docs/deploy-vercel.md)
+- [Checklist lanzamiento público](./docs/public-launch-checklist.md)
 
 ```bash
 pnpm validate-rooms   # comprobar YAML antes de commit
