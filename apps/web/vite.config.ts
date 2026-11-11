@@ -7,13 +7,16 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.svg"],
+      includeAssets: ["favicon.svg", "media/*"],
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,ico,svg,jpg,webp}"],
+      },
       manifest: {
         name: "escapeAI",
         short_name: "escapeAI",
         description: "Escape rooms online con orquestador IA",
-        theme_color: "#0f172a",
-        background_color: "#0f172a",
+        theme_color: "#0c1222",
+        background_color: "#0c1222",
         display: "standalone",
         start_url: "/",
         icons: [

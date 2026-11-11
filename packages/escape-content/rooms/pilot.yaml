@@ -1,11 +1,14 @@
 id: pilot
 name: La oficina del conserje
+tagline: Un edificio dormido, un candado que guarda secretos de otro siglo.
+theme: urban
+coverImage: /media/pilot-cover.jpg
 timeLimitSec: 3600
 startSceneId: entrance
 items:
   fuse:
     name: Fusible
-    description: Un fusible pequeño metálico.
+    description: Pequeño, metálico, aún caliente al tacto.
 winCondition:
   type: puzzle_solved
   puzzleId: panel_final
@@ -13,9 +16,12 @@ scenes:
   entrance:
     id: entrance
     title: Entrada del edificio
+    image: /media/pilot-entrance.jpg
+    mood: Luces de neón en el pasillo, olor a café rancio y cable viejo.
     description: >
-      La puerta del cuarto del conserje está cerrada con un candado numérico.
-      En la pared hay un post-it casi borrado.
+      El ascensor lleva horas averiado. La puerta del conserje luce un candado
+      numérico recién pasado a moderno; junto a ella, un post-it con tinta
+      borrada por la humedad insiste en recordar algo importante.
     puzzles: [lockbox]
     exits:
       - toSceneId: basement
@@ -26,8 +32,11 @@ scenes:
   basement:
     id: basement
     title: Sótano
+    image: /media/pilot-basement.jpg
+    mood: Vibración eléctrica en el suelo; linternas del móvil parpadean solas.
     description: >
-      El cuadro eléctrico vibra. Falta algo en la ranura del fusible.
+      Tuberías sudan condensación. El cuadro de fusibles está abierto y falta
+      el último módulo: sin él, el edificio seguirá a oscuras.
     items: [fuse]
     puzzles: [fuse_slot]
     exits:
@@ -39,14 +48,18 @@ scenes:
   control:
     id: control
     title: Sala de control
+    image: /media/pilot-control.jpg
+    mood: Pantallas retro iluminan monitores apagados; el silencio pesa.
     description: >
-      Las luces parpadean. Un panel pide un código de cuatro letras.
+      El pulsador maestro vuelve a la vida. Aún queda un panel antiguo que
+      pide un código de cuatro letras antes de devolver la luz al bloque entero.
     puzzles: [panel_final]
     exits: []
 puzzles:
   lockbox:
     id: lockbox
     type: code
+    label: Candado del conserje
     prompt: Introduce el código del candado (4 dígitos).
     answer: "1984"
     maxHints: 3
@@ -60,7 +73,8 @@ puzzles:
   fuse_slot:
     id: fuse_slot
     type: inventory
-    prompt: Coloca el fusible en el cuadro eléctrico.
+    label: Cuadro de fusibles
+    prompt: Coloca el fusible en la ranura vacía.
     requiresItem: fuse
     maxHints: 2
     hints:
@@ -71,6 +85,7 @@ puzzles:
   panel_final:
     id: panel_final
     type: code
+    label: Panel maestro
     prompt: Código del panel (4 letras, mayúsculas).
     answer: LUZ
     normalize: uppercase

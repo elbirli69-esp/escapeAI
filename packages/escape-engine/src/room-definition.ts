@@ -7,6 +7,8 @@ export type PuzzleType = "code" | "inventory";
 export type RoomPuzzle = {
   id: string;
   type: PuzzleType;
+  /** Título corto en la UI (si no, se usa id). */
+  label?: string;
   prompt: string;
   answer?: string;
   requiresItem?: string;
@@ -19,6 +21,9 @@ export type RoomScene = {
   id: string;
   title: string;
   description: string;
+  /** Ruta o URL de imagen de la escena (p. ej. /media/pilot-entrance.jpg). */
+  image?: string;
+  mood?: string;
   puzzles?: string[];
   items?: string[];
   exits?: Array<{
@@ -36,6 +41,9 @@ export type RoomItem = {
 export type RoomDefinition = {
   id: string;
   name: string;
+  tagline?: string;
+  coverImage?: string;
+  theme?: "urban" | "coastal" | string;
   timeLimitSec: number;
   startSceneId: string;
   winCondition: Condition;

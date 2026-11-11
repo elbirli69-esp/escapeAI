@@ -6,6 +6,10 @@ export type RoomSummary = {
   id: string;
   title: string;
   summary: string;
+  tagline?: string;
+  coverImage?: string;
+  theme?: string;
+  sceneCount?: number;
   timeLimitSec: number;
 };
 

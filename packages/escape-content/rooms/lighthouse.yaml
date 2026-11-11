@@ -1,11 +1,14 @@
 id: lighthouse
 name: El faro de Punta Norte
+tagline: Marea alta, aceite escaso y un faro que debe volver a hablar con el mar.
+theme: coastal
+coverImage: /media/lighthouse-cover.jpg
 timeLimitSec: 2700
 startSceneId: dock
 items:
   oil_can:
     name: Bidón de aceite
-    description: Aceite para linternas, huele a sal y metal.
+    description: Ligeramente oxidado; el tapón gotea un hilo dorado.
 winCondition:
   type: puzzle_solved
   puzzleId: beacon_sequence
@@ -13,9 +16,12 @@ scenes:
   dock:
     id: dock
     title: Muelle
+    image: /media/lighthouse-dock.jpg
+    mood: Viento horizontal, cuerdas que crujen, faro cortado por la espuma.
     description: >
-      La tormenta araña el muelle. En el poste de marea se lee una placa:
-      "Solo con la marea alta se abre el almacén". Hoy la tabla marca HIGH.
+      Las olas golpean los pilotes como tambores. En el poste de marea una placa
+      oxidadíssima advierte: «Solo con la marea alta se abre el almacén».
+      La aguja indica HIGH.
     puzzles: [tide_lock]
     exits:
       - toSceneId: supply
@@ -26,8 +32,11 @@ scenes:
   supply:
     id: supply
     title: Almacén del faro
+    image: /media/lighthouse-supply.jpg
+    mood: Salitre en el aire, sacos mojados, un bidón que aún pesa.
     description: >
-      Cajas oxidadas y un bidón medio lleno. La linterna auxiliar está seca.
+      Cajas con herrajes viejos y una linterna auxiliar con el cristal opaco.
+      Sin combustible no podrás subir a ajustar el mecanismo superior.
     items: [oil_can]
     puzzles: [refill_lamp]
     exits:
@@ -39,15 +48,18 @@ scenes:
   lantern_room:
     id: lantern_room
     title: Sala de la linterna
+    image: /media/lighthouse-lantern.svg
+    mood: El haz gira débil; el mar exige una señal clara esta noche.
     description: >
-      El mecanismo del faro parpadea en un ritmo irregular.
-      Una nota del guardián dice: "Tres letras, el patrón clásico de socorro".
+      El prisma late con un ritmo errático. Sobre la barandilla, una nota del
+      guardián: «Tres letras, el patrón clásico de socorro».
     puzzles: [beacon_sequence]
     exits: []
 puzzles:
   tide_lock:
     id: tide_lock
     type: code
+    label: Cerradura del almacén
     prompt: Código del almacén (marea en inglés, 4 letras).
     answer: HIGH
     normalize: uppercase
@@ -62,7 +74,8 @@ puzzles:
   refill_lamp:
     id: refill_lamp
     type: inventory
-    prompt: Reposta la linterna auxiliar con el bidón.
+    label: Linterna auxiliar
+    prompt: Reposta la linterna con el bidón.
     requiresItem: oil_can
     maxHints: 2
     hints:
@@ -73,6 +86,7 @@ puzzles:
   beacon_sequence:
     id: beacon_sequence
     type: code
+    label: Señal del faro
     prompt: Patrón de socorro en morse (3 letras).
     answer: SOS
     normalize: uppercase

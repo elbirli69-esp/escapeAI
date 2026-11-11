@@ -303,6 +303,18 @@ export function toPublicState(session: SessionRecord, nowMs = Date.now()): Publi
   }
 
   const sceneItemIds = session.sceneItems.get(session.currentSceneId) ?? new Set();
+  const items = session.room.items ?? {};
+
+  function toPublicItem(id: string) {
+    const meta = items[id];
+    return {
+      id,
+      name: meta?.name ?? id,
+      description: meta?.description,
+    };
+  }
+
+  const sceneOrder = Object.keys(session.room.scenes);
 
   return {
     sessionId: session.sessionId,
@@ -312,11 +324,16 @@ export function toPublicState(session: SessionRecord, nowMs = Date.now()): Publi
     currentSceneId: session.currentSceneId,
     sceneTitle: scene.title,
     sceneDescription: scene.description.trim(),
+    sceneImageUrl: scene.image,
+    sceneMood: scene.mood,
+    sceneOrder,
+    roomTheme: session.room.theme,
     narrative: [...session.narrative],
     puzzles: (scene.puzzles ?? []).map((id) => {
       const puzzle = session.room.puzzles[id];
       return {
         id,
+        label: puzzle.label ?? humanizeId(id),
         prompt: puzzle.prompt,
         solved: session.solvedPuzzles.has(id),
         attempts: session.puzzleAttempts.get(id) ?? 0,
@@ -327,6 +344,8 @@ export function toPublicState(session: SessionRecord, nowMs = Date.now()): Publi
     exits: getAvailableExits(session),
     inventory: [...session.inventory],
     sceneItems: [...sceneItemIds],
+    inventoryItems: [...session.inventory].map(toPublicItem),
+    sceneItemItems: [...sceneItemIds].map(toPublicItem),
     elapsedSec,
     timeLimitSec: session.room.timeLimitSec,
     timeRemainingSec,
@@ -354,4 +373,10 @@ export function toAiContext(session: SessionRecord, nowMs = Date.now()): AiConte
     timeRemainingSec: publicState.timeRemainingSec,
     recentNarrative: session.narrative.slice(-8),
   };
+}
+
+function humanizeId(id: string): string {
+  return id
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
