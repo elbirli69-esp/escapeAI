@@ -1,6 +1,6 @@
-import type { PublicState } from "@escapeai/shared";
+import type { OrchestratorResponse, PublicState } from "@escapeai/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createSession, fetchRooms, fetchState, sendAction, type RoomSummary } from "./api";
 
 function RoomPicker(props: {
@@ -10,6 +10,7 @@ function RoomPicker(props: {
   selectedRoomId: string;
   onSelectRoom: (id: string) => void;
   busy: boolean;
+  startError: string | null;
   onStart: () => void;
 }) {
   return (
@@ -22,6 +23,7 @@ function RoomPicker(props: {
           pantalla completa.
         </p>
       </header>
+      {props.startError && <FlashBanner message={props.startError} onDismiss={undefined} />}
       {props.loading && <p>Cargando salas…</p>}
       {props.error && (
         <p className="error">No se pudo cargar el catálogo. ¿Está la API en marcha?</p>
@@ -55,6 +57,19 @@ function RoomPicker(props: {
   );
 }
 
+function FlashBanner(props: { message: string; onDismiss?: () => void }) {
+  return (
+    <div className="flash-banner" role="alert">
+      <span>{props.message}</span>
+      {props.onDismiss && (
+        <button type="button" className="flash-dismiss" onClick={props.onDismiss} aria-label="Cerrar">
+          ×
+        </button>
+      )}
+    </div>
+  );
+}
+
 function formatTime(sec: number): string {
   const m = Math.floor(sec / 60);
   const s = sec % 60;
@@ -68,6 +83,8 @@ export function App() {
   const [selectedRoomId, setSelectedRoomId] = useState("pilot");
   const [answer, setAnswer] = useState("");
   const [selectedPuzzle, setSelectedPuzzle] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [narrator, setNarrator] = useState<OrchestratorResponse | null>(null);
   const queryClient = useQueryClient();
 
   const roomsQuery = useQuery({
@@ -82,6 +99,8 @@ export function App() {
       localStorage.setItem("escapeai.sessionId", data.sessionId);
       localStorage.setItem("escapeai.roomId", roomId);
       setSessionId(data.sessionId);
+      setNarrator(null);
+      setActionError(null);
       queryClient.setQueryData(["state", data.sessionId], data.state);
     },
   });
@@ -100,10 +119,24 @@ export function App() {
     onSuccess: (result) => {
       queryClient.setQueryData(["state", sessionId], result.state);
       if (!result.ok && result.error) {
-        alert(result.error);
+        setActionError(result.error);
+      } else {
+        setActionError(null);
+      }
+      if (result.orchestrator) {
+        setNarrator(result.orchestrator);
       }
     },
+    onError: () => {
+      setActionError("No se pudo contactar con el servidor. Reintenta.");
+    },
   });
+
+  useEffect(() => {
+    if (!actionError) return;
+    const t = setTimeout(() => setActionError(null), 6000);
+    return () => clearTimeout(t);
+  }, [actionError]);
 
   const state = stateQuery.data;
 
@@ -122,6 +155,9 @@ export function App() {
         selectedRoomId={selectedRoomId}
         onSelectRoom={setSelectedRoomId}
         busy={startGame.isPending}
+        startError={
+          startGame.isError ? "No se pudo crear la partida. Comprueba la API." : null
+        }
         onStart={() => startGame.mutate(selectedRoomId)}
       />
     );
@@ -144,11 +180,16 @@ export function App() {
       onSelectPuzzle={setSelectedPuzzle}
       onAction={(action) => actionMutation.mutate(action)}
       busy={actionMutation.isPending}
+      actionError={actionError}
+      onDismissError={() => setActionError(null)}
+      narrator={narrator}
       onNewGame={() => {
         localStorage.removeItem("escapeai.sessionId");
         localStorage.removeItem("escapeai.roomId");
         setSessionId(null);
         setSelectedPuzzle(null);
+        setNarrator(null);
+        setActionError(null);
       }}
     />
   );
@@ -162,6 +203,9 @@ function GameView(props: {
   onSelectPuzzle: (id: string) => void;
   onAction: (action: Parameters<typeof sendAction>[1]) => void;
   busy: boolean;
+  actionError: string | null;
+  onDismissError: () => void;
+  narrator: OrchestratorResponse | null;
   onNewGame: () => void;
 }) {
   const { state } = props;
@@ -172,19 +216,30 @@ function GameView(props: {
       <header className="game-head">
         <div>
           <p className="eyebrow">{state.roomName}</p>
-          <h1>{state.sceneTitle}</h1>
+          <div className="title-row">
+            <h1>{state.sceneTitle}</h1>
+            {props.narrator?.source === "openai" && (
+              <span className="narrator-badge" title={props.narrator.message}>
+                Narrador IA
+              </span>
+            )}
+          </div>
         </div>
         <div className="status time" aria-label="Tiempo restante">
           {formatTime(state.timeRemainingSec)}
         </div>
       </header>
 
+      {props.actionError && (
+        <FlashBanner message={props.actionError} onDismiss={props.onDismissError} />
+      )}
+
       <p className="scene">{state.sceneDescription}</p>
 
       <section className="panel">
         <h2>Diario</h2>
         <ul className="log">
-          {state.narrative.slice(-6).map((line, i) => (
+          {state.narrative.slice(-8).map((line, i) => (
             <li key={`${i}-${line.slice(0, 12)}`}>{line}</li>
           ))}
         </ul>

@@ -5,11 +5,29 @@ import {
   serializeSession,
   type SessionRecord,
 } from "@escapeai/escape-engine";
+import {
+  createUpstashRedis,
+  RedisSessionStore,
+  sessionTtlSec,
+} from "./redis-session-store.js";
+
+export type SessionStoreKind = "redis" | "file" | "memory";
+
+export interface SessionStoreMeta {
+  kind: SessionStoreKind;
+  ttlSec?: number;
+}
 
 export interface SessionStore {
   get(sessionId: string): Promise<SessionRecord | undefined>;
   set(session: SessionRecord): Promise<void>;
   delete(sessionId: string): Promise<void>;
+}
+
+let lastMeta: SessionStoreMeta = { kind: "memory" };
+
+export function getSessionStoreMeta(): SessionStoreMeta {
+  return lastMeta;
 }
 
 export class MemorySessionStore implements SessionStore {
@@ -73,13 +91,23 @@ export class FileSessionStore implements SessionStore {
 }
 
 export async function createSessionStore(): Promise<SessionStore> {
+  const redis = createUpstashRedis();
+  if (redis) {
+    const ttlSec = sessionTtlSec();
+    lastMeta = { kind: "redis", ttlSec };
+    return new RedisSessionStore(redis, ttlSec);
+  }
+
   const dataDir =
     process.env.SESSION_DATA_DIR ??
     (process.env.VERCEL ? "/tmp/escapeai-sessions" : undefined);
   if (dataDir) {
     const store = new FileSessionStore(dataDir);
     await store.init();
+    lastMeta = { kind: "file" };
     return store;
   }
+
+  lastMeta = { kind: "memory" };
   return new MemorySessionStore();
 }

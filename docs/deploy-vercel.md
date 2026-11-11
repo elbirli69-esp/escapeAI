@@ -27,10 +27,13 @@ En **Project → Settings → Environment Variables**:
 
 | Variable | Preview + Production | Notas |
 | -------- | -------------------- | ----- |
-| `SESSION_DATA_DIR` | opcional `/tmp/escapeai-sessions` | Por defecto en Vercel ya usa `/tmp` (best-effort; no compartido entre instancias) |
+| `UPSTASH_REDIS_REST_URL` | **recomendado** | Vercel → Storage → Upstash Redis |
+| `UPSTASH_REDIS_REST_TOKEN` | **recomendado** | Se crea al vincular la base |
+| `SESSION_TTL_SEC` | opcional | Por defecto `172800` (48 h) |
+| `SESSION_DATA_DIR` | solo local | Carpeta JSON en desarrollo |
 | `OPENAI_API_KEY` | opcional | Narración con IA |
 | `OPENAI_MODEL` | opcional | p. ej. `gpt-4o-mini` |
-| `CORS_ORIGINS` | opcional | Solo si usas otro dominio custom además del de Vercel |
+| `CORS_ORIGINS` | opcional | Dominio custom adicional |
 
 Vercel inyecta `VERCEL_URL` / `VERCEL_PROJECT_PRODUCTION_URL`; la API los usa para CORS.
 
@@ -69,12 +72,16 @@ pnpm build
 vercel dev        # requiere Vercel CLI y login
 ```
 
-## 6. Limitaciones actuales (MVP)
+## 6. Checklist de lanzamiento
 
-- **Sesiones:** en serverless, la persistencia en `/tmp` no es fiable a largo plazo ni entre regiones. Siguiente paso: **Vercel KV**, **Upstash Redis** o **Neon Postgres**.
+Ver [public-launch-checklist.md](./public-launch-checklist.md) (Redis + dominio/SSO + smoke tests).
+
+## 7. Limitaciones actuales (MVP)
+
+- Sin Upstash: fallback a `/tmp` o memoria (no fiable entre recargas en prod).
 - **Cold starts:** primera petición puede tardar un poco tras inactividad.
 
-## 7. Dos proyectos (alternativa)
+## 8. Dos proyectos (alternativa)
 
 Si prefieres API y web separadas (como algunos monorepos con backend en Render):
 

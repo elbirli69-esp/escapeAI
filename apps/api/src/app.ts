@@ -9,7 +9,11 @@ import type { GameAction, GameEvent } from "@escapeai/shared";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { runOrchestrator } from "./orchestrator.js";
-import { createSessionStore, type SessionStore } from "./session-store.js";
+import {
+  createSessionStore,
+  getSessionStoreMeta,
+  type SessionStore,
+} from "./session-store.js";
 
 export function getDefaultCorsOrigins(): string[] {
   if (process.env.CORS_ORIGINS) {
@@ -29,13 +33,15 @@ export async function createApp(store?: SessionStore): Promise<Hono> {
 
   app.use("*", cors({ origin: getDefaultCorsOrigins() }));
 
-  app.get("/health", (c) =>
-    c.json({
+  app.get("/health", (c) => {
+    const storeMeta = getSessionStoreMeta();
+    return c.json({
       ok: true,
-      persistence: Boolean(process.env.SESSION_DATA_DIR),
+      persistence: storeMeta.kind,
+      sessionTtlSec: storeMeta.ttlSec,
       runtime: process.env.VERCEL ? "vercel" : "node",
-    }),
-  );
+    });
+  });
 
   app.get("/rooms", (c) => {
     const rooms = ROOM_CATALOG.map((entry) => {

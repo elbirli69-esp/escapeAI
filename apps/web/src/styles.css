@@ -173,6 +173,53 @@ button {
   color: #fca5a5;
 }
 
+.flash-banner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0.75rem 0 1rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.5rem;
+  border: 1px solid #f87171;
+  background: #450a0a;
+  color: #fecaca;
+  font-size: 0.92rem;
+}
+
+.flash-dismiss {
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.title-row h1 {
+  margin: 0;
+}
+
+.narrator-badge {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.2rem 0.45rem;
+  border-radius: 0.35rem;
+  background: #4c1d95;
+  color: #e9d5ff;
+  border: 1px solid #7c3aed;
+  white-space: nowrap;
+}
+
 .room-list {
   list-style: none;
   padding: 0;
