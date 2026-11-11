@@ -168,3 +168,40 @@ button {
 .end {
   text-align: center;
 }
+
+.error {
+  color: #fca5a5;
+}
+
+.room-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.room-card {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid #334155;
+  background: #1e293b;
+  color: inherit;
+  cursor: pointer;
+}
+
+.room-card.active {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 1px #38bdf8;
+}
+
+.room-card .meta {
+  font-size: 0.8rem;
+  opacity: 0.75;
+}

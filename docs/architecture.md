@@ -37,4 +37,11 @@
 
 ## Sala piloto
 
-`packages/escape-content/rooms/pilot.yaml` — tres escenas, cinco interacciones hasta victoria. Cubierta por test en `escape-engine`.
+Salas en `packages/escape-content/rooms/`:
+
+| ID | Archivo | Test e2e |
+| --- | --- | --- |
+| `pilot` | `pilot.yaml` | `rooms.test.ts` |
+| `lighthouse` | `lighthouse.yaml` | `rooms.test.ts` |
+
+Catálogo expuesto en `GET /rooms` y selector en la PWA.

@@ -1,0 +1,86 @@
+id: lighthouse
+name: El faro de Punta Norte
+timeLimitSec: 2700
+startSceneId: dock
+items:
+  oil_can:
+    name: Bidón de aceite
+    description: Aceite para linternas, huele a sal y metal.
+winCondition:
+  type: puzzle_solved
+  puzzleId: beacon_sequence
+scenes:
+  dock:
+    id: dock
+    title: Muelle
+    description: >
+      La tormenta araña el muelle. En el poste de marea se lee una placa:
+      "Solo con la marea alta se abre el almacén". Hoy la tabla marca HIGH.
+    puzzles: [tide_lock]
+    exits:
+      - toSceneId: supply
+        label: Entrar al almacén
+        when:
+          type: puzzle_solved
+          puzzleId: tide_lock
+  supply:
+    id: supply
+    title: Almacén del faro
+    description: >
+      Cajas oxidadas y un bidón medio lleno. La linterna auxiliar está seca.
+    items: [oil_can]
+    puzzles: [refill_lamp]
+    exits:
+      - toSceneId: lantern_room
+        label: Subir a la linterna
+        when:
+          type: puzzle_solved
+          puzzleId: refill_lamp
+  lantern_room:
+    id: lantern_room
+    title: Sala de la linterna
+    description: >
+      El mecanismo del faro parpadea en un ritmo irregular.
+      Una nota del guardián dice: "Tres letras, el patrón clásico de socorro".
+    puzzles: [beacon_sequence]
+    exits: []
+puzzles:
+  tide_lock:
+    id: tide_lock
+    type: code
+    prompt: Código del almacén (marea en inglés, 4 letras).
+    answer: HIGH
+    normalize: uppercase
+    maxHints: 3
+    hints:
+      - level: 1
+        text: La placa del muelle ya te dio la palabra; está en inglés.
+      - level: 2
+        text: Cuatro letras, todo mayúsculas.
+      - level: 3
+        text: HIGH.
+  refill_lamp:
+    id: refill_lamp
+    type: inventory
+    prompt: Reposta la linterna auxiliar con el bidón.
+    requiresItem: oil_can
+    maxHints: 2
+    hints:
+      - level: 1
+        text: Necesitas el líquido del almacén.
+      - level: 2
+        text: Usa el bidón de aceite en este puzzle.
+  beacon_sequence:
+    id: beacon_sequence
+    type: code
+    prompt: Patrón de socorro en morse (3 letras).
+    answer: SOS
+    normalize: uppercase
+    maxHints: 3
+    hints:
+      - level: 1
+        text: Tres cortos, tres largos, tres cortos… en letras se abrevia así.
+      - level: 2
+        text: Tres letras muy conocidas en emergencias marítimas.
+      - level: 3
+        text: SOS.

@@ -1,18 +1,22 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadRoomFromFile, type RoomDefinition } from "@escapeai/escape-engine";
+import { ROOM_CATALOG, ROOM_FILES, type RoomId } from "./rooms.js";
 
 const roomsDir = join(dirname(fileURLToPath(import.meta.url)), "rooms");
 
+export { ROOM_CATALOG, ROOM_FILES, type RoomId };
+
 export function getPilotRoom(): RoomDefinition {
-  return loadRoomFromFile(join(roomsDir, "pilot.yaml"));
+  return loadRoomById("pilot");
 }
 
-export function listRoomIds(): string[] {
-  return ["pilot"];
+export function listRoomIds(): RoomId[] {
+  return Object.keys(ROOM_FILES) as RoomId[];
 }
 
 export function loadRoomById(roomId: string): RoomDefinition {
-  if (roomId === "pilot") return getPilotRoom();
-  throw new Error(`Unknown room: ${roomId}`);
+  const file = ROOM_FILES[roomId as RoomId];
+  if (!file) throw new Error(`Unknown room: ${roomId}`);
+  return loadRoomFromFile(join(roomsDir, file));
 }

@@ -2,6 +2,20 @@ import type { ApplyResult, GameAction, PublicState } from "@escapeai/shared";
 
 const base = "/api";
 
+export type RoomSummary = {
+  id: string;
+  title: string;
+  summary: string;
+  timeLimitSec: number;
+};
+
+export async function fetchRooms(): Promise<RoomSummary[]> {
+  const res = await fetch(`${base}/rooms`);
+  if (!res.ok) throw new Error("No se pudo cargar el catálogo");
+  const data = await res.json();
+  return data.rooms as RoomSummary[];
+}
+
 export async function createSession(roomId = "pilot"): Promise<{
   sessionId: string;
   state: PublicState;

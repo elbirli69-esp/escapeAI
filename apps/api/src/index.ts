@@ -1,5 +1,5 @@
 import { serve } from "@hono/node-server";
-import { loadRoomById } from "@escapeai/escape-content";
+import { listRoomIds, loadRoomById, ROOM_CATALOG } from "@escapeai/escape-content";
 import {
   applyAction,
   createSession,
@@ -25,6 +25,19 @@ const corsOrigins = process.env.CORS_ORIGINS?.split(",").map((s) => s.trim()) ??
 app.use("*", cors({ origin: corsOrigins }));
 
 app.get("/health", (c) => c.json({ ok: true, persistence: Boolean(process.env.SESSION_DATA_DIR) }));
+
+app.get("/rooms", (c) => {
+  const rooms = ROOM_CATALOG.map((entry) => {
+    const def = loadRoomById(entry.id);
+    return {
+      id: entry.id,
+      title: entry.title,
+      summary: entry.summary,
+      timeLimitSec: def.timeLimitSec,
+    };
+  });
+  return c.json({ rooms, ids: listRoomIds() });
+});
 
 async function saveSession(session: SessionRecord): Promise<void> {
   await store.set(session);

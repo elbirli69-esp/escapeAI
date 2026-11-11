@@ -1,7 +1,59 @@
 import type { PublicState } from "@escapeai/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { createSession, fetchState, sendAction } from "./api";
+import { createSession, fetchRooms, fetchState, sendAction, type RoomSummary } from "./api";
+
+function RoomPicker(props: {
+  rooms: RoomSummary[];
+  loading: boolean;
+  error: boolean;
+  selectedRoomId: string;
+  onSelectRoom: (id: string) => void;
+  busy: boolean;
+  onStart: () => void;
+}) {
+  return (
+    <main className="shell">
+      <header>
+        <p className="eyebrow">escapeAI</p>
+        <h1>Elige una sala</h1>
+        <p className="lede">
+          Motor en servidor, narración opcional con IA. Instala la PWA para jugar a
+          pantalla completa.
+        </p>
+      </header>
+      {props.loading && <p>Cargando salas…</p>}
+      {props.error && (
+        <p className="error">No se pudo cargar el catálogo. ¿Está la API en marcha?</p>
+      )}
+      <ul className="room-list">
+        {props.rooms.map((room) => (
+          <li key={room.id}>
+            <button
+              type="button"
+              className={
+                room.id === props.selectedRoomId ? "room-card active" : "room-card"
+              }
+              onClick={() => props.onSelectRoom(room.id)}
+            >
+              <strong>{room.title}</strong>
+              <span>{room.summary}</span>
+              <span className="meta">{Math.round(room.timeLimitSec / 60)} min</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <button
+        type="button"
+        className="primary"
+        disabled={props.busy || props.rooms.length === 0}
+        onClick={props.onStart}
+      >
+        {props.busy ? "Preparando sala…" : "Empezar partida"}
+      </button>
+    </main>
+  );
+}
 
 function formatTime(sec: number): string {
   const m = Math.floor(sec / 60);
@@ -13,14 +65,22 @@ export function App() {
   const [sessionId, setSessionId] = useState<string | null>(
     () => localStorage.getItem("escapeai.sessionId"),
   );
+  const [selectedRoomId, setSelectedRoomId] = useState("pilot");
   const [answer, setAnswer] = useState("");
   const [selectedPuzzle, setSelectedPuzzle] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
+  const roomsQuery = useQuery({
+    queryKey: ["rooms"],
+    queryFn: fetchRooms,
+    enabled: !sessionId,
+  });
+
   const startGame = useMutation({
-    mutationFn: () => createSession("pilot"),
-    onSuccess: (data) => {
+    mutationFn: (roomId: string) => createSession(roomId),
+    onSuccess: (data, roomId) => {
       localStorage.setItem("escapeai.sessionId", data.sessionId);
+      localStorage.setItem("escapeai.roomId", roomId);
       setSessionId(data.sessionId);
       queryClient.setQueryData(["state", data.sessionId], data.state);
     },
@@ -55,24 +115,15 @@ export function App() {
 
   if (!sessionId) {
     return (
-      <main className="shell">
-        <header>
-          <p className="eyebrow">escapeAI</p>
-          <h1>Escape room piloto</h1>
-          <p className="lede">
-            PWA con motor determinista en servidor. La capa de IA llegará después
-            de los eventos de pista.
-          </p>
-        </header>
-        <button
-          type="button"
-          className="primary"
-          disabled={startGame.isPending}
-          onClick={() => startGame.mutate()}
-        >
-          {startGame.isPending ? "Preparando sala…" : "Empezar partida"}
-        </button>
-      </main>
+      <RoomPicker
+        rooms={roomsQuery.data ?? []}
+        loading={roomsQuery.isLoading}
+        error={roomsQuery.isError}
+        selectedRoomId={selectedRoomId}
+        onSelectRoom={setSelectedRoomId}
+        busy={startGame.isPending}
+        onStart={() => startGame.mutate(selectedRoomId)}
+      />
     );
   }
 
@@ -95,7 +146,9 @@ export function App() {
       busy={actionMutation.isPending}
       onNewGame={() => {
         localStorage.removeItem("escapeai.sessionId");
+        localStorage.removeItem("escapeai.roomId");
         setSessionId(null);
+        setSelectedPuzzle(null);
       }}
     />
   );
