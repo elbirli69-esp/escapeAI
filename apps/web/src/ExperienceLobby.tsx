@@ -3,6 +3,7 @@ import type {
   AdventureType,
   EventPreview,
   JoinEventResponse,
+  PublicState,
 } from "@escapeai/shared";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -26,7 +27,7 @@ export function ExperienceLobby(props: {
   onClassicStart: () => void;
   classicBusy: boolean;
   classicError: string | null;
-  onEventSession: (sessionId: string) => void;
+  onEventSession: (sessionId: string, initialState?: PublicState) => void;
 }) {
   const [mode, setMode] = useState<LobbyMode>("home");
   const [adventureType, setAdventureType] = useState<AdventureType>("celebration");
@@ -72,7 +73,7 @@ export function ExperienceLobby(props: {
         "escapeai.teamId",
         joinMutation.data?.teamId ?? joinMutation.data?.playerId ?? "",
       );
-      props.onEventSession(data.sessionId);
+      props.onEventSession(data.sessionId, data.state);
     },
     onError: (e: Error) => setFormError(e.message),
   });
