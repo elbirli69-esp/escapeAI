@@ -1,0 +1,58 @@
+import type { RoomDefinition } from "./room-definition.js";
+import type { SessionRecord } from "./session.js";
+
+export type SerializedSession = {
+  sessionId: string;
+  room: RoomDefinition;
+  currentSceneId: string;
+  solvedPuzzles: string[];
+  inventory: string[];
+  sceneItems: Record<string, string[]>;
+  puzzleAttempts: Record<string, number>;
+  puzzleHintsUsed: Record<string, number>;
+  narrative: string[];
+  startedAtMs: number;
+  status: SessionRecord["status"];
+};
+
+export function serializeSession(session: SessionRecord): SerializedSession {
+  const sceneItems: Record<string, string[]> = {};
+  for (const [sceneId, items] of session.sceneItems) {
+    sceneItems[sceneId] = [...items];
+  }
+
+  return {
+    sessionId: session.sessionId,
+    room: session.room,
+    currentSceneId: session.currentSceneId,
+    solvedPuzzles: [...session.solvedPuzzles],
+    inventory: [...session.inventory],
+    sceneItems,
+    puzzleAttempts: Object.fromEntries(session.puzzleAttempts),
+    puzzleHintsUsed: Object.fromEntries(session.puzzleHintsUsed),
+    narrative: [...session.narrative],
+    startedAtMs: session.startedAtMs,
+    status: session.status,
+  };
+}
+
+export function deserializeSession(data: SerializedSession): SessionRecord {
+  const sceneItems = new Map<string, Set<string>>();
+  for (const [sceneId, items] of Object.entries(data.sceneItems)) {
+    sceneItems.set(sceneId, new Set(items));
+  }
+
+  return {
+    sessionId: data.sessionId,
+    room: data.room,
+    currentSceneId: data.currentSceneId,
+    solvedPuzzles: new Set(data.solvedPuzzles),
+    inventory: new Set(data.inventory),
+    sceneItems,
+    puzzleAttempts: new Map(Object.entries(data.puzzleAttempts)),
+    puzzleHintsUsed: new Map(Object.entries(data.puzzleHintsUsed)),
+    narrative: [...data.narrative],
+    startedAtMs: data.startedAtMs,
+    status: data.status,
+  };
+}

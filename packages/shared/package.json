@@ -1,0 +1,20 @@
+{
+  "name": "@escapeai/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "echo \"no tests\""
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}

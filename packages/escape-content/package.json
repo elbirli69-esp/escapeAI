@@ -1,0 +1,25 @@
+{
+  "name": "@escapeai/escape-content",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/copy-rooms.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "echo \"no tests\""
+  },
+  "dependencies": {
+    "@escapeai/escape-engine": "workspace:*",
+    "yaml": "^2.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "typescript": "^5.6.3"
+  }
+}
