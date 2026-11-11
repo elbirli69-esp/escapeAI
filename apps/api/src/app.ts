@@ -5,9 +5,12 @@ import {
   toAiContext,
   toPublicState,
 } from "@escapeai/escape-engine";
-import type { GameAction, GameEvent } from "@escapeai/shared";
+import type { CreateSessionRequest, GameAction, GameEvent } from "@escapeai/shared";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { createEventStore } from "./event-store.js";
+import { mountEventRoutes, startEventSession, syncPlayerStatusFromSession } from "./events-routes.js";
+import { mountMediaRoutes } from "./media-routes.js";
 import { resolveLlmConfig } from "./llm-config.js";
 import { runOrchestrator } from "./orchestrator.js";
 import {
@@ -30,6 +33,7 @@ export function getDefaultCorsOrigins(): string[] {
 
 export async function createApp(store?: SessionStore): Promise<Hono> {
   const sessionStore = store ?? (await createSessionStore());
+  const eventStore = await createEventStore();
   const app = new Hono().basePath("/api");
 
   app.use("*", cors({ origin: getDefaultCorsOrigins() }));
@@ -47,6 +51,9 @@ export async function createApp(store?: SessionStore): Promise<Hono> {
         : { configured: false },
     });
   });
+
+  mountEventRoutes(app, eventStore);
+  mountMediaRoutes(app);
 
   app.get("/rooms", (c) => {
     const rooms = ROOM_CATALOG.map((entry) => {
@@ -66,10 +73,21 @@ export async function createApp(store?: SessionStore): Promise<Hono> {
   });
 
   app.post("/sessions", async (c) => {
-    const body = (await c.req.json<{ roomId?: string }>().catch(() => ({}))) as {
-      roomId?: string;
-    };
-    const roomId = body.roomId ?? "pilot";
+    const body = (await c.req.json<CreateSessionRequest>().catch(() => ({}))) as CreateSessionRequest;
+
+    const teamId =
+      "eventCode" in body ? (body.teamId ?? body.playerId) : undefined;
+    if ("eventCode" in body && body.eventCode && teamId) {
+      const result = await startEventSession(
+        body.eventCode,
+        teamId,
+        eventStore,
+        sessionStore,
+      );
+      return c.json(result.body, result.status as 200 | 201 | 404);
+    }
+
+    const roomId = "roomId" in body ? (body.roomId ?? "pilot") : "pilot";
     const room = loadRoomById(roomId);
     const session = createSession(room);
     const intro = await runOrchestrator(session, []);
@@ -122,6 +140,7 @@ export async function createApp(store?: SessionStore): Promise<Hono> {
     }
 
     await sessionStore.set(session);
+    await syncPlayerStatusFromSession(eventStore, session);
     return c.json({ ...result, state: toPublicState(session), orchestrator });
   });
 
@@ -131,6 +150,6 @@ export async function createApp(store?: SessionStore): Promise<Hono> {
 function shouldOrchestrate(events: GameEvent[]): boolean {
   if (events.length === 0) return false;
   return events.some((e) =>
-    ["puzzle_failed", "scene_entered", "game_won", "game_lost"].includes(e.type),
+    ["puzzle_failed", "scene_entered", "game_won", "game_lost", "hint_requested"].includes(e.type),
   );
 }

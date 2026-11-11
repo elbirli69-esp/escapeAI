@@ -1,4 +1,13 @@
-import type { ApplyResult, GameAction, PublicState } from "@escapeai/shared";
+import type {
+  AdventureTemplateInfo,
+  ApplyResult,
+  CreateEventRequest,
+  EventLeaderboard,
+  EventPreview,
+  GameAction,
+  JoinEventResponse,
+  PublicState,
+} from "@escapeai/shared";
 
 const base = "/api";
 
@@ -31,6 +40,79 @@ export async function createSession(roomId = "pilot"): Promise<{
   });
   if (!res.ok) throw new Error("No se pudo crear la sesión");
   return res.json();
+}
+
+export async function fetchAdventureTemplates(): Promise<AdventureTemplateInfo[]> {
+  const res = await fetch(`${base}/adventures`);
+  if (!res.ok) throw new Error("No se pudieron cargar las plantillas");
+  const data = await res.json();
+  return data.templates as AdventureTemplateInfo[];
+}
+
+export async function createCustomEvent(body: CreateEventRequest): Promise<EventPreview> {
+  const res = await fetch(`${base}/events`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { error?: string }).error ?? "No se pudo crear el evento");
+  return (data as { preview: EventPreview }).preview;
+}
+
+export async function joinEventAsTeam(
+  joinCode: string,
+  teamName: string,
+): Promise<JoinEventResponse> {
+  const res = await fetch(`${base}/events/${encodeURIComponent(joinCode)}/teams`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ displayName: teamName }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { error?: string }).error ?? "No se pudo registrar el equipo");
+  return data as JoinEventResponse;
+}
+
+/** @deprecated Usa joinEventAsTeam */
+export async function joinEventAsPlayer(joinCode: string, displayName: string): Promise<JoinEventResponse> {
+  return joinEventAsTeam(joinCode, displayName);
+}
+
+export async function fetchEventLeaderboard(joinCode: string): Promise<EventLeaderboard> {
+  const res = await fetch(`${base}/events/${encodeURIComponent(joinCode)}/leaderboard`);
+  if (!res.ok) throw new Error("Evento no encontrado");
+  return res.json();
+}
+
+export async function fetchPexelsImage(query: string): Promise<{ url: string; source: string }> {
+  const res = await fetch(`${base}/media/pexels?q=${encodeURIComponent(query)}`);
+  if (!res.ok) throw new Error("No se pudo cargar imagen");
+  return res.json();
+}
+
+export async function fetchFalImage(prompt: string): Promise<{ url: string; source: string }> {
+  const res = await fetch(`${base}/media/fal-image`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt }),
+  });
+  if (!res.ok) throw new Error("No se pudo generar imagen");
+  return res.json();
+}
+
+export async function startEventSession(
+  eventCode: string,
+  teamId: string,
+): Promise<{ sessionId: string; state: PublicState }> {
+  const res = await fetch(`${base}/sessions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ eventCode, teamId, playerId: teamId }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { error?: string }).error ?? "No se pudo iniciar la partida");
+  return data as { sessionId: string; state: PublicState };
 }
 
 export async function fetchState(sessionId: string): Promise<PublicState> {

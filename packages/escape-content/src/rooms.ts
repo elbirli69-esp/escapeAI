@@ -1,6 +1,7 @@
 export const ROOM_FILES = {
   pilot: "pilot.yaml",
   lighthouse: "lighthouse.yaml",
+  "interactive-lab": "interactive-lab.yaml",
 } as const;
 
 export type RoomId = keyof typeof ROOM_FILES;
@@ -28,5 +29,13 @@ export const ROOM_CATALOG: Array<{
     tagline: "Marea alta, aceite escaso y una tormenta que no perdona.",
     coverImage: "/media/lighthouse-cover.jpg",
     theme: "coastal",
+  },
+  {
+    id: "interactive-lab",
+    title: "Laboratorio sensorial",
+    summary: "Sonido, voz, cámara e imágenes en un solo hub de pruebas.",
+    tagline: "Demuestra todas las pistas interactivas en el móvil.",
+    coverImage: "/media/pilot-cover.jpg",
+    theme: "urban",
   },
 ];

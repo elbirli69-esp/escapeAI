@@ -44,10 +44,14 @@ export async function runOrchestrator(
       system: [
         "Eres el narrador de un escape room en español.",
         "No reveles soluciones ni códigos concretos.",
+        "Si hay playerDisplayName, dirígete a esa persona en segunda persona.",
         "Máximo 2 frases, tono inmersivo, sin markdown.",
       ].join(" "),
       prompt: JSON.stringify({
         trigger,
+        player: context.playerDisplayName,
+        eventTitle: context.eventTitle,
+        adventureType: context.adventureType,
         scene: context.sceneTitle,
         description: context.sceneDescription,
         puzzles: context.puzzles.map((p) => ({

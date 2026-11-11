@@ -2,7 +2,7 @@ export type Condition =
   | { type: "puzzle_solved"; puzzleId: string }
   | { type: "has_item"; itemId: string };
 
-export type PuzzleType = "code" | "inventory";
+export type PuzzleType = "code" | "inventory" | "sound" | "voice" | "camera" | "visual";
 
 export type RoomPuzzle = {
   id: string;
@@ -15,6 +15,16 @@ export type RoomPuzzle = {
   normalize?: "uppercase" | "lowercase" | "trim";
   maxHints?: number;
   hints?: Array<{ level: number; text: string }>;
+  /** URL de audio (sound). */
+  audioUrl?: string;
+  /** Búsqueda Pexels si no hay visualUrl (visual). */
+  pexelsQuery?: string;
+  visualUrl?: string;
+  /** Prompt fal.ai opcional (visual); se resuelve en cliente/API al jugar. */
+  falPrompt?: string;
+  /** Instrucción de búsqueda en el entorno real (camera). */
+  cameraPrompt?: string;
+  voiceLocale?: string;
 };
 
 export type RoomScene = {

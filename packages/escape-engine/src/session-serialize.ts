@@ -1,15 +1,19 @@
+import type { InteractionStep } from "@escapeai/shared";
+import type { PlayerContext } from "./player-context.js";
 import type { RoomDefinition } from "./room-definition.js";
 import type { SessionRecord } from "./session.js";
 
 export type SerializedSession = {
   sessionId: string;
   room: RoomDefinition;
+  playerContext?: PlayerContext;
   currentSceneId: string;
   solvedPuzzles: string[];
   inventory: string[];
   sceneItems: Record<string, string[]>;
   puzzleAttempts: Record<string, number>;
   puzzleHintsUsed: Record<string, number>;
+  puzzleInteractions: Record<string, InteractionStep[]>;
   narrative: string[];
   startedAtMs: number;
   status: SessionRecord["status"];
@@ -24,12 +28,16 @@ export function serializeSession(session: SessionRecord): SerializedSession {
   return {
     sessionId: session.sessionId,
     room: session.room,
+    playerContext: session.playerContext,
     currentSceneId: session.currentSceneId,
     solvedPuzzles: [...session.solvedPuzzles],
     inventory: [...session.inventory],
     sceneItems,
     puzzleAttempts: Object.fromEntries(session.puzzleAttempts),
     puzzleHintsUsed: Object.fromEntries(session.puzzleHintsUsed),
+    puzzleInteractions: Object.fromEntries(
+      [...session.puzzleInteractions].map(([k, v]) => [k, [...v]]),
+    ),
     narrative: [...session.narrative],
     startedAtMs: session.startedAtMs,
     status: session.status,
@@ -45,12 +53,16 @@ export function deserializeSession(data: SerializedSession): SessionRecord {
   return {
     sessionId: data.sessionId,
     room: data.room,
+    playerContext: data.playerContext,
     currentSceneId: data.currentSceneId,
     solvedPuzzles: new Set(data.solvedPuzzles),
     inventory: new Set(data.inventory),
     sceneItems,
     puzzleAttempts: new Map(Object.entries(data.puzzleAttempts)),
     puzzleHintsUsed: new Map(Object.entries(data.puzzleHintsUsed)),
+    puzzleInteractions: new Map(
+      Object.entries(data.puzzleInteractions ?? {}).map(([k, steps]) => [k, new Set(steps)]),
+    ),
     narrative: [...data.narrative],
     startedAtMs: data.startedAtMs,
     status: data.status,
