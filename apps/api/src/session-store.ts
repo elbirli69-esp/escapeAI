@@ -73,7 +73,9 @@ export class FileSessionStore implements SessionStore {
 }
 
 export async function createSessionStore(): Promise<SessionStore> {
-  const dataDir = process.env.SESSION_DATA_DIR;
+  const dataDir =
+    process.env.SESSION_DATA_DIR ??
+    (process.env.VERCEL ? "/tmp/escapeai-sessions" : undefined);
   if (dataDir) {
     const store = new FileSessionStore(dataDir);
     await store.init();

@@ -6,7 +6,11 @@ settings:
 
 importers:
 
-  .: {}
+  .:
+    dependencies:
+      hono:
+        specifier: ^4.6.3
+        version: 4.13.18
 
   apps/api:
     dependencies:

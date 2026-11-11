@@ -11,6 +11,9 @@
     "dev:web": "pnpm --filter @escapeai/web run dev",
     "typecheck": "pnpm -r run typecheck"
   },
+  "dependencies": {
+    "hono": "^4.6.3"
+  },
   "engines": {
     "node": ">=20"
   },
