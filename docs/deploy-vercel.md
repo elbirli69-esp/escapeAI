@@ -46,9 +46,11 @@ URLs actuales de producción:
 - https://escapeai-rodrigo-cv.vercel.app
 - https://escapeai-self.vercel.app
 
-**SSO / Deployment Protection:** si el equipo tiene *Vercel Authentication* en `*.vercel.app` (como en otros proyectos del team), los visitantes anónimos no verán la app hasta que añadas un **dominio custom** o desactives la protección en **Project → Settings → Deployment Protection** para Production.
+**SSO / Deployment Protection:** en el proyecto **escapeai**, Production ya está **pública** en `*.vercel.app` (solo los **previews** de PR siguen con Vercel Authentication). Otros proyectos del equipo, como StorIAteller, pueden seguir protegidos hasta tener dominio propio.
 
-Igual que StorIAteller: **Settings → Domains** → tu dominio + `CORS_ORIGINS=https://tudominio.com` si aplica.
+Si creas un dominio custom en escapeai: **Settings → Domains** + `CORS_ORIGINS=https://tudominio.com` si aplica.
+
+**Upstash Redis:** [Storage del proyecto](https://vercel.com/rodrigo-cv/escapeai/stores) → **Upstash Redis** → vincular → redeploy. Comprueba `GET /api/health` → `"persistence": "redis"`.
 
 ## 4. Comprobar el deploy
 
