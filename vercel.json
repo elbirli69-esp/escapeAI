@@ -11,7 +11,7 @@
   "functions": {
     "api/index.ts": {
       "maxDuration": 30,
-      "includeFiles": "packages/escape-content/dist/rooms/**"
+      "includeFiles": "{apps/api/dist/**,packages/*/dist/**,packages/escape-content/dist/rooms/**}"
     }
   },
   "headers": [
