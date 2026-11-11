@@ -41,8 +41,15 @@ export type GameAction =
   | TakeItemAction
   | UseItemAction;
 
+export type PublicItem = {
+  id: string;
+  name: string;
+  description?: string;
+};
+
 export type PublicPuzzle = {
   id: string;
+  label?: string;
   prompt: string;
   solved: boolean;
   attempts: number;
@@ -64,11 +71,18 @@ export type PublicState = {
   currentSceneId: string;
   sceneTitle: string;
   sceneDescription: string;
+  sceneImageUrl?: string;
+  sceneMood?: string;
+  /** Orden de escenas para barra de progreso. */
+  sceneOrder?: string[];
+  roomTheme?: string;
   narrative: string[];
   puzzles: PublicPuzzle[];
   exits: PublicExit[];
   inventory: string[];
   sceneItems: string[];
+  inventoryItems?: PublicItem[];
+  sceneItemItems?: PublicItem[];
   elapsedSec: number;
   timeLimitSec: number;
   timeRemainingSec: number;

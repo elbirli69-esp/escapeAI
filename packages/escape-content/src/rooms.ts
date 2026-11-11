@@ -5,15 +5,28 @@ export const ROOM_FILES = {
 
 export type RoomId = keyof typeof ROOM_FILES;
 
-export const ROOM_CATALOG: Array<{ id: RoomId; title: string; summary: string }> = [
+export const ROOM_CATALOG: Array<{
+  id: RoomId;
+  title: string;
+  summary: string;
+  tagline?: string;
+  coverImage?: string;
+  theme?: string;
+}> = [
   {
     id: "pilot",
     title: "La oficina del conserje",
-    summary: "Edificio urbano, candado y cuadro eléctrico.",
+    summary: "Candado, fusible y panel maestro en un bloque que despierta.",
+    tagline: "Un edificio dormido, un candado que guarda secretos de otro siglo.",
+    coverImage: "/media/pilot-cover.jpg",
+    theme: "urban",
   },
   {
     id: "lighthouse",
     title: "El faro de Punta Norte",
-    summary: "Tormenta en el muelle, aceite y señal de socorro.",
+    summary: "Marea, almacén y un faro que debe volver a guiar barcos.",
+    tagline: "Marea alta, aceite escaso y una tormenta que no perdona.",
+    coverImage: "/media/lighthouse-cover.jpg",
+    theme: "coastal",
   },
 ];

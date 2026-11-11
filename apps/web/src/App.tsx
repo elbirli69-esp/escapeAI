@@ -1,60 +1,10 @@
-import type { OrchestratorResponse, PublicState } from "@escapeai/shared";
+import type { OrchestratorResponse, PublicItem, PublicState } from "@escapeai/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { createSession, fetchRooms, fetchState, sendAction, type RoomSummary } from "./api";
 
-function RoomPicker(props: {
-  rooms: RoomSummary[];
-  loading: boolean;
-  error: boolean;
-  selectedRoomId: string;
-  onSelectRoom: (id: string) => void;
-  busy: boolean;
-  startError: string | null;
-  onStart: () => void;
-}) {
-  return (
-    <main className="shell">
-      <header>
-        <p className="eyebrow">escapeAI</p>
-        <h1>Elige una sala</h1>
-        <p className="lede">
-          Motor en servidor, narración opcional con IA. Instala la PWA para jugar a
-          pantalla completa.
-        </p>
-      </header>
-      {props.startError && <FlashBanner message={props.startError} onDismiss={undefined} />}
-      {props.loading && <p>Cargando salas…</p>}
-      {props.error && (
-        <p className="error">No se pudo cargar el catálogo. ¿Está la API en marcha?</p>
-      )}
-      <ul className="room-list">
-        {props.rooms.map((room) => (
-          <li key={room.id}>
-            <button
-              type="button"
-              className={
-                room.id === props.selectedRoomId ? "room-card active" : "room-card"
-              }
-              onClick={() => props.onSelectRoom(room.id)}
-            >
-              <strong>{room.title}</strong>
-              <span>{room.summary}</span>
-              <span className="meta">{Math.round(room.timeLimitSec / 60)} min</span>
-            </button>
-          </li>
-        ))}
-      </ul>
-      <button
-        type="button"
-        className="primary"
-        disabled={props.busy || props.rooms.length === 0}
-        onClick={props.onStart}
-      >
-        {props.busy ? "Preparando sala…" : "Empezar partida"}
-      </button>
-    </main>
-  );
+function themeClass(theme?: string): string {
+  return theme === "coastal" ? "theme-coastal" : "theme-urban";
 }
 
 function FlashBanner(props: { message: string; onDismiss?: () => void }) {
@@ -62,7 +12,12 @@ function FlashBanner(props: { message: string; onDismiss?: () => void }) {
     <div className="flash-banner" role="alert">
       <span>{props.message}</span>
       {props.onDismiss && (
-        <button type="button" className="flash-dismiss" onClick={props.onDismiss} aria-label="Cerrar">
+        <button
+          type="button"
+          className="flash-dismiss"
+          onClick={props.onDismiss}
+          aria-label="Cerrar"
+        >
           ×
         </button>
       )}
@@ -74,6 +29,139 @@ function formatTime(sec: number): string {
   const m = Math.floor(sec / 60);
   const s = sec % 60;
   return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function SceneHero(props: { image?: string; title: string; mood?: string }) {
+  return (
+    <figure className="scene-hero">
+      {props.image ? (
+        <img src={props.image} alt="" className="scene-hero-img" loading="eager" />
+      ) : (
+        <div className="scene-hero-placeholder" aria-hidden />
+      )}
+      <figcaption className="scene-hero-caption">
+        <h2 className="scene-hero-title">{props.title}</h2>
+        {props.mood && <p className="scene-hero-mood">{props.mood}</p>}
+      </figcaption>
+    </figure>
+  );
+}
+
+function ProgressRail(props: { order: string[]; current: string; theme?: string }) {
+  const idx = props.order.indexOf(props.current);
+  return (
+    <nav className="progress-rail" aria-label="Progreso por escenas">
+      {props.order.map((id, i) => (
+        <span
+          key={id}
+          className={
+            i < idx ? "progress-dot done" : i === idx ? "progress-dot active" : "progress-dot"
+          }
+          title={id}
+        />
+      ))}
+    </nav>
+  );
+}
+
+function ItemCard(props: {
+  item: PublicItem;
+  variant: "inventory" | "scene";
+  busy: boolean;
+  onTake?: () => void;
+  onUse?: () => void;
+}) {
+  return (
+    <article className="item-card">
+      <div className="item-icon" aria-hidden>
+        {props.variant === "inventory" ? "🎒" : "✦"}
+      </div>
+      <div className="item-body">
+        <strong>{props.item.name}</strong>
+        {props.item.description && <p>{props.item.description}</p>}
+      </div>
+      {props.variant === "scene" && props.onTake && (
+        <button type="button" className="chip chip-action" disabled={props.busy} onClick={props.onTake}>
+          Coger
+        </button>
+      )}
+      {props.variant === "inventory" && props.onUse && (
+        <button type="button" className="ghost sm" disabled={props.busy} onClick={props.onUse}>
+          Usar
+        </button>
+      )}
+    </article>
+  );
+}
+
+function RoomPicker(props: {
+  rooms: RoomSummary[];
+  loading: boolean;
+  error: boolean;
+  selectedRoomId: string;
+  onSelectRoom: (id: string) => void;
+  busy: boolean;
+  startError: string | null;
+  onStart: () => void;
+}) {
+  const selected = props.rooms.find((r) => r.id === props.selectedRoomId);
+
+  return (
+    <main className={`shell lobby ${selected ? themeClass(selected.theme) : ""}`}>
+      <header className="lobby-hero">
+        <p className="eyebrow">escapeAI · salas online</p>
+        <h1 className="display">Encuentra la salida</h1>
+        <p className="lede">
+          Explora, combina objetos y descifra códigos. El motor decide; el narrador
+          opcional acompaña con pistas.
+        </p>
+      </header>
+
+      {props.startError && <FlashBanner message={props.startError} />}
+      {props.loading && <p className="muted">Cargando salas…</p>}
+      {props.error && (
+        <p className="error">No se pudo cargar el catálogo. ¿Está la API en marcha?</p>
+      )}
+
+      <ul className="room-grid">
+        {props.rooms.map((room) => (
+          <li key={room.id}>
+            <button
+              type="button"
+              className={
+                room.id === props.selectedRoomId ? "room-card-v2 active" : "room-card-v2"
+              }
+              onClick={() => props.onSelectRoom(room.id)}
+            >
+              <div className="room-card-media">
+                {room.coverImage ? (
+                  <img src={room.coverImage} alt="" loading="lazy" />
+                ) : (
+                  <div className="room-card-fallback" />
+                )}
+              </div>
+              <div className="room-card-copy">
+                <strong>{room.title}</strong>
+                {room.tagline && <span className="room-tagline">{room.tagline}</span>}
+                <span className="meta">
+                  {room.sceneCount ?? "—"} escenas · {Math.round(room.timeLimitSec / 60)} min
+                </span>
+              </div>
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      <button
+        type="button"
+        className="primary wide"
+        disabled={props.busy || props.rooms.length === 0}
+        onClick={props.onStart}
+      >
+        {props.busy ? "Preparando sala…" : "Empezar partida"}
+      </button>
+    </main>
+  );
 }
 
 export function App() {
@@ -109,8 +197,7 @@ export function App() {
     queryKey: ["state", sessionId],
     queryFn: () => fetchState(sessionId!),
     enabled: Boolean(sessionId),
-    refetchInterval: (q) =>
-      q.state.data?.status === "playing" ? 15_000 : false,
+    refetchInterval: (q) => (q.state.data?.status === "playing" ? 15_000 : false),
   });
 
   const actionMutation = useMutation({
@@ -118,18 +205,11 @@ export function App() {
       sendAction(sessionId!, action),
     onSuccess: (result) => {
       queryClient.setQueryData(["state", sessionId], result.state);
-      if (!result.ok && result.error) {
-        setActionError(result.error);
-      } else {
-        setActionError(null);
-      }
-      if (result.orchestrator) {
-        setNarrator(result.orchestrator);
-      }
+      if (!result.ok && result.error) setActionError(result.error);
+      else setActionError(null);
+      if (result.orchestrator) setNarrator(result.orchestrator);
     },
-    onError: () => {
-      setActionError("No se pudo contactar con el servidor. Reintenta.");
-    },
+    onError: () => setActionError("No se pudo contactar con el servidor. Reintenta."),
   });
 
   useEffect(() => {
@@ -166,7 +246,7 @@ export function App() {
   if (stateQuery.isLoading || !state) {
     return (
       <main className="shell">
-        <p>Cargando sesión…</p>
+        <p className="muted">Cargando sesión…</p>
       </main>
     );
   }
@@ -209,24 +289,37 @@ function GameView(props: {
   onNewGame: () => void;
 }) {
   const { state } = props;
+  const sceneOrder = state.sceneOrder?.length
+    ? state.sceneOrder
+    : [state.currentSceneId];
+  const inventoryItems = state.inventoryItems ?? [];
+  const sceneItemItems = state.sceneItemItems ?? [];
   const activePuzzle = state.puzzles.find((p) => p.id === props.activePuzzleId);
+  const sceneIdx = sceneOrder.indexOf(state.currentSceneId);
+  const progress = Math.round(
+    (Math.max(0, sceneIdx) / Math.max(1, sceneOrder.length - 1)) * 100,
+  );
 
   return (
-    <main className="shell">
+    <main className={`shell game ${themeClass(state.roomTheme)}`}>
       <header className="game-head">
         <div>
           <p className="eyebrow">{state.roomName}</p>
           <div className="title-row">
-            <h1>{state.sceneTitle}</h1>
+            <h1 className="display-sm">{state.sceneTitle}</h1>
             {props.narrator?.source === "openai" && (
               <span className="narrator-badge" title={props.narrator.message}>
                 Narrador IA
               </span>
             )}
           </div>
+          <ProgressRail order={sceneOrder} current={state.currentSceneId} />
         </div>
-        <div className="status time" aria-label="Tiempo restante">
-          {formatTime(state.timeRemainingSec)}
+        <div className="timer-stack">
+          <div className="status time" aria-label="Tiempo restante">
+            {formatTime(state.timeRemainingSec)}
+          </div>
+          <span className="progress-label">{progress}% recorrido</span>
         </div>
       </header>
 
@@ -234,44 +327,61 @@ function GameView(props: {
         <FlashBanner message={props.actionError} onDismiss={props.onDismissError} />
       )}
 
-      <p className="scene">{state.sceneDescription}</p>
+      <SceneHero
+        image={state.sceneImageUrl}
+        title={state.sceneTitle}
+        mood={state.sceneMood}
+      />
 
-      <section className="panel">
-        <h2>Diario</h2>
+      <p className="scene prose">{state.sceneDescription}</p>
+
+      <section className="panel glass">
+        <h2>Diario de campo</h2>
         <ul className="log">
-          {state.narrative.slice(-8).map((line, i) => (
+          {state.narrative.slice(-10).map((line, i) => (
             <li key={`${i}-${line.slice(0, 12)}`}>{line}</li>
           ))}
         </ul>
       </section>
 
-      {(state.inventory.length > 0 || state.sceneItems.length > 0) && (
-        <section className="panel">
+      {(inventoryItems.length > 0 || sceneItemItems.length > 0) && (
+        <section className="panel glass">
           <h2>Objetos</h2>
-          <div className="chips">
-            {state.inventory.map((id) => (
-              <span key={id} className="chip">
-                {id}
-              </span>
+          <div className="item-grid">
+            {inventoryItems.map((item) => (
+              <ItemCard
+                key={item.id}
+                item={item}
+                variant="inventory"
+                busy={props.busy}
+                onUse={
+                  activePuzzle
+                    ? () =>
+                        props.onAction({
+                          type: "use_item",
+                          itemId: item.id,
+                          puzzleId: activePuzzle.id,
+                        })
+                    : undefined
+                }
+              />
             ))}
-            {state.sceneItems.map((id) => (
-              <button
-                key={id}
-                type="button"
-                className="chip chip-action"
-                disabled={props.busy}
-                onClick={() => props.onAction({ type: "take_item", itemId: id })}
-              >
-                Coger {id}
-              </button>
+            {sceneItemItems.map((item) => (
+              <ItemCard
+                key={item.id}
+                item={item}
+                variant="scene"
+                busy={props.busy}
+                onTake={() => props.onAction({ type: "take_item", itemId: item.id })}
+              />
             ))}
           </div>
         </section>
       )}
 
       {state.puzzles.length > 0 && (
-        <section className="panel">
-          <h2>Puzzles</h2>
+        <section className="panel glass panel-puzzle">
+          <h2>Retos</h2>
           <div className="puzzle-tabs">
             {state.puzzles.map((p) => (
               <button
@@ -282,13 +392,13 @@ function GameView(props: {
                 onClick={() => props.onSelectPuzzle(p.id)}
               >
                 {p.solved ? "✓ " : ""}
-                {p.id}
+                {p.label ?? p.id}
               </button>
             ))}
           </div>
           {activePuzzle && !activePuzzle.solved && (
             <>
-              <p>{activePuzzle.prompt}</p>
+              <p className="puzzle-prompt">{activePuzzle.prompt}</p>
               <form
                 className="row"
                 onSubmit={(e) => {
@@ -305,26 +415,13 @@ function GameView(props: {
                 <input
                   value={props.answer}
                   onChange={(e) => props.onAnswerChange(e.target.value)}
-                  placeholder="Respuesta"
+                  placeholder="Tu respuesta"
                   autoComplete="off"
                 />
                 <button type="submit" className="primary" disabled={props.busy}>
                   Enviar
                 </button>
               </form>
-              {state.inventory.length > 0 && (
-                <InventoryActions
-                  inventory={state.inventory}
-                  busy={props.busy}
-                  onUse={(itemId: string) =>
-                    props.onAction({
-                      type: "use_item",
-                      itemId,
-                      puzzleId: activePuzzle.id,
-                    })
-                  }
-                />
-              )}
               <button
                 type="button"
                 className="ghost"
@@ -344,7 +441,7 @@ function GameView(props: {
       )}
 
       {state.exits.length > 0 && (
-        <section className="panel">
+        <section className="panel glass">
           <h2>Salidas</h2>
           <ExitActions
             exits={state.exits}
@@ -355,36 +452,21 @@ function GameView(props: {
       )}
 
       {state.status !== "playing" && (
-        <section className="panel end">
-          <h2>{state.status === "won" ? "Victoria" : "Fin"}</h2>
-          <button type="button" className="primary" onClick={props.onNewGame}>
+        <section className={`panel end ${state.status === "won" ? "end-won" : "end-lost"}`}>
+          <h2 className="display-sm">
+            {state.status === "won" ? "¡Escapaste!" : "Tiempo agotado"}
+          </h2>
+          <p>
+            {state.status === "won"
+              ? "La sala cede sus secretos. ¿Te atreves con otra?"
+              : "La tormenta —o el edificio— ganó esta vez."}
+          </p>
+          <button type="button" className="primary wide" onClick={props.onNewGame}>
             Nueva partida
           </button>
         </section>
       )}
     </main>
-  );
-}
-
-function InventoryActions(props: {
-  inventory: string[];
-  busy: boolean;
-  onUse: (itemId: string) => void;
-}) {
-  return (
-    <div className="row wrap">
-      {props.inventory.map((itemId) => (
-        <button
-          key={itemId}
-          type="button"
-          className="ghost"
-          disabled={props.busy}
-          onClick={() => props.onUse(itemId)}
-        >
-          Usar {itemId}
-        </button>
-      ))}
-    </div>
   );
 }
 
@@ -404,6 +486,7 @@ function ExitActions(props: {
           onClick={() => props.onMove(exit.toSceneId)}
         >
           {exit.label}
+          {!exit.available && <span className="meta-inline"> (bloqueada)</span>}
         </button>
       ))}
     </div>

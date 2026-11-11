@@ -50,6 +50,10 @@ export async function createApp(store?: SessionStore): Promise<Hono> {
         id: entry.id,
         title: entry.title,
         summary: entry.summary,
+        tagline: def.tagline ?? entry.tagline,
+        coverImage: def.coverImage ?? entry.coverImage,
+        theme: def.theme ?? entry.theme,
+        sceneCount: Object.keys(def.scenes).length,
         timeLimitSec: def.timeLimitSec,
       };
     });
