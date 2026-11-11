@@ -1,0 +1,8 @@
+node_modules
+dist
+.pnpm-store
+*.local
+.DS_Store
+coverage
+dev-dist
+*.tsbuildinfo

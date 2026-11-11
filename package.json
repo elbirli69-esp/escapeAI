@@ -1,0 +1,17 @@
+{
+  "name": "escapeai",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r run build",
+    "test": "pnpm -r run test",
+    "dev": "pnpm --parallel --filter @escapeai/api --filter @escapeai/web run dev",
+    "dev:api": "pnpm --filter @escapeai/api run dev",
+    "dev:web": "pnpm --filter @escapeai/web run dev",
+    "typecheck": "pnpm -r run typecheck"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@9.15.0"
+}

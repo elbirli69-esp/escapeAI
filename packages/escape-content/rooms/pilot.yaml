@@ -1,0 +1,84 @@
+id: pilot
+name: La oficina del conserje
+timeLimitSec: 3600
+startSceneId: entrance
+items:
+  fuse:
+    name: Fusible
+    description: Un fusible pequeño metálico.
+winCondition:
+  type: puzzle_solved
+  puzzleId: panel_final
+scenes:
+  entrance:
+    id: entrance
+    title: Entrada del edificio
+    description: >
+      La puerta del cuarto del conserje está cerrada con un candado numérico.
+      En la pared hay un post-it casi borrado.
+    puzzles: [lockbox]
+    exits:
+      - toSceneId: basement
+        label: Bajar al sótano
+        when:
+          type: puzzle_solved
+          puzzleId: lockbox
+  basement:
+    id: basement
+    title: Sótano
+    description: >
+      El cuadro eléctrico vibra. Falta algo en la ranura del fusible.
+    items: [fuse]
+    puzzles: [fuse_slot]
+    exits:
+      - toSceneId: control
+        label: Ir a la sala de control
+        when:
+          type: puzzle_solved
+          puzzleId: fuse_slot
+  control:
+    id: control
+    title: Sala de control
+    description: >
+      Las luces parpadean. Un panel pide un código de cuatro letras.
+    puzzles: [panel_final]
+    exits: []
+puzzles:
+  lockbox:
+    id: lockbox
+    type: code
+    prompt: Introduce el código del candado (4 dígitos).
+    answer: "1984"
+    maxHints: 3
+    hints:
+      - level: 1
+        text: El post-it menciona un año distópico muy citado en libros.
+      - level: 2
+        text: El año tiene cuatro dígitos y empieza por 19.
+      - level: 3
+        text: Prueba 1984.
+  fuse_slot:
+    id: fuse_slot
+    type: inventory
+    prompt: Coloca el fusible en el cuadro eléctrico.
+    requiresItem: fuse
+    maxHints: 2
+    hints:
+      - level: 1
+        text: Necesitas algo metálico que encaje en la ranura.
+      - level: 2
+        text: Toma el fusible del sótano y úsalo aquí (acción usar objeto).
+  panel_final:
+    id: panel_final
+    type: code
+    prompt: Código del panel (4 letras, mayúsculas).
+    answer: LUZ
+    normalize: uppercase
+    maxHints: 3
+    hints:
+      - level: 1
+        text: Cuando el cuadro funciona, lo primero que vuelve es la iluminación.
+      - level: 2
+        text: La palabra es corta y en español, cuatro letras.
+      - level: 3
+        text: La solución es LUZ.
