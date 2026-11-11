@@ -6,7 +6,8 @@ import { runOrchestrator } from "./orchestrator.js";
 import {
   createJoinCode,
   leaderboardFromEvent,
-  nextPlayerSlot,
+  migrateLegacyEvent,
+  nextTeamSlot,
   toEventPreview,
   validateCreateEvent,
   type EventStore,
@@ -33,7 +34,7 @@ export function mountEventRoutes(app: Hono, eventStore: EventStore): void {
       config: body,
       title: body.eventTitle?.trim() || room.name,
       room,
-      players: {},
+      teams: {},
     };
 
     for (let attempt = 0; attempt < 5; attempt++) {
@@ -51,96 +52,119 @@ export function mountEventRoutes(app: Hono, eventStore: EventStore): void {
   app.get("/events/:code", async (c) => {
     const event = await eventStore.getByCode(c.req.param("code"));
     if (!event) return c.json({ error: "Evento no encontrado" }, 404);
+    const teams = leaderboardFromEvent(event);
     return c.json({
       preview: toEventPreview(event),
-      players: leaderboardFromEvent(event),
+      teams,
+      players: teams.map((t) => ({
+        ...t,
+        playerId: t.teamId,
+        displayName: t.teamName,
+      })),
     });
   });
 
-  app.post("/events/:code/players", async (c) => {
-    const event = await eventStore.getByCode(c.req.param("code"));
-    if (!event) return c.json({ error: "Evento no encontrado" }, 404);
+  const joinTeam = async (code: string, rawBody: unknown) => {
+    const event = await eventStore.getByCode(code);
+    if (!event) return { status: 404, body: { error: "Evento no encontrado" } };
 
-    const body = (await c.req.json<JoinEventRequest>().catch(() => null)) as JoinEventRequest | null;
-    const displayName = body?.displayName?.trim();
-    if (!displayName || displayName.length < 2) {
-      return c.json({ error: "Indica tu nombre (mínimo 2 caracteres)." }, 400);
+    const body = rawBody as JoinEventRequest | null;
+    const teamName = body?.displayName?.trim();
+    if (!teamName || teamName.length < 2) {
+      return { status: 400, body: { error: "Indica el nombre del equipo (mínimo 2 caracteres)." } };
     }
 
-    const slot = nextPlayerSlot(event);
+    const e = migrateLegacyEvent(event);
+    const slot = nextTeamSlot(e);
     if (slot === undefined) {
-      return c.json({ error: "Cupo completo para este evento." }, 409);
+      return { status: 409, body: { error: "Cupo de equipos completo." } };
     }
 
-    const playerId = randomUUID();
-    event.players[playerId] = {
-      playerId,
-      displayName,
+    const teamId = randomUUID();
+    e.teams[teamId] = {
+      teamId,
+      teamName,
       slot,
       status: "waiting",
       joinedAtMs: Date.now(),
     };
-    await eventStore.save(event);
+    await eventStore.save(e);
 
-    return c.json(
-      {
-        playerId,
+    return {
+      status: 201,
+      body: {
+        teamId,
+        playerId: teamId,
         slot,
-        joinCode: event.joinCode,
-        eventTitle: event.title,
+        joinCode: e.joinCode,
+        eventTitle: e.title,
       },
-      201,
-    );
+    };
+  };
+
+  app.post("/events/:code/teams", async (c) => {
+    const body = await c.req.json().catch(() => null);
+    const result = await joinTeam(c.req.param("code"), body);
+    return c.json(result.body, result.status as 201 | 400 | 404 | 409);
+  });
+
+  app.post("/events/:code/players", async (c) => {
+    const body = await c.req.json().catch(() => null);
+    const result = await joinTeam(c.req.param("code"), body);
+    return c.json(result.body, result.status as 201 | 400 | 404 | 409);
   });
 
   app.get("/events/:code/leaderboard", async (c) => {
     const event = await eventStore.getByCode(c.req.param("code"));
     if (!event) return c.json({ error: "Evento no encontrado" }, 404);
+    const teams = leaderboardFromEvent(event);
     return c.json({
       joinCode: event.joinCode,
       title: event.title,
-      players: leaderboardFromEvent(event),
+      teams,
+      players: teams,
     });
   });
 }
 
 export async function startEventSession(
   eventCode: string,
-  playerId: string,
+  teamId: string,
   eventStore: EventStore,
   sessionStore: SessionStore,
 ): Promise<{ status: number; body: unknown }> {
   const event = await eventStore.getByCode(eventCode);
   if (!event) return { status: 404, body: { error: "Evento no encontrado" } };
 
-  const player = event.players[playerId];
-  if (!player) return { status: 404, body: { error: "Jugador no registrado en este evento" } };
+  const e = migrateLegacyEvent(event);
+  const team = e.teams[teamId];
+  if (!team) return { status: 404, body: { error: "Equipo no registrado en este evento" } };
 
-  if (player.sessionId) {
-    const existing = await sessionStore.get(player.sessionId);
+  if (team.sessionId) {
+    const existing = await sessionStore.get(team.sessionId);
     if (existing) {
       return { status: 200, body: { sessionId: existing.sessionId, state: toPublicState(existing) } };
     }
   }
 
   const playerContext: PlayerContext = {
-    displayName: player.displayName,
-    eventId: event.eventId,
-    playerId,
-    joinCode: event.joinCode,
-    slot: player.slot,
-    eventTitle: event.title,
-    adventureType: event.config.adventureType,
+    displayName: team.teamName,
+    eventId: e.eventId,
+    playerId: teamId,
+    joinCode: e.joinCode,
+    slot: team.slot,
+    eventTitle: e.title,
+    adventureType: e.config.adventureType,
   };
 
-  const session = createSession(event.room, playerContext);
+  const session = createSession(e.room, playerContext);
   const intro = await runOrchestrator(session, []);
   if (intro.message) session.narrative.push(intro.message);
 
-  player.sessionId = session.sessionId;
-  player.status = "playing";
+  team.sessionId = session.sessionId;
+  team.status = "playing";
   await sessionStore.set(session);
-  await eventStore.save(event);
+  await eventStore.save(e);
 
   return { status: 201, body: { sessionId: session.sessionId, state: toPublicState(session) } };
 }
@@ -153,14 +177,17 @@ export async function syncPlayerStatusFromSession(
   if (!ctx?.joinCode) return;
   const event = await eventStore.getByCode(ctx.joinCode);
   if (!event) return;
-  const player = event.players[ctx.playerId];
-  if (!player || player.sessionId !== session.sessionId) return;
+  const e = migrateLegacyEvent(event);
+  const team = e.teams[ctx.playerId];
+  if (!team || team.sessionId !== session.sessionId) return;
 
   const elapsed = Math.floor((Date.now() - session.startedAtMs) / 1000);
-  player.timeRemainingSec = Math.max(0, session.room.timeLimitSec - elapsed);
-  if (session.status === "won") player.status = "won";
-  else if (session.status === "lost") player.status = "lost";
-  else player.status = "playing";
+  team.timeRemainingSec = Math.max(0, session.room.timeLimitSec - elapsed);
+  team.elapsedSec = elapsed;
+  team.puzzlesSolved = session.solvedPuzzles.size;
+  if (session.status === "won") team.status = "won";
+  else if (session.status === "lost") team.status = "lost";
+  else team.status = "playing";
 
-  await eventStore.save(event);
+  await eventStore.save(e);
 }

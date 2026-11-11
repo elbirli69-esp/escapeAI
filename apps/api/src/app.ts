@@ -75,10 +75,12 @@ export async function createApp(store?: SessionStore): Promise<Hono> {
   app.post("/sessions", async (c) => {
     const body = (await c.req.json<CreateSessionRequest>().catch(() => ({}))) as CreateSessionRequest;
 
-    if ("eventCode" in body && body.eventCode && body.playerId) {
+    const teamId =
+      "eventCode" in body ? (body.teamId ?? body.playerId) : undefined;
+    if ("eventCode" in body && body.eventCode && teamId) {
       const result = await startEventSession(
         body.eventCode,
-        body.playerId,
+        teamId,
         eventStore,
         sessionStore,
       );

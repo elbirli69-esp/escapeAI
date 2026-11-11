@@ -2,6 +2,7 @@ import type {
   AdventureTemplateInfo,
   ApplyResult,
   CreateEventRequest,
+  EventLeaderboard,
   EventPreview,
   GameAction,
   JoinEventResponse,
@@ -59,18 +60,29 @@ export async function createCustomEvent(body: CreateEventRequest): Promise<Event
   return (data as { preview: EventPreview }).preview;
 }
 
-export async function joinEventAsPlayer(
+export async function joinEventAsTeam(
   joinCode: string,
-  displayName: string,
+  teamName: string,
 ): Promise<JoinEventResponse> {
-  const res = await fetch(`${base}/events/${encodeURIComponent(joinCode)}/players`, {
+  const res = await fetch(`${base}/events/${encodeURIComponent(joinCode)}/teams`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ displayName }),
+    body: JSON.stringify({ displayName: teamName }),
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error((data as { error?: string }).error ?? "No se pudo unir al evento");
+  if (!res.ok) throw new Error((data as { error?: string }).error ?? "No se pudo registrar el equipo");
   return data as JoinEventResponse;
+}
+
+/** @deprecated Usa joinEventAsTeam */
+export async function joinEventAsPlayer(joinCode: string, displayName: string): Promise<JoinEventResponse> {
+  return joinEventAsTeam(joinCode, displayName);
+}
+
+export async function fetchEventLeaderboard(joinCode: string): Promise<EventLeaderboard> {
+  const res = await fetch(`${base}/events/${encodeURIComponent(joinCode)}/leaderboard`);
+  if (!res.ok) throw new Error("Evento no encontrado");
+  return res.json();
 }
 
 export async function fetchPexelsImage(query: string): Promise<{ url: string; source: string }> {
@@ -91,12 +103,12 @@ export async function fetchFalImage(prompt: string): Promise<{ url: string; sour
 
 export async function startEventSession(
   eventCode: string,
-  playerId: string,
+  teamId: string,
 ): Promise<{ sessionId: string; state: PublicState }> {
   const res = await fetch(`${base}/sessions`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ eventCode, playerId }),
+    body: JSON.stringify({ eventCode, teamId, playerId: teamId }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((data as { error?: string }).error ?? "No se pudo iniciar la partida");

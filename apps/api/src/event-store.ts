@@ -1,19 +1,26 @@
-import { randomBytes, randomUUID } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import type { RoomDefinition } from "@escapeai/escape-engine";
-import type { CreateEventRequest, EventPlayerPublic, EventPreview } from "@escapeai/shared";
+import type {
+  CreateEventRequest,
+  EventPreview,
+  EventTeamPublic,
+} from "@escapeai/shared";
+import { MAX_EVENT_TEAMS, MIN_EVENT_TEAMS, resolveTeamCount } from "@escapeai/shared";
 import { Redis } from "@upstash/redis";
 import { createUpstashRedis, sessionTtlSec } from "./redis-session-store.js";
 
 const EVENT_KEY_PREFIX = "escapeai:event:";
 
-export type StoredPlayer = {
-  playerId: string;
-  displayName: string;
+export type StoredTeam = {
+  teamId: string;
+  teamName: string;
   slot: number;
   sessionId?: string;
-  status: EventPlayerPublic["status"];
+  status: EventTeamPublic["status"];
   joinedAtMs: number;
   timeRemainingSec?: number;
+  elapsedSec?: number;
+  puzzlesSolved?: number;
 };
 
 export type StoredEvent = {
@@ -23,7 +30,9 @@ export type StoredEvent = {
   config: CreateEventRequest;
   title: string;
   room: RoomDefinition;
-  players: Record<string, StoredPlayer>;
+  teams: Record<string, StoredTeam>;
+  /** @deprecated Lectura legacy */
+  players?: Record<string, StoredTeam & { playerId?: string; displayName?: string }>;
 };
 
 export interface EventStore {
@@ -36,17 +45,39 @@ export function createJoinCode(): string {
   return randomBytes(3).toString("hex").toUpperCase();
 }
 
+export function migrateLegacyEvent(event: StoredEvent): StoredEvent {
+  if (Object.keys(event.teams ?? {}).length > 0) return event;
+  const legacy = event.players ?? {};
+  const teams: Record<string, StoredTeam> = {};
+  for (const [id, row] of Object.entries(legacy)) {
+    teams[id] = {
+      teamId: row.teamId ?? id,
+      teamName: row.teamName ?? row.displayName ?? "Equipo",
+      slot: row.slot,
+      sessionId: row.sessionId,
+      status: row.status,
+      joinedAtMs: row.joinedAtMs,
+      timeRemainingSec: row.timeRemainingSec,
+      elapsedSec: row.elapsedSec,
+      puzzlesSolved: row.puzzlesSolved,
+    };
+  }
+  return { ...event, teams };
+}
+
 export function toEventPreview(event: StoredEvent): EventPreview {
+  const e = migrateLegacyEvent(event);
+  const teamCount = resolveTeamCount(e.config);
   return {
-    joinCode: event.joinCode,
-    eventId: event.eventId,
-    title: event.title,
-    adventureType: event.config.adventureType,
-    playerCount: event.config.playerCount,
-    roomName: event.room.name,
-    timeLimitSec: event.room.timeLimitSec,
-    sceneCount: Object.keys(event.room.scenes).length,
-    joinedPlayers: Object.keys(event.players).length,
+    joinCode: e.joinCode,
+    eventId: e.eventId,
+    title: e.title,
+    adventureType: e.config.adventureType,
+    teamCount,
+    roomName: e.room.name,
+    timeLimitSec: e.room.timeLimitSec,
+    sceneCount: Object.keys(e.room.scenes).length,
+    joinedTeams: Object.keys(e.teams).length,
   };
 }
 
@@ -54,9 +85,13 @@ export function validateCreateEvent(body: CreateEventRequest): string | undefine
   if (!body.adventureType || !["birthday", "celebration", "mystery", "team"].includes(body.adventureType)) {
     return "Tipo de aventura no válido.";
   }
-  const count = Number(body.playerCount);
-  if (!Number.isFinite(count) || count < 1 || count > 20) {
-    return "El número de jugadores debe estar entre 1 y 20.";
+  const teamCount = resolveTeamCount(body);
+  if (teamCount < MIN_EVENT_TEAMS || teamCount > MAX_EVENT_TEAMS) {
+    return `El número de equipos debe estar entre ${MIN_EVENT_TEAMS} y ${MAX_EVENT_TEAMS}.`;
+  }
+  body.teamCount = teamCount;
+  if (body.durationMin && ![30, 45, 60].includes(body.durationMin)) {
+    body.durationMin = 45;
   }
   const name = body.subject?.name?.trim();
   if (!name || name.length < 2) {
@@ -67,7 +102,6 @@ export function validateCreateEvent(body: CreateEventRequest): string | undefine
     return "Añade al menos un dato jugable (anécdota, lugar, etc.).";
   }
   body.facts = facts;
-  body.playerCount = Math.floor(count);
   body.subject = {
     name,
     age: body.subject.age,
@@ -76,23 +110,47 @@ export function validateCreateEvent(body: CreateEventRequest): string | undefine
   return undefined;
 }
 
-export function newStoredEvent(
-  config: CreateEventRequest,
-  room: RoomDefinition,
-  title: string,
-): StoredEvent {
-  return {
-    eventId: randomUUID(),
-    joinCode: createJoinCode(),
-    createdAtMs: Date.now(),
-    config,
-    title,
-    room,
-    players: {},
-  };
+export function nextTeamSlot(event: StoredEvent): number | undefined {
+  const e = migrateLegacyEvent(event);
+  const cap = resolveTeamCount(e.config);
+  const used = new Set(Object.values(e.teams).map((t) => t.slot));
+  for (let slot = 1; slot <= cap; slot++) {
+    if (!used.has(slot)) return slot;
+  }
+  return undefined;
 }
 
-class MemoryEventStore implements EventStore {
+function rankTeams(teams: EventTeamPublic[]): EventTeamPublic[] {
+  const order = { won: 0, playing: 1, waiting: 2, lost: 3 } as const;
+  return [...teams].sort((a, b) => {
+    const sa = order[a.status];
+    const sb = order[b.status];
+    if (sa !== sb) return sa - sb;
+    if (a.status === "won" && b.status === "won") {
+      return (a.elapsedSec ?? 99999) - (b.elapsedSec ?? 99999);
+    }
+    if (a.status === "playing" && b.status === "playing") {
+      return (b.puzzlesSolved ?? 0) - (a.puzzlesSolved ?? 0);
+    }
+    return a.slot - b.slot;
+  });
+}
+
+export function leaderboardFromEvent(event: StoredEvent): EventTeamPublic[] {
+  const e = migrateLegacyEvent(event);
+  const rows: EventTeamPublic[] = Object.values(e.teams).map((t) => ({
+    teamId: t.teamId,
+    teamName: t.teamName,
+    slot: t.slot,
+    status: t.status,
+    timeRemainingSec: t.timeRemainingSec,
+    elapsedSec: t.elapsedSec,
+    puzzlesSolved: t.puzzlesSolved,
+  }));
+  return rankTeams(rows);
+}
+
+export class MemoryEventStore implements EventStore {
   private readonly byCode = new Map<string, StoredEvent>();
 
   async create(event: StoredEvent): Promise<void> {
@@ -101,7 +159,8 @@ class MemoryEventStore implements EventStore {
   }
 
   async getByCode(joinCode: string): Promise<StoredEvent | undefined> {
-    return this.byCode.get(joinCode.toUpperCase());
+    const raw = this.byCode.get(joinCode.toUpperCase());
+    return raw ? migrateLegacyEvent(raw) : undefined;
   }
 
   async save(event: StoredEvent): Promise<void> {
@@ -129,7 +188,7 @@ class RedisEventStore implements EventStore {
   async getByCode(joinCode: string): Promise<StoredEvent | undefined> {
     const raw = await this.redis.get<string>(this.key(joinCode));
     if (!raw) return undefined;
-    return JSON.parse(raw) as StoredEvent;
+    return migrateLegacyEvent(JSON.parse(raw) as StoredEvent);
   }
 
   async save(event: StoredEvent): Promise<void> {
@@ -141,24 +200,4 @@ export async function createEventStore(): Promise<EventStore> {
   const redis = createUpstashRedis();
   if (redis) return new RedisEventStore(redis, sessionTtlSec());
   return new MemoryEventStore();
-}
-
-export function nextPlayerSlot(event: StoredEvent): number | undefined {
-  const used = new Set(Object.values(event.players).map((p) => p.slot));
-  for (let slot = 1; slot <= event.config.playerCount; slot++) {
-    if (!used.has(slot)) return slot;
-  }
-  return undefined;
-}
-
-export function leaderboardFromEvent(event: StoredEvent): EventPlayerPublic[] {
-  return Object.values(event.players)
-    .sort((a, b) => a.slot - b.slot)
-    .map((p) => ({
-      playerId: p.playerId,
-      displayName: p.displayName,
-      slot: p.slot,
-      status: p.status,
-      timeRemainingSec: p.timeRemainingSec,
-    }));
 }

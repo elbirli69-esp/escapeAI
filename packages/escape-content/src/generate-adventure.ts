@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { AdventureType, CreateEventRequest, EventSubject } from "@escapeai/shared";
+import { durationMinToSec, resolveDurationMin } from "@escapeai/shared";
 import type { RoomDefinition } from "@escapeai/escape-engine";
 
 const IMAGE_SETS: Record<AdventureType, { cover: string; scenes: [string, string, string] }> = {
@@ -92,7 +93,7 @@ export function generateAdventureRoom(
     tagline: introTone.tagline,
     coverImage: imgs.cover,
     theme,
-    timeLimitSec: 2700,
+    timeLimitSec: durationMinToSec(resolveDurationMin(input)),
     startSceneId: "start",
     winCondition: { type: "puzzle_solved", puzzleId: "final_code" },
     items: {

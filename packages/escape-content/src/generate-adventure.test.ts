@@ -4,7 +4,7 @@ import { generateAdventureRoom } from "./generate-adventure.js";
 
 const baseInput: CreateEventRequest = {
   adventureType: "birthday",
-  playerCount: 8,
+  teamCount: 4,
   subject: { name: "Ada Lovelace", age: 36, nickname: "Ada" },
   facts: ["Nació en 1815", "Le gustan los puzzles"],
 };

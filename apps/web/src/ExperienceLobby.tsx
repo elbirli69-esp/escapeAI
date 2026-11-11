@@ -6,15 +6,17 @@ import type {
 } from "@escapeai/shared";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import type { EventDurationMin } from "@escapeai/shared";
 import {
   createCustomEvent,
   fetchAdventureTemplates,
-  joinEventAsPlayer,
+  joinEventAsTeam,
   startEventSession,
   type RoomSummary,
 } from "./api";
+import { EventOrganizerBoard } from "./EventOrganizerBoard";
 
-type LobbyMode = "home" | "create" | "join" | "catalog";
+type LobbyMode = "home" | "create" | "join" | "organizer" | "catalog";
 
 export function ExperienceLobby(props: {
   rooms: RoomSummary[];
@@ -28,7 +30,8 @@ export function ExperienceLobby(props: {
 }) {
   const [mode, setMode] = useState<LobbyMode>("home");
   const [adventureType, setAdventureType] = useState<AdventureType>("celebration");
-  const [playerCount, setPlayerCount] = useState(8);
+  const [teamCount, setTeamCount] = useState(4);
+  const [durationMin, setDurationMin] = useState<EventDurationMin>(45);
   const [subjectName, setSubjectName] = useState("");
   const [nickname, setNickname] = useState("");
   const [age, setAge] = useState("");
@@ -55,16 +58,20 @@ export function ExperienceLobby(props: {
   });
 
   const joinMutation = useMutation({
-    mutationFn: async (): Promise<JoinEventResponse> => joinEventAsPlayer(joinCode, displayName),
+    mutationFn: async (): Promise<JoinEventResponse> => joinEventAsTeam(joinCode, displayName),
     onError: (e: Error) => setFormError(e.message),
   });
 
   const startMutation = useMutation({
-    mutationFn: async (payload: JoinEventResponse) => startEventSession(payload.joinCode, payload.playerId),
+    mutationFn: async (payload: JoinEventResponse) =>
+      startEventSession(payload.joinCode, payload.teamId ?? payload.playerId),
     onSuccess: (data) => {
       localStorage.setItem("escapeai.sessionId", data.sessionId);
       localStorage.setItem("escapeai.eventCode", joinCode || created?.joinCode || "");
-      localStorage.setItem("escapeai.playerId", joinMutation.data?.playerId ?? "");
+      localStorage.setItem(
+        "escapeai.teamId",
+        joinMutation.data?.teamId ?? joinMutation.data?.playerId ?? "",
+      );
       props.onEventSession(data.sessionId);
     },
     onError: (e: Error) => setFormError(e.message),
@@ -86,8 +93,8 @@ export function ExperienceLobby(props: {
           <p className="eyebrow">escapeAI</p>
           <h1 className="display">Tu escape, a tu medida</h1>
           <p className="lede">
-            Crea una experiencia para hasta 20 jugadores (cada móvil, sus pistas) o entra al
-            catálogo clásico.
+            Organiza una aventura para 2–5 equipos (un móvil por equipo), comparte el código y
+            proyecta el ranking.
           </p>
         </header>
         <div className="mode-grid">
@@ -96,8 +103,12 @@ export function ExperienceLobby(props: {
             <span className="meta">Tipo, nombre central, datos → código para invitar</span>
           </button>
           <button type="button" className="room-card-v2" onClick={() => setMode("join")}>
-            <strong>Unirme con código</strong>
-            <span className="meta">Hasta 20 jugadores en paralelo</span>
+            <strong>Entrar como equipo</strong>
+            <span className="meta">Código del organizador + nombre del equipo</span>
+          </button>
+          <button type="button" className="room-card-v2" onClick={() => setMode("organizer")}>
+            <strong>Panel organizador</strong>
+            <span className="meta">Ranking en vivo para TV o proyector</span>
           </button>
           <button type="button" className="room-card-v2" onClick={() => setMode("catalog")}>
             <strong>Catálogo clásico</strong>
@@ -128,7 +139,8 @@ export function ExperienceLobby(props: {
                 .filter(Boolean);
               createMutation.mutate({
                 adventureType,
-                playerCount,
+                teamCount,
+                durationMin,
                 subject: {
                   name: subjectName.trim(),
                   nickname: nickname.trim() || undefined,
@@ -164,14 +176,25 @@ export function ExperienceLobby(props: {
               ))}
 
             <label>
-              Jugadores (máx. 20)
+              Equipos en competición (2–5)
               <input
                 type="number"
-                min={1}
-                max={20}
-                value={playerCount}
-                onChange={(e) => setPlayerCount(Number(e.target.value))}
+                min={2}
+                max={5}
+                value={teamCount}
+                onChange={(e) => setTeamCount(Number(e.target.value))}
               />
+            </label>
+            <label>
+              Duración (minutos)
+              <select
+                value={durationMin}
+                onChange={(e) => setDurationMin(Number(e.target.value) as EventDurationMin)}
+              >
+                <option value={30}>30 min</option>
+                <option value={45}>45 min</option>
+                <option value={60}>60 min</option>
+              </select>
             </label>
             <label>
               Nombre central (persona, pareja o nombre del evento)
@@ -203,25 +226,71 @@ export function ExperienceLobby(props: {
             <p className="join-code">{created.joinCode}</p>
             <p>
               <strong>{created.title}</strong> · {created.sceneCount} escenas ·{" "}
-              {Math.round(created.timeLimitSec / 60)} min · cupo {created.playerCount}
+              {Math.round(created.timeLimitSec / 60)} min · {created.teamCount} equipos
             </p>
             <p className="muted">
-              Cada persona se une con el código y su nombre; al jugar, el narrador usará ese nombre en
-              las pistas.
+              Cada equipo entra con el código y su nombre de grupo. Recomendado: un móvil por equipo.
             </p>
             <button
               type="button"
               className="primary wide"
               onClick={() => {
                 setJoinCode(created.joinCode);
+                setMode("organizer");
+              }}
+            >
+              Abrir panel / proyector
+            </button>
+            <button
+              type="button"
+              className="ghost wide"
+              onClick={() => {
+                setJoinCode(created.joinCode);
                 setMode("join");
               }}
             >
-              Probar como jugador
+              Probar como equipo
             </button>
           </div>
         )}
       </main>
+    );
+  }
+
+  if (mode === "organizer") {
+    const code = created?.joinCode || joinCode;
+    return (
+      <>
+        {!code ? (
+          <main className="shell lobby">
+            <button type="button" className="ghost sm back-link" onClick={() => setMode("home")}>
+              ← Volver
+            </button>
+            <h1 className="display">Panel organizador</h1>
+            <form
+              className="wizard"
+              onSubmit={(e) => {
+                e.preventDefault();
+                setJoinCode(joinCode.toUpperCase());
+              }}
+            >
+              <label>
+                Código del evento
+                <input
+                  value={joinCode}
+                  onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                  required
+                />
+              </label>
+              <button type="submit" className="primary wide">
+                Ver ranking
+              </button>
+            </form>
+          </main>
+        ) : (
+          <EventOrganizerBoard joinCode={code} onBack={() => setMode("home")} />
+        )}
+      </>
     );
   }
 
@@ -231,7 +300,7 @@ export function ExperienceLobby(props: {
         <button type="button" className="ghost sm back-link" onClick={() => setMode("home")}>
           ← Volver
         </button>
-        <h1 className="display">Unirse</h1>
+        <h1 className="display">Unirse como equipo</h1>
         {formError && <p className="error">{formError}</p>}
         <form
           className="wizard"
@@ -253,7 +322,7 @@ export function ExperienceLobby(props: {
             />
           </label>
           <label>
-            Tu nombre en la partida
+            Nombre del equipo
             <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
           </label>
           <button
@@ -261,7 +330,7 @@ export function ExperienceLobby(props: {
             className="primary wide"
             disabled={joinMutation.isPending || startMutation.isPending}
           >
-            {joinMutation.isPending || startMutation.isPending ? "Entrando…" : "Empezar mi partida"}
+            {joinMutation.isPending || startMutation.isPending ? "Entrando…" : "Empezar partida del equipo"}
           </button>
         </form>
       </main>

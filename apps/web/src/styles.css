@@ -595,3 +595,37 @@ button {
 .interaction-panel.done {
   border-color: var(--accent);
 }
+
+.organizer-board .join-code.inline {
+  font-size: 1.25rem;
+  letter-spacing: 0.15em;
+}
+
+.leaderboard-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.leaderboard-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 0.6rem;
+  background: var(--panel);
+}
+
+.leaderboard-row.status-won {
+  border-color: var(--accent);
+}
+
+.leaderboard-row .rank {
+  font-weight: 800;
+  opacity: 0.5;
+  min-width: 1.5rem;
+}
