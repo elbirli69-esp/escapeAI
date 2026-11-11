@@ -38,4 +38,9 @@ pnpm dev
 
 ## Documentación
 
-Ver [docs/architecture.md](./docs/architecture.md).
+- [Arquitectura](./docs/architecture.md)
+- [Diseñar salas (YAML)](./docs/authoring-rooms.md)
+
+```bash
+pnpm validate-rooms   # comprobar YAML antes de commit
+```
