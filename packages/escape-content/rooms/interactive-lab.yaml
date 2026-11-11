@@ -1,0 +1,73 @@
+id: interactive-lab
+name: Laboratorio sensorial
+tagline: Sonido, voz, cámara e imágenes — prueba todas las pistas.
+theme: urban
+coverImage: /media/pilot-cover.jpg
+timeLimitSec: 1800
+startSceneId: hub
+winCondition:
+  type: puzzle_solved
+  puzzleId: voice_finale
+items: {}
+scenes:
+  hub:
+    id: hub
+    title: Hub de pruebas
+    image: /media/pilot-entrance.jpg
+    mood: Luces LED y altavoces ocultos en la pared.
+    description: >
+      Cuatro estaciones esperan: una emite un código en Morse (simplificado a dígitos
+      hablados), otra exige tu voz, otra la cámara y la última una imagen enigma.
+    puzzles: [sound_station, visual_station, camera_station, voice_finale]
+    exits: []
+puzzles:
+  sound_station:
+    id: sound_station
+    type: sound
+    label: Estación sonora
+    prompt: Escucha el clip. Al final se dictan cuatro cifras — introdúcelas aquí.
+    audioUrl: https://cdn.pixabay.com/audio/2022/10/25/audio_63460baf12.mp3
+    answer: "4268"
+    normalize: trim
+    maxHints: 2
+    hints:
+      - level: 1
+        text: Las cifras se anuncian en voz alta al acabar el efecto.
+      - level: 2
+        text: Prueba 4268 (solo en demo; cambia en tu sala generada).
+  visual_station:
+    id: visual_station
+    type: visual
+    label: Enigma visual
+    prompt: Observa la fotografía. ¿Cuántas puertas rojas ves? (número)
+    pexelsQuery: red doors building
+    answer: "3"
+    normalize: trim
+    maxHints: 1
+    hints:
+      - level: 1
+        text: Cuenta solo las puertas claramente rojas; en el fallback local imagina tres.
+  camera_station:
+    id: camera_station
+    type: camera
+    label: Búsqueda real
+    cameraPrompt: Fotografía algo redondo de tu entorno (una taza, un reloj…).
+    prompt: Tras la foto, escribe en español un objeto redondo que hayas capturado (ej. TAZA).
+    answer: TAZA
+    normalize: uppercase
+    maxHints: 1
+    hints:
+      - level: 1
+        text: Cualquier palabra válida en mayúsculas sirve en demo; en eventos se personaliza.
+  voice_finale:
+    id: voice_finale
+    type: voice
+    label: Sello de voz
+    prompt: Di en voz alta la frase mágica para cerrar el laboratorio.
+    answer: "luego"
+    normalize: lowercase
+    voiceLocale: es-ES
+    maxHints: 1
+    hints:
+      - level: 1
+        text: La frase es «luego» (como «hasta luego» sin el hasta).

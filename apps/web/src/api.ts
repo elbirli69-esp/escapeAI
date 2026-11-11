@@ -73,6 +73,22 @@ export async function joinEventAsPlayer(
   return data as JoinEventResponse;
 }
 
+export async function fetchPexelsImage(query: string): Promise<{ url: string; source: string }> {
+  const res = await fetch(`${base}/media/pexels?q=${encodeURIComponent(query)}`);
+  if (!res.ok) throw new Error("No se pudo cargar imagen");
+  return res.json();
+}
+
+export async function fetchFalImage(prompt: string): Promise<{ url: string; source: string }> {
+  const res = await fetch(`${base}/media/fal-image`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt }),
+  });
+  if (!res.ok) throw new Error("No se pudo generar imagen");
+  return res.json();
+}
+
 export async function startEventSession(
   eventCode: string,
   playerId: string,

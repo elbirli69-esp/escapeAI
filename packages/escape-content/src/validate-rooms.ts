@@ -56,11 +56,23 @@ function validateRoomContent(
   }
 
   for (const puzzle of Object.values(room.puzzles)) {
-    if (puzzle.type === "code" && !puzzle.answer) {
-      errors.push(`${prefix}: puzzle '${puzzle.id}' (code) sin answer`);
+    if (
+      ["code", "sound", "voice", "camera", "visual"].includes(puzzle.type) &&
+      !puzzle.answer
+    ) {
+      errors.push(`${prefix}: puzzle '${puzzle.id}' (${puzzle.type}) sin answer`);
     }
     if (puzzle.type === "inventory" && !puzzle.requiresItem) {
       errors.push(`${prefix}: puzzle '${puzzle.id}' (inventory) sin requiresItem`);
+    }
+    if (puzzle.type === "sound" && !puzzle.audioUrl) {
+      errors.push(`${prefix}: puzzle '${puzzle.id}' (sound) sin audioUrl`);
+    }
+    if (puzzle.type === "visual" && !puzzle.visualUrl && !puzzle.pexelsQuery && !puzzle.falPrompt) {
+      errors.push(`${prefix}: puzzle '${puzzle.id}' (visual) sin visualUrl, pexelsQuery o falPrompt`);
+    }
+    if (puzzle.type === "camera" && !puzzle.cameraPrompt) {
+      errors.push(`${prefix}: puzzle '${puzzle.id}' (camera) sin cameraPrompt`);
     }
     const hints = puzzle.hints ?? [];
     for (let i = 0; i < hints.length; i++) {

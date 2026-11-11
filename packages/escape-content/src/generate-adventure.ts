@@ -104,7 +104,7 @@ export function generateAdventureRoom(
         image: imgs.scenes[0],
         mood: introTone.mood1,
         description: `${introTone.scene1Body} ${factA}`,
-        puzzles: ["entry_lock"],
+        puzzles: ["sound_intro", "entry_lock"],
         exits: [
           {
             toSceneId: "middle",
@@ -120,7 +120,7 @@ export function generateAdventureRoom(
         mood: introTone.mood2,
         description: introTone.scene2Body,
         items: ["token"],
-        puzzles: ["token_slot"],
+        puzzles: ["camera_hunt", "token_slot"],
         exits: [
           {
             toSceneId: "finale",
@@ -135,11 +135,27 @@ export function generateAdventureRoom(
         image: imgs.scenes[2],
         mood: introTone.mood3,
         description: introTone.scene3Body,
-        puzzles: ["final_code"],
+        puzzles: ["visual_gallery", "final_code", "voice_seal"],
         exits: [],
       },
     },
     puzzles: {
+      sound_intro: {
+        id: "sound_intro",
+        type: "sound",
+        label: "Mensaje oculto",
+        prompt:
+          "Sube el volumen y escucha. Al final se repite un fragmento del año clave (dos cifras).",
+        audioUrl:
+          "https://cdn.pixabay.com/audio/2024/09/23/audio_d76b709f16.mp3",
+        answer: codes.yearCode.slice(0, 2),
+        normalize: "trim",
+        maxHints: 2,
+        hints: [
+          { level: 1, text: "Las dos primeras cifras del año de nacimiento." },
+          { level: 2, text: `Empiezan por ${codes.yearCode.slice(0, 1)}.` },
+        ],
+      },
       entry_lock: {
         id: "entry_lock",
         type: "code",
@@ -154,6 +170,17 @@ export function generateAdventureRoom(
           { level: 3, text: `El código son cuatro cifras: empieza por ${codes.yearCode.slice(0, 2)}.` },
         ],
       },
+      camera_hunt: {
+        id: "camera_hunt",
+        type: "camera",
+        label: "Prueba en el salón",
+        cameraPrompt: `Haz una foto relacionada con: ${factA.slice(0, 60)}.`,
+        prompt: `Tras la foto, escribe en MAYÚSCULAS el apodo «${nickname}».`,
+        answer: nickname.toUpperCase().replace(/[^A-ZÁÉÍÓÚÑ]/gi, "X").slice(0, 12) || "EQUIPO",
+        normalize: "uppercase",
+        maxHints: 1,
+        hints: [{ level: 1, text: `El apodo del protagonista: ${nickname}.` }],
+      },
       token_slot: {
         id: "token_slot",
         type: "inventory",
@@ -165,6 +192,24 @@ export function generateAdventureRoom(
           { level: 1, text: `Coge el objeto que nombra a ${nickname}.` },
           { level: 2, text: factB },
         ],
+      },
+      visual_gallery: {
+        id: "visual_gallery",
+        type: "visual",
+        label: "Galería enigma",
+        prompt: `Mira la imagen. ¿Cuántas letras tiene el apodo «${nickname}»? (número)`,
+        pexelsQuery:
+          input.adventureType === "mystery"
+            ? "fog lighthouse night"
+            : `${nickname} celebration party`,
+        falPrompt:
+          input.adventureType === "birthday"
+            ? `birthday mystery poster for ${nickname}, cinematic, no text`
+            : undefined,
+        answer: String(nickname.length),
+        normalize: "trim",
+        maxHints: 1,
+        hints: [{ level: 1, text: `Cuenta letras de ${nickname}.` }],
       },
       final_code: {
         id: "final_code",
@@ -179,6 +224,17 @@ export function generateAdventureRoom(
           { level: 2, text: codes.letterHint2 },
           { level: 3, text: `Cuatro letras, sin espacios: relacionado con «${nickname}».` },
         ],
+      },
+      voice_seal: {
+        id: "voice_seal",
+        type: "voice",
+        label: "Sello vocal",
+        prompt: `Di en voz alta el apodo «${nickname}» para sellar la victoria (opcional antes del código final).`,
+        answer: nickname.toLowerCase(),
+        normalize: "lowercase",
+        voiceLocale: "es-ES",
+        maxHints: 1,
+        hints: [{ level: 1, text: `Pronuncia: ${nickname}` }],
       },
     },
   };

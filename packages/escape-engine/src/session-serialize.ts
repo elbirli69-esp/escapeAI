@@ -1,3 +1,4 @@
+import type { InteractionStep } from "@escapeai/shared";
 import type { PlayerContext } from "./player-context.js";
 import type { RoomDefinition } from "./room-definition.js";
 import type { SessionRecord } from "./session.js";
@@ -12,6 +13,7 @@ export type SerializedSession = {
   sceneItems: Record<string, string[]>;
   puzzleAttempts: Record<string, number>;
   puzzleHintsUsed: Record<string, number>;
+  puzzleInteractions: Record<string, InteractionStep[]>;
   narrative: string[];
   startedAtMs: number;
   status: SessionRecord["status"];
@@ -33,6 +35,9 @@ export function serializeSession(session: SessionRecord): SerializedSession {
     sceneItems,
     puzzleAttempts: Object.fromEntries(session.puzzleAttempts),
     puzzleHintsUsed: Object.fromEntries(session.puzzleHintsUsed),
+    puzzleInteractions: Object.fromEntries(
+      [...session.puzzleInteractions].map(([k, v]) => [k, [...v]]),
+    ),
     narrative: [...session.narrative],
     startedAtMs: session.startedAtMs,
     status: session.status,
@@ -55,6 +60,9 @@ export function deserializeSession(data: SerializedSession): SessionRecord {
     sceneItems,
     puzzleAttempts: new Map(Object.entries(data.puzzleAttempts)),
     puzzleHintsUsed: new Map(Object.entries(data.puzzleHintsUsed)),
+    puzzleInteractions: new Map(
+      Object.entries(data.puzzleInteractions ?? {}).map(([k, steps]) => [k, new Set(steps)]),
+    ),
     narrative: [...data.narrative],
     startedAtMs: data.startedAtMs,
     status: data.status,

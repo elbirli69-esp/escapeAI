@@ -557,3 +557,41 @@ button {
 .back-link {
   margin-bottom: 0.75rem;
 }
+
+.interaction-panel {
+  margin-bottom: 1rem;
+}
+
+.interaction-title {
+  font-size: 0.95rem;
+  margin: 0 0 0.5rem;
+}
+
+.audio-player {
+  width: 100%;
+  margin-bottom: 0.35rem;
+}
+
+.visual-puzzle img,
+.camera-preview,
+.camera-shot {
+  width: 100%;
+  max-height: 240px;
+  object-fit: cover;
+  border-radius: 0.5rem;
+  border: 1px solid var(--panel-border);
+}
+
+.camera-preview {
+  background: #000;
+  margin-bottom: 0.5rem;
+}
+
+.interactive-puzzle .muted.sm,
+.interactive-puzzle .error.sm {
+  font-size: 0.82rem;
+}
+
+.interaction-panel.done {
+  border-color: var(--accent);
+}

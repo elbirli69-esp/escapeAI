@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { createSession, fetchRooms, fetchState, sendAction } from "./api";
 import { ExperienceLobby } from "./ExperienceLobby";
+import { InteractivePuzzle } from "./InteractivePuzzle";
 
 function themeClass(theme?: string): string {
   return theme === "coastal" ? "theme-coastal" : "theme-urban";
@@ -339,45 +340,13 @@ function GameView(props: {
             ))}
           </div>
           {activePuzzle && !activePuzzle.solved && (
-            <>
-              <p className="puzzle-prompt">{activePuzzle.prompt}</p>
-              <form
-                className="row"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (!props.answer.trim()) return;
-                  props.onAction({
-                    type: "submit_answer",
-                    puzzleId: activePuzzle.id,
-                    value: props.answer,
-                  });
-                  props.onAnswerChange("");
-                }}
-              >
-                <input
-                  value={props.answer}
-                  onChange={(e) => props.onAnswerChange(e.target.value)}
-                  placeholder="Tu respuesta"
-                  autoComplete="off"
-                />
-                <button type="submit" className="primary" disabled={props.busy}>
-                  Enviar
-                </button>
-              </form>
-              <button
-                type="button"
-                className="ghost"
-                disabled={props.busy}
-                onClick={() =>
-                  props.onAction({
-                    type: "request_hint",
-                    puzzleId: activePuzzle.id,
-                  })
-                }
-              >
-                Pedir pista ({activePuzzle.hintsUsed}/{activePuzzle.maxHints})
-              </button>
-            </>
+            <InteractivePuzzle
+              puzzle={activePuzzle}
+              answer={props.answer}
+              onAnswerChange={props.onAnswerChange}
+              busy={props.busy}
+              onAction={props.onAction}
+            />
           )}
         </section>
       )}

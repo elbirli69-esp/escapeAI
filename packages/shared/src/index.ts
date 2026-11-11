@@ -7,7 +7,16 @@ export type GameActionType =
   | "move"
   | "request_hint"
   | "take_item"
-  | "use_item";
+  | "use_item"
+  | "complete_interaction";
+
+export type InteractionStep = "listen" | "speak" | "capture" | "view";
+
+export type CompleteInteractionAction = {
+  type: "complete_interaction";
+  puzzleId: string;
+  step: InteractionStep;
+};
 
 export type SubmitAnswerAction = {
   type: "submit_answer";
@@ -41,7 +50,16 @@ export type GameAction =
   | MoveAction
   | RequestHintAction
   | TakeItemAction
-  | UseItemAction;
+  | UseItemAction
+  | CompleteInteractionAction;
+
+export type PublicPuzzleType =
+  | "code"
+  | "inventory"
+  | "sound"
+  | "voice"
+  | "camera"
+  | "visual";
 
 export type PublicItem = {
   id: string;
@@ -53,10 +71,18 @@ export type PublicPuzzle = {
   id: string;
   label?: string;
   prompt: string;
+  puzzleType: PublicPuzzleType;
   solved: boolean;
   attempts: number;
   hintsUsed: number;
   maxHints: number;
+  completedSteps: InteractionStep[];
+  audioUrl?: string;
+  visualUrl?: string;
+  pexelsQuery?: string;
+  falPrompt?: string;
+  cameraPrompt?: string;
+  voiceLocale?: string;
 };
 
 export type PublicExit = {

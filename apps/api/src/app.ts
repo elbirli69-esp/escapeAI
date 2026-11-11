@@ -10,6 +10,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { createEventStore } from "./event-store.js";
 import { mountEventRoutes, startEventSession, syncPlayerStatusFromSession } from "./events-routes.js";
+import { mountMediaRoutes } from "./media-routes.js";
 import { resolveLlmConfig } from "./llm-config.js";
 import { runOrchestrator } from "./orchestrator.js";
 import {
@@ -52,6 +53,7 @@ export async function createApp(store?: SessionStore): Promise<Hono> {
   });
 
   mountEventRoutes(app, eventStore);
+  mountMediaRoutes(app);
 
   app.get("/rooms", (c) => {
     const rooms = ROOM_CATALOG.map((entry) => {

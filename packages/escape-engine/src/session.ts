@@ -1,5 +1,12 @@
 import { randomUUID } from "node:crypto";
-import type { AiContext, ApplyResult, GameAction, GameEvent, PublicState } from "@escapeai/shared";
+import type {
+  AiContext,
+  ApplyResult,
+  GameAction,
+  GameEvent,
+  InteractionStep,
+  PublicState,
+} from "@escapeai/shared";
 import type { PlayerContext } from "./player-context.js";
 import type { Condition, RoomDefinition, RoomPuzzle } from "./room-definition.js";
 
@@ -13,6 +20,8 @@ export type SessionRecord = {
   sceneItems: Map<string, Set<string>>;
   puzzleAttempts: Map<string, number>;
   puzzleHintsUsed: Map<string, number>;
+  /** Pasos de interacción completados por puzzle (sound, voice, …). */
+  puzzleInteractions: Map<string, Set<InteractionStep>>;
   narrative: string[];
   startedAtMs: number;
   status: "playing" | "won" | "lost";
@@ -38,6 +47,7 @@ export function createSession(room: RoomDefinition, playerContext?: PlayerContex
     sceneItems,
     puzzleAttempts: new Map(),
     puzzleHintsUsed: new Map(),
+    puzzleInteractions: new Map(),
     narrative: [greeting],
     startedAtMs: Date.now(),
     status: "playing",
@@ -134,6 +144,13 @@ export function applyAction(
       });
       break;
     }
+    case "complete_interaction": {
+      const err = completeInteraction(session, action.puzzleId, action.step);
+      if (err) {
+        return { ok: false, error: err, state: toPublicState(session, nowMs), events };
+      }
+      break;
+    }
   }
 
   if (checkWin(session)) {
@@ -154,9 +171,14 @@ function submitAnswer(
 } {
   const puzzle = session.room.puzzles[puzzleId];
   if (!puzzle) return { error: "Puzzle desconocido." };
-  if (puzzle.type !== "code") return { error: "Este puzzle no admite respuesta escrita." };
+  if (!isAnswerablePuzzle(puzzle.type)) {
+    return { error: "Este puzzle no admite respuesta escrita." };
+  }
   if (!isPuzzleActive(session, puzzleId)) return { error: "Ese puzzle no está disponible aquí." };
   if (session.solvedPuzzles.has(puzzleId)) return { error: "Puzzle ya resuelto." };
+
+  const stepErr = requireInteractionSteps(session, puzzle);
+  if (stepErr) return { error: stepErr };
 
   const attempts = (session.puzzleAttempts.get(puzzleId) ?? 0) + 1;
   session.puzzleAttempts.set(puzzleId, attempts);
@@ -278,6 +300,76 @@ function isPuzzleActive(session: SessionRecord, puzzleId: string): boolean {
   return (scene.puzzles ?? []).includes(puzzleId);
 }
 
+function isAnswerablePuzzle(type: RoomPuzzle["type"]): boolean {
+  return ["code", "sound", "voice", "camera", "visual"].includes(type);
+}
+
+function requiredSteps(puzzle: RoomPuzzle): InteractionStep[] {
+  switch (puzzle.type) {
+    case "sound":
+      return ["listen"];
+    case "voice":
+      return ["speak"];
+    case "camera":
+      return ["capture"];
+    case "visual":
+      return ["view"];
+    default:
+      return [];
+  }
+}
+
+function getInteractionSet(session: SessionRecord, puzzleId: string): Set<InteractionStep> {
+  let set = session.puzzleInteractions.get(puzzleId);
+  if (!set) {
+    set = new Set();
+    session.puzzleInteractions.set(puzzleId, set);
+  }
+  return set;
+}
+
+function completeInteraction(
+  session: SessionRecord,
+  puzzleId: string,
+  step: InteractionStep,
+): string | undefined {
+  const puzzle = session.room.puzzles[puzzleId];
+  if (!puzzle) return "Puzzle desconocido.";
+  if (!isPuzzleActive(session, puzzleId)) return "Ese puzzle no está disponible aquí.";
+  const needed = requiredSteps(puzzle);
+  if (!needed.includes(step)) return "Paso no aplicable a este puzzle.";
+  getInteractionSet(session, puzzleId).add(step);
+  const labels: Record<InteractionStep, string> = {
+    listen: "Has escuchado la pista sonora.",
+    speak: "El sistema ha captado tu voz.",
+    capture: "Foto registrada. Ahora introduce la palabra clave.",
+    view: "Has estudiado la imagen.",
+  };
+  session.narrative.push(labels[step]);
+  return undefined;
+}
+
+function requireInteractionSteps(session: SessionRecord, puzzle: RoomPuzzle): string | undefined {
+  const needed = requiredSteps(puzzle);
+  if (needed.length === 0) return undefined;
+  const done = getInteractionSet(session, puzzle.id);
+  for (const step of needed) {
+    if (!done.has(step)) {
+      switch (step) {
+        case "listen":
+          return "Escucha el audio hasta el final antes de responder.";
+        case "speak":
+          return "Usa el micrófono y di la frase antes de validar.";
+        case "capture":
+          return "Haz una foto del objeto antes de enviar la respuesta.";
+        case "view":
+          return "Abre y mira la imagen antes de responder.";
+      }
+    }
+  }
+  return undefined;
+}
+
 function normalizeAnswer(value: string, mode?: RoomPuzzle["normalize"]): string {
   let v = value.trim();
   if (mode === "uppercase") v = v.toUpperCase();
@@ -340,14 +432,23 @@ export function toPublicState(session: SessionRecord, nowMs = Date.now()): Publi
     narrative: [...session.narrative],
     puzzles: (scene.puzzles ?? []).map((id) => {
       const puzzle = session.room.puzzles[id];
+      const steps = session.puzzleInteractions.get(id);
       return {
         id,
         label: puzzle.label ?? humanizeId(id),
         prompt: puzzle.prompt,
+        puzzleType: puzzle.type,
         solved: session.solvedPuzzles.has(id),
         attempts: session.puzzleAttempts.get(id) ?? 0,
         hintsUsed: session.puzzleHintsUsed.get(id) ?? 0,
         maxHints: puzzle.maxHints ?? (puzzle.hints?.length ?? 0),
+        completedSteps: steps ? [...steps] : [],
+        audioUrl: puzzle.audioUrl,
+        visualUrl: puzzle.visualUrl,
+        pexelsQuery: puzzle.pexelsQuery,
+        falPrompt: puzzle.falPrompt,
+        cameraPrompt: puzzle.cameraPrompt,
+        voiceLocale: puzzle.voiceLocale,
       };
     }),
     exits: getAvailableExits(session),
