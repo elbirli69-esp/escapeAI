@@ -12,3 +12,4 @@ export {
   serializeSession,
   type SerializedSession,
 } from "./session-serialize.js";
+export type { PlayerContext } from "./player-context.js";

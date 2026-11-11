@@ -1,3 +1,5 @@
+import type { AdventureType } from "./events.js";
+
 export type GameStatus = "playing" | "won" | "lost";
 
 export type GameActionType =
@@ -67,6 +69,9 @@ export type PublicState = {
   sessionId: string;
   roomId: string;
   roomName: string;
+  /** Nombre mostrado del jugador en sesiones de evento. */
+  playerDisplayName?: string;
+  eventJoinCode?: string;
   status: GameStatus;
   currentSceneId: string;
   sceneTitle: string;
@@ -121,6 +126,9 @@ export type AiPuzzleContext = {
 export type AiContext = {
   sessionId: string;
   roomName: string;
+  playerDisplayName?: string;
+  eventTitle?: string;
+  adventureType?: AdventureType;
   sceneTitle: string;
   sceneDescription: string;
   status: GameStatus;
@@ -129,3 +137,5 @@ export type AiContext = {
   timeRemainingSec: number;
   recentNarrative: string[];
 };
+
+export * from "./events.js";

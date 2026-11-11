@@ -1,7 +1,8 @@
 import type { OrchestratorResponse, PublicItem, PublicState } from "@escapeai/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { createSession, fetchRooms, fetchState, sendAction, type RoomSummary } from "./api";
+import { createSession, fetchRooms, fetchState, sendAction } from "./api";
+import { ExperienceLobby } from "./ExperienceLobby";
 
 function themeClass(theme?: string): string {
   return theme === "coastal" ? "theme-coastal" : "theme-urban";
@@ -94,76 +95,6 @@ function ItemCard(props: {
   );
 }
 
-function RoomPicker(props: {
-  rooms: RoomSummary[];
-  loading: boolean;
-  error: boolean;
-  selectedRoomId: string;
-  onSelectRoom: (id: string) => void;
-  busy: boolean;
-  startError: string | null;
-  onStart: () => void;
-}) {
-  const selected = props.rooms.find((r) => r.id === props.selectedRoomId);
-
-  return (
-    <main className={`shell lobby ${selected ? themeClass(selected.theme) : ""}`}>
-      <header className="lobby-hero">
-        <p className="eyebrow">escapeAI · salas online</p>
-        <h1 className="display">Encuentra la salida</h1>
-        <p className="lede">
-          Explora, combina objetos y descifra códigos. El motor decide; el narrador
-          opcional acompaña con pistas.
-        </p>
-      </header>
-
-      {props.startError && <FlashBanner message={props.startError} />}
-      {props.loading && <p className="muted">Cargando salas…</p>}
-      {props.error && (
-        <p className="error">No se pudo cargar el catálogo. ¿Está la API en marcha?</p>
-      )}
-
-      <ul className="room-grid">
-        {props.rooms.map((room) => (
-          <li key={room.id}>
-            <button
-              type="button"
-              className={
-                room.id === props.selectedRoomId ? "room-card-v2 active" : "room-card-v2"
-              }
-              onClick={() => props.onSelectRoom(room.id)}
-            >
-              <div className="room-card-media">
-                {room.coverImage ? (
-                  <img src={room.coverImage} alt="" loading="lazy" />
-                ) : (
-                  <div className="room-card-fallback" />
-                )}
-              </div>
-              <div className="room-card-copy">
-                <strong>{room.title}</strong>
-                {room.tagline && <span className="room-tagline">{room.tagline}</span>}
-                <span className="meta">
-                  {room.sceneCount ?? "—"} escenas · {Math.round(room.timeLimitSec / 60)} min
-                </span>
-              </div>
-            </button>
-          </li>
-        ))}
-      </ul>
-
-      <button
-        type="button"
-        className="primary wide"
-        disabled={props.busy || props.rooms.length === 0}
-        onClick={props.onStart}
-      >
-        {props.busy ? "Preparando sala…" : "Empezar partida"}
-      </button>
-    </main>
-  );
-}
-
 export function App() {
   const [sessionId, setSessionId] = useState<string | null>(
     () => localStorage.getItem("escapeai.sessionId"),
@@ -228,17 +159,23 @@ export function App() {
 
   if (!sessionId) {
     return (
-      <RoomPicker
+      <ExperienceLobby
         rooms={roomsQuery.data ?? []}
-        loading={roomsQuery.isLoading}
-        error={roomsQuery.isError}
+        roomsLoading={roomsQuery.isLoading}
         selectedRoomId={selectedRoomId}
         onSelectRoom={setSelectedRoomId}
-        busy={startGame.isPending}
-        startError={
-          startGame.isError ? "No se pudo crear la partida. Comprueba la API." : null
+        classicBusy={startGame.isPending}
+        classicError={
+          startGame.isError || roomsQuery.isError
+            ? "No se pudo conectar con la API o crear la partida."
+            : null
         }
-        onStart={() => startGame.mutate(selectedRoomId)}
+        onClassicStart={() => startGame.mutate(selectedRoomId)}
+        onEventSession={(id) => {
+          setSessionId(id);
+          setNarrator(null);
+          setActionError(null);
+        }}
       />
     );
   }
@@ -304,7 +241,11 @@ function GameView(props: {
     <main className={`shell game ${themeClass(state.roomTheme)}`}>
       <header className="game-head">
         <div>
-          <p className="eyebrow">{state.roomName}</p>
+          <p className="eyebrow">
+            {state.playerDisplayName ? `${state.playerDisplayName} · ` : ""}
+            {state.roomName}
+            {state.eventJoinCode ? ` · ${state.eventJoinCode}` : ""}
+          </p>
           <div className="title-row">
             <h1 className="display-sm">{state.sceneTitle}</h1>
             {props.narrator && props.narrator.source !== "fallback" && (

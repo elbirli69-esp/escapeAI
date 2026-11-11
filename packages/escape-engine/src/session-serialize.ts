@@ -1,9 +1,11 @@
+import type { PlayerContext } from "./player-context.js";
 import type { RoomDefinition } from "./room-definition.js";
 import type { SessionRecord } from "./session.js";
 
 export type SerializedSession = {
   sessionId: string;
   room: RoomDefinition;
+  playerContext?: PlayerContext;
   currentSceneId: string;
   solvedPuzzles: string[];
   inventory: string[];
@@ -24,6 +26,7 @@ export function serializeSession(session: SessionRecord): SerializedSession {
   return {
     sessionId: session.sessionId,
     room: session.room,
+    playerContext: session.playerContext,
     currentSceneId: session.currentSceneId,
     solvedPuzzles: [...session.solvedPuzzles],
     inventory: [...session.inventory],
@@ -45,6 +48,7 @@ export function deserializeSession(data: SerializedSession): SessionRecord {
   return {
     sessionId: data.sessionId,
     room: data.room,
+    playerContext: data.playerContext,
     currentSceneId: data.currentSceneId,
     solvedPuzzles: new Set(data.solvedPuzzles),
     inventory: new Set(data.inventory),

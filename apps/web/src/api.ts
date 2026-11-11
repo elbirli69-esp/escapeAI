@@ -1,4 +1,12 @@
-import type { ApplyResult, GameAction, PublicState } from "@escapeai/shared";
+import type {
+  AdventureTemplateInfo,
+  ApplyResult,
+  CreateEventRequest,
+  EventPreview,
+  GameAction,
+  JoinEventResponse,
+  PublicState,
+} from "@escapeai/shared";
 
 const base = "/api";
 
@@ -31,6 +39,52 @@ export async function createSession(roomId = "pilot"): Promise<{
   });
   if (!res.ok) throw new Error("No se pudo crear la sesión");
   return res.json();
+}
+
+export async function fetchAdventureTemplates(): Promise<AdventureTemplateInfo[]> {
+  const res = await fetch(`${base}/adventures`);
+  if (!res.ok) throw new Error("No se pudieron cargar las plantillas");
+  const data = await res.json();
+  return data.templates as AdventureTemplateInfo[];
+}
+
+export async function createCustomEvent(body: CreateEventRequest): Promise<EventPreview> {
+  const res = await fetch(`${base}/events`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { error?: string }).error ?? "No se pudo crear el evento");
+  return (data as { preview: EventPreview }).preview;
+}
+
+export async function joinEventAsPlayer(
+  joinCode: string,
+  displayName: string,
+): Promise<JoinEventResponse> {
+  const res = await fetch(`${base}/events/${encodeURIComponent(joinCode)}/players`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ displayName }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { error?: string }).error ?? "No se pudo unir al evento");
+  return data as JoinEventResponse;
+}
+
+export async function startEventSession(
+  eventCode: string,
+  playerId: string,
+): Promise<{ sessionId: string; state: PublicState }> {
+  const res = await fetch(`${base}/sessions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ eventCode, playerId }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { error?: string }).error ?? "No se pudo iniciar la partida");
+  return data as { sessionId: string; state: PublicState };
 }
 
 export async function fetchState(sessionId: string): Promise<PublicState> {

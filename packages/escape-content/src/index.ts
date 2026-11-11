@@ -1,6 +1,7 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadRoomFromFile, type RoomDefinition } from "@escapeai/escape-engine";
+import { generateAdventureRoom, listAdventureTemplates } from "./generate-adventure.js";
 import { ROOM_CATALOG, ROOM_FILES, type RoomId } from "./rooms.js";
 
 const roomsDir = join(dirname(fileURLToPath(import.meta.url)), "rooms");
@@ -20,3 +21,5 @@ export function loadRoomById(roomId: string): RoomDefinition {
   if (!file) throw new Error(`Unknown room: ${roomId}`);
   return loadRoomFromFile(join(roomsDir, file));
 }
+
+export { generateAdventureRoom, listAdventureTemplates };

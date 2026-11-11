@@ -12,16 +12,18 @@
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/copy-rooms.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "echo \"no tests\"",
+    "test": "vitest run",
     "validate-rooms": "tsx src/validate-rooms.ts"
   },
   "dependencies": {
     "@escapeai/escape-engine": "workspace:*",
+    "@escapeai/shared": "workspace:*",
     "yaml": "^2.6.0"
   },
   "devDependencies": {
     "@types/node": "^22.9.0",
     "tsx": "^4.19.2",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
   }
 }

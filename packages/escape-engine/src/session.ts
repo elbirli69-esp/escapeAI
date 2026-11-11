@@ -1,10 +1,12 @@
 import { randomUUID } from "node:crypto";
 import type { AiContext, ApplyResult, GameAction, GameEvent, PublicState } from "@escapeai/shared";
+import type { PlayerContext } from "./player-context.js";
 import type { Condition, RoomDefinition, RoomPuzzle } from "./room-definition.js";
 
 export type SessionRecord = {
   sessionId: string;
   room: RoomDefinition;
+  playerContext?: PlayerContext;
   currentSceneId: string;
   solvedPuzzles: Set<string>;
   inventory: Set<string>;
@@ -16,22 +18,27 @@ export type SessionRecord = {
   status: "playing" | "won" | "lost";
 };
 
-export function createSession(room: RoomDefinition): SessionRecord {
+export function createSession(room: RoomDefinition, playerContext?: PlayerContext): SessionRecord {
   const sceneItems = new Map<string, Set<string>>();
   for (const scene of Object.values(room.scenes)) {
     sceneItems.set(scene.id, new Set(scene.items ?? []));
   }
 
+  const greeting = playerContext
+    ? `${playerContext.displayName}, bienvenido a «${room.name}». Tu misión es personal: las pistas hablan contigo.`
+    : `Has entrado en «${room.name}».`;
+
   const session: SessionRecord = {
     sessionId: randomUUID(),
     room,
+    playerContext,
     currentSceneId: room.startSceneId,
     solvedPuzzles: new Set(),
     inventory: new Set(),
     sceneItems,
     puzzleAttempts: new Map(),
     puzzleHintsUsed: new Map(),
-    narrative: [`Has entrado en «${room.name}».`],
+    narrative: [greeting],
     startedAtMs: Date.now(),
     status: "playing",
   };
@@ -320,6 +327,8 @@ export function toPublicState(session: SessionRecord, nowMs = Date.now()): Publi
     sessionId: session.sessionId,
     roomId: session.room.id,
     roomName: session.room.name,
+    playerDisplayName: session.playerContext?.displayName,
+    eventJoinCode: session.playerContext?.joinCode,
     status: session.status,
     currentSceneId: session.currentSceneId,
     sceneTitle: scene.title,
@@ -356,9 +365,14 @@ export function toAiContext(session: SessionRecord, nowMs = Date.now()): AiConte
   const publicState = toPublicState(session, nowMs);
   const scene = session.room.scenes[session.currentSceneId];
 
+  const ctx = session.playerContext;
+
   return {
     sessionId: session.sessionId,
     roomName: session.room.name,
+    playerDisplayName: ctx?.displayName,
+    eventTitle: ctx?.eventTitle ?? session.room.name,
+    adventureType: ctx?.adventureType,
     sceneTitle: scene.title,
     sceneDescription: scene.description.trim(),
     status: publicState.status,
