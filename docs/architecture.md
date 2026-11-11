@@ -17,10 +17,21 @@
 | `apps/api`           | Hono, sesiones en memoria (MVP)        |
 | `apps/web`           | PWA jugador                            |
 
+## Persistencia (MVP)
+
+- Por defecto: sesiones **en memoria** (desarrollo).
+- Con `SESSION_DATA_DIR=./data/sessions`: persistencia en **JSON** por sesión (sobrevive reinicios de la API).
+- Próximo paso: Postgres (Neon) cuando haya despliegue compartido.
+
+## Orquestador IA
+
+- `apps/api/src/orchestrator.ts`: narración tras eventos (`puzzle_failed`, `hint_requested`, etc.).
+- Sin `OPENAI_API_KEY`: modo **fallback** (textos curados + eco de pistas YAML).
+- Con `OPENAI_API_KEY` (+ opcional `OPENAI_MODEL`): paráfrasis inmersiva sin revelar soluciones.
+
 ## Roadmap técnico
 
-- Postgres + Redis para sesiones y timer persistente
-- Orquestador IA (Vercel AI SDK) en `apps/api` o `services/orchestrator`
+- Postgres + Redis para sesiones multi-instancia
 - Multijugador (WebSockets)
 - Capacitor para Android / iOS (mismo build de `apps/web`)
 

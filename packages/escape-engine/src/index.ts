@@ -7,3 +7,8 @@ export {
   toPublicState,
   type SessionRecord,
 } from "./session.js";
+export {
+  deserializeSession,
+  serializeSession,
+  type SerializedSession,
+} from "./session-serialize.js";

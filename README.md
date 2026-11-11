@@ -19,6 +19,15 @@ pnpm dev
 - API: http://localhost:8787
 - Web (PWA): http://localhost:5173 (proxy `/api` → API)
 
+### Variables de entorno (API)
+
+| Variable | Descripción |
+| -------- | ----------- |
+| `SESSION_DATA_DIR` | Carpeta para guardar sesiones JSON (p. ej. `./data/sessions`) |
+| `OPENAI_API_KEY` | Activa narración con modelo OpenAI |
+| `OPENAI_MODEL` | Opcional, por defecto `gpt-4o-mini` |
+| `CORS_ORIGINS` | Orígenes permitidos separados por coma |
+
 ## Scripts
 
 | Comando      | Descripción                    |

@@ -87,6 +87,12 @@ export type ApplyResult = {
   error?: string;
   state: PublicState;
   events: GameEvent[];
+  orchestrator?: OrchestratorResponse;
+};
+
+export type OrchestratorResponse = {
+  message: string;
+  source: "fallback" | "openai";
 };
 
 export type AiPuzzleContext = {

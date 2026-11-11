@@ -7,22 +7,28 @@ import {
   toPublicState,
   type SessionRecord,
 } from "@escapeai/escape-engine";
-import type { GameAction } from "@escapeai/shared";
+import type { GameAction, GameEvent } from "@escapeai/shared";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { runOrchestrator } from "./orchestrator.js";
+import { createSessionStore, type SessionStore } from "./session-store.js";
 
-const sessions = new Map<string, SessionRecord>();
+let store: SessionStore;
 
 const app = new Hono();
 
-app.use(
-  "*",
-  cors({
-    origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
-  }),
-);
+const corsOrigins = process.env.CORS_ORIGINS?.split(",").map((s) => s.trim()) ?? [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+];
 
-app.get("/health", (c) => c.json({ ok: true }));
+app.use("*", cors({ origin: corsOrigins }));
+
+app.get("/health", (c) => c.json({ ok: true, persistence: Boolean(process.env.SESSION_DATA_DIR) }));
+
+async function saveSession(session: SessionRecord): Promise<void> {
+  await store.set(session);
+}
 
 app.post("/sessions", async (c) => {
   const body = (await c.req.json<{ roomId?: string }>().catch(() => ({}))) as {
@@ -31,33 +37,76 @@ app.post("/sessions", async (c) => {
   const roomId = body.roomId ?? "pilot";
   const room = loadRoomById(roomId);
   const session = createSession(room);
-  sessions.set(session.sessionId, session);
+  const intro = await runOrchestrator(session, []);
+  if (intro.message) session.narrative.push(intro.message);
+  await saveSession(session);
   return c.json({ sessionId: session.sessionId, state: toPublicState(session) }, 201);
 });
 
-app.get("/sessions/:sessionId", (c) => {
-  const session = sessions.get(c.req.param("sessionId"));
+app.get("/sessions/:sessionId", async (c) => {
+  const session = await store.get(c.req.param("sessionId"));
   if (!session) return c.json({ error: "Sesión no encontrada" }, 404);
   return c.json({ state: toPublicState(session) });
 });
 
-app.get("/sessions/:sessionId/ai-context", (c) => {
-  const session = sessions.get(c.req.param("sessionId"));
+app.get("/sessions/:sessionId/ai-context", async (c) => {
+  const session = await store.get(c.req.param("sessionId"));
   if (!session) return c.json({ error: "Sesión no encontrada" }, 404);
   return c.json({ context: toAiContext(session) });
 });
 
+app.post("/sessions/:sessionId/orchestrate", async (c) => {
+  const session = await store.get(c.req.param("sessionId"));
+  if (!session) return c.json({ error: "Sesión no encontrada" }, 404);
+
+  const body = (await c.req.json<{ events?: GameEvent[] }>().catch(() => ({}))) as {
+    events?: GameEvent[];
+  };
+  const events = body.events ?? [];
+  const orchestrator = await runOrchestrator(session, events);
+  if (orchestrator.message) {
+    session.narrative.push(orchestrator.message);
+    await saveSession(session);
+  }
+  return c.json({ orchestrator, state: toPublicState(session) });
+});
+
 app.post("/sessions/:sessionId/actions", async (c) => {
-  const session = sessions.get(c.req.param("sessionId"));
+  const session = await store.get(c.req.param("sessionId"));
   if (!session) return c.json({ error: "Sesión no encontrada" }, 404);
 
   const action = (await c.req.json()) as GameAction;
   const result = applyAction(session, action);
-  return c.json(result);
+
+  let orchestrator;
+  if (shouldOrchestrate(result.events)) {
+    orchestrator = await runOrchestrator(session, result.events);
+    if (orchestrator.message) {
+      session.narrative.push(orchestrator.message);
+    }
+  }
+
+  await saveSession(session);
+  return c.json({ ...result, state: toPublicState(session), orchestrator });
 });
+
+function shouldOrchestrate(events: GameEvent[]): boolean {
+  if (events.length === 0) return false;
+  return events.some((e) =>
+    ["puzzle_failed", "scene_entered", "game_won", "game_lost"].includes(e.type),
+  );
+}
 
 const port = Number(process.env.PORT ?? 8787);
 
-serve({ fetch: app.fetch, port }, () => {
-  console.log(`escapeAI API listening on http://localhost:${port}`);
+async function main() {
+  store = await createSessionStore();
+  serve({ fetch: app.fetch, port }, () => {
+    console.log(`escapeAI API listening on http://localhost:${port}`);
+  });
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
 });
