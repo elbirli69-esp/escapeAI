@@ -307,9 +307,10 @@ function GameView(props: {
           <p className="eyebrow">{state.roomName}</p>
           <div className="title-row">
             <h1 className="display-sm">{state.sceneTitle}</h1>
-            {props.narrator?.source === "openai" && (
+            {props.narrator && props.narrator.source !== "fallback" && (
               <span className="narrator-badge" title={props.narrator.message}>
                 Narrador IA
+                {props.narrator.source === "deepseek" ? " · DeepSeek" : ""}
               </span>
             )}
           </div>

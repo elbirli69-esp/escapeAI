@@ -26,8 +26,8 @@
 ## Orquestador IA
 
 - `apps/api/src/orchestrator.ts`: narración tras eventos (`puzzle_failed`, `hint_requested`, etc.).
-- Sin `OPENAI_API_KEY`: modo **fallback** (textos curados + eco de pistas YAML).
-- Con `OPENAI_API_KEY` (+ opcional `OPENAI_MODEL`): paráfrasis inmersiva sin revelar soluciones.
+- Sin `DEEPSEEK_API_KEY` ni `OPENAI_API_KEY`: modo **fallback** (textos curados + eco de pistas YAML).
+- Con **DeepSeek** (`DEEPSEEK_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL`) u OpenAI directo: narración breve sin revelar soluciones.
 
 ## Roadmap técnico
 
