@@ -47,6 +47,18 @@ El generador de aventuras personalizadas puede insertar **un puzzle interactivo 
 - Las fotos **no se suben** al servidor en v1: solo se marca `capture` en sesión; la validación es la **palabra clave** acordada en la sala.
 - El narrador IA no recibe imágenes ni audio del jugador.
 
+## Sonido en producto genérico
+
+Misma mecánica en todas las ocasiones; solo cambian **datos del wizard**:
+
+| Patrón | `answer` derivado de entradas |
+| ------ | ----------------------------- |
+| Fragmento numérico (eventos generados) | 2 primeras cifras del código de 4 dígitos (año en `facts` → prioridad) |
+| Código completo | Escuchar → escribir 4 cifras o palabra definida en YAML |
+| Identificación | SFX + respuesta palabra (salas manuales / laboratorio) |
+
+El organizador no elige el patrón en v1: el **generador** enlaza sonido + candado al mismo pipeline numérico.
+
 ## Próximo
 
 - Validación de imagen en servidor (visión) opcional.

@@ -33,20 +33,24 @@ export function listAdventureTemplates(): Array<{
 }> {
   return [
     {
-      id: "birthday",
-      title: "Cumpleaños",
-      description: "Misión personal para el protagonista: años, apodos y anécdotas se convierten en códigos.",
+      id: "celebration",
+      title: "Celebración",
+      description: "Fiestas, aniversarios, encuentros: el nombre central y los datos del grupo alimentan códigos y pistas.",
       suggestedFacts: [
-        "Ciudad donde nació",
-        "Primer concierto o canción favorita",
-        "Apodo de la infancia",
+        "Motivo del evento",
+        "Lugar o fecha simbólica (p. ej. año 2018)",
+        "Frase o chiste interno del grupo",
       ],
     },
     {
-      id: "celebration",
-      title: "Celebración",
-      description: "Fiesta en grupo: mismo misterio, cada móvil a su ritmo.",
-      suggestedFacts: ["Motivo de la fiesta", "Lugar del brindis", "Frase interna del grupo"],
+      id: "birthday",
+      title: "Homenaje personal",
+      description: "Una persona en el centro: mismas reglas que cualquier celebración, tono más íntimo.",
+      suggestedFacts: [
+        "Lugar o año que recordáis juntos",
+        "Apodo o canción favorita",
+        "Detalle que solo los del grupo saben",
+      ],
     },
     {
       id: "mystery",
@@ -145,14 +149,14 @@ export function generateAdventureRoom(
         type: "sound",
         label: "Mensaje oculto",
         prompt:
-          "Sube el volumen y escucha. Al final se repite un fragmento del año clave (dos cifras).",
+          "Sube el volumen y escucha. Las dos primeras cifras del candado numérico se anuncian en el ambiente.",
         audioUrl:
           "https://cdn.pixabay.com/audio/2024/09/23/audio_d76b709f16.mp3",
         answer: codes.yearCode.slice(0, 2),
         normalize: "trim",
         maxHints: 2,
         hints: [
-          { level: 1, text: "Las dos primeras cifras del año de nacimiento." },
+          { level: 1, text: "Son las dos primeras cifras del código numérico de la sala." },
           { level: 2, text: `Empiezan por ${codes.yearCode.slice(0, 1)}.` },
         ],
       },
@@ -243,10 +247,10 @@ export function generateAdventureRoom(
 function defaultTitle(type: AdventureType, subject: EventSubject): string {
   const first = subject.name.split(/\s+/)[0] ?? subject.name;
   switch (type) {
-    case "birthday":
-      return `Operación ${first}`;
     case "celebration":
-      return `La fiesta de ${first}`;
+      return `Celebración ${first}`;
+    case "birthday":
+      return `Homenaje ${first}`;
     case "mystery":
       return `Caso ${first}`;
     default:
@@ -255,32 +259,42 @@ function defaultTitle(type: AdventureType, subject: EventSubject): string {
 }
 
 function deriveCodes(subject: EventSubject, facts: string[]) {
-  const yearCode = pickYearCode(subject, facts);
+  const yearCode = pickNumericCode(subject, facts);
   const letterCode = pickLetterCode(subject.name);
   const nickname = (subject.nickname?.trim() || subject.name.split(/\s+/)[0]) ?? "";
+  const key = subject.age;
   return {
     yearCode,
-    yearHint1: subject.age
-      ? `Piensa en el año en que ${nickname || "el protagonista"} cumplió… no, en el año de nacimiento (${subject.age} años hoy).`
-      : `Una fecha de cuatro cifras aparece en las pistas del grupo.`,
-    yearHint2: facts.find((f) => /\b(19|20)\d{2}\b/.test(f))
-      ? "Revisa la primera anécdota: hay un año escondido."
-      : `Suma mental: si hoy tiene ${subject.age ?? "?"} años, resta de ${new Date().getFullYear()}.`,
+    yearHint1: facts.some((f) => /\b(1\d{3}|20\d{2})\b/.test(f))
+      ? "Busca un año de cuatro cifras en los datos que diste al crear el evento."
+      : key
+        ? `La cifra clave del organizador (${key}) ayuda a formar el candado (cuatro dígitos).`
+        : "Cuatro cifras: fijate en fechas y números de tus datos jugables.",
+    yearHint2: facts.find((f) => /\b(1\d{3}|20\d{2})\b/.test(f))
+      ? "Revisa la primera línea de datos jugables: hay un año."
+      : key
+        ? `Prueba rellenando con ceros: ${String(key).padStart(4, "0").slice(-4)}.`
+        : `El código empieza por ${yearCode.slice(0, 2)}.`,
     letterCode,
-    letterHint1: `Las iniciales y cierres del nombre «${subject.name}» pueden dar cuatro letras.`,
-    letterHint2: `Prueba mayúsculas, sin tildes; piensa en ${nickname || subject.name}.`,
+    letterHint1: `Las iniciales y cierres de «${subject.name}» pueden dar cuatro letras.`,
+    letterHint2: `Mayúsculas, sin tildes; piensa en ${nickname || subject.name}.`,
   };
 }
 
-function pickYearCode(subject: EventSubject, facts: string[]): string {
-  if (subject.age && subject.age > 0 && subject.age < 120) {
-    return String(new Date().getFullYear() - subject.age);
-  }
+/** Código numérico de 4 cifras: año en facts → cifra clave → fallback estable. */
+function pickNumericCode(subject: EventSubject, facts: string[]): string {
   for (const fact of facts) {
-    const m = fact.match(/\b(19|20)\d{2}\b/);
+    const m = fact.match(/\b(1\d{3}|20\d{2})\b/);
     if (m) return m[0];
   }
-  return "1990";
+  const key = subject.age;
+  if (key !== undefined && key > 0) {
+    if (key >= 1000 && key <= 9999) return String(key);
+    return String(key).padStart(4, "0").slice(-4);
+  }
+  let hash = 0;
+  for (const ch of subject.name) hash = (hash * 31 + ch.charCodeAt(0)) % 9000;
+  return String(1000 + hash);
 }
 
 function pickLetterCode(fullName: string): string {
@@ -305,19 +319,33 @@ function toneForType(type: AdventureType, name: string, nickname: string) {
     finalPrompt: "Introduce el código de cuatro letras.",
   };
   switch (type) {
+    case "celebration":
+      return {
+        ...shared,
+        tagline: `${name}: una misión para todo el grupo, cada móvil a su ritmo.`,
+        scene1Title: "Convocatoria",
+        scene1Body: `Los datos del evento rodean a ${nickname}: notas, un audio y un candado numérico.`,
+        mood1: "Ambiente festivo y reloj en marcha.",
+        scene2Title: "Sala de señales",
+        scene2Body: `Un token simbólico y pruebas con cámara conectan los datos que compartiste al crear la partida.`,
+        mood2: "Conversaciones y luces de fondo.",
+        scene3Title: "Cierre",
+        scene3Body: `La salida pide el código vinculado al nombre central «${name}».`,
+        mood3: "Últimos minutos: el grupo compite en paralelo.",
+      };
     case "birthday":
       return {
         ...shared,
-        tagline: `Un escape hecho a medida para ${name}.`,
+        tagline: `Homenaje a ${name}: mismo motor, tono más personal.`,
         scene1Title: "Bienvenida",
-        scene1Body: `Todo gira en torno a ${nickname}: en la pared, notas del equipo y un candado que no cederá hasta que recuerdes un año clave.`,
-        mood1: "Confeti en el suelo, música lejana y un temporizador sin piedad.",
-        scene2Title: "Sala de recuerdos",
-        scene2Body: `Entre cajas, alguien dejó un objeto simbólico. Solo encaja en la ranura cuando lo tengas en el inventario.`,
-        mood2: "Olor a tarta y cables viejos: lo sentimental se mezcla con lo eléctrico.",
+        scene1Body: `El relato gira en torno a ${nickname} y a los datos que conocen quienes están aquí.`,
+        mood1: "Música suave y un candado que espera cifras.",
+        scene2Title: "Recuerdos",
+        scene2Body: "Un objeto simbólico encaja cuando lo tienes y completas la prueba de entorno.",
+        mood2: "Mezcla de emotivo y mecánico.",
         scene3Title: "Gran final",
-        scene3Body: `La puerta principal espera un código que solo quien conoce bien a ${nickname} puede intuir.`,
-        mood3: "Aplausos contenidos: queda una última cerradura.",
+        scene3Body: `El último código honra a ${nickname}.`,
+        mood3: "Aplauso contenido antes de la salida.",
       };
     case "mystery":
       return {
@@ -333,12 +361,12 @@ function toneForType(type: AdventureType, name: string, nickname: string) {
         scene3Body: "El culpable no importa ahora: importa el código que abre la salida.",
         mood3: "Luz intermitente, olas contra la roca.",
       };
-  default:
+    case "team":
       return {
         ...shared,
-        tagline: `Misión cooperativa: cada jugador con su cronómetro, misma historia.`,
+        tagline: `Reto «${name}»: competid en paralelo con la misma sala.`,
         scene1Title: "Briefing",
-        scene1Body: `El reto «${name}» empieza con un candado numérico atado a los datos del organizador.`,
+        scene1Body: `El organizador fijó los datos; el candado numérico sale de ahí.`,
         mood1: "Energía de equipo y pizarras llenas de garabatos.",
         scene2Title: "Taller",
         scene2Body: "Recoge el token del equipo y actívalo en la consola central.",
@@ -346,6 +374,20 @@ function toneForType(type: AdventureType, name: string, nickname: string) {
         scene3Title: "Meta",
         scene3Body: "Quien descifre las cuatro letras finales desbloquea la victoria oficial.",
         mood3: "Cuenta atrás audible en cada móvil.",
+      };
+    default:
+      return {
+        ...shared,
+        tagline: `Misión «${name}».`,
+        scene1Title: "Inicio",
+        scene1Body: `Los hechos del evento guían el primer candado.`,
+        mood1: "Tensión suave.",
+        scene2Title: "Taller",
+        scene2Body: "Objeto y prueba sensorial en el entorno.",
+        mood2: "Exploración.",
+        scene3Title: "Meta",
+        scene3Body: "Código final ligado al nombre central.",
+        mood3: "Último empujón.",
       };
   }
 }

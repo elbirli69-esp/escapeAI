@@ -27,7 +27,7 @@ export function ExperienceLobby(props: {
   onEventSession: (sessionId: string) => void;
 }) {
   const [mode, setMode] = useState<LobbyMode>("home");
-  const [adventureType, setAdventureType] = useState<AdventureType>("birthday");
+  const [adventureType, setAdventureType] = useState<AdventureType>("celebration");
   const [playerCount, setPlayerCount] = useState(8);
   const [subjectName, setSubjectName] = useState("");
   const [nickname, setNickname] = useState("");
@@ -93,7 +93,7 @@ export function ExperienceLobby(props: {
         <div className="mode-grid">
           <button type="button" className="room-card-v2" onClick={() => setMode("create")}>
             <strong>Crear experiencia</strong>
-            <span className="meta">Tipo, protagonista, datos → código para invitar</span>
+            <span className="meta">Tipo, nombre central, datos → código para invitar</span>
           </button>
           <button type="button" className="room-card-v2" onClick={() => setMode("join")}>
             <strong>Unirme con código</strong>
@@ -174,19 +174,19 @@ export function ExperienceLobby(props: {
               />
             </label>
             <label>
-              Protagonista (nombre completo)
+              Nombre central (persona, pareja o nombre del evento)
               <input value={subjectName} onChange={(e) => setSubjectName(e.target.value)} required />
             </label>
             <label>
-              Apodo (opcional)
+              Apodo o forma corta (opcional)
               <input value={nickname} onChange={(e) => setNickname(e.target.value)} />
             </label>
             <label>
-              Edad (opcional, para código numérico)
-              <input type="number" min={1} max={120} value={age} onChange={(e) => setAge(e.target.value)} />
+              Cifra clave (opcional: año, aniversario, número interno…)
+              <input type="number" min={1} max={9999} value={age} onChange={(e) => setAge(e.target.value)} />
             </label>
             <label>
-              Datos jugables (uno por línea)
+              Datos jugables (fechas, lugares, frases — uno por línea)
               <textarea rows={4} value={facts} onChange={(e) => setFacts(e.target.value)} required />
             </label>
             <label>

@@ -19,7 +19,7 @@ describe("generateAdventureRoom", () => {
 
   it("genera códigos coherentes con edad y nombre", () => {
     const room = generateAdventureRoom(baseInput, "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
-    expect(room.puzzles.entry_lock.answer).toBe(String(new Date().getFullYear() - 36));
+    expect(room.puzzles.entry_lock.answer).toBe("1815");
     expect(room.puzzles.final_code.answer).toBe("ALAE");
   });
 });

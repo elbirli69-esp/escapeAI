@@ -60,7 +60,7 @@ export function validateCreateEvent(body: CreateEventRequest): string | undefine
   }
   const name = body.subject?.name?.trim();
   if (!name || name.length < 2) {
-    return "Indica el nombre del protagonista.";
+    return "Indica el nombre central (persona, evento o tema).";
   }
   const facts = body.facts?.map((f) => f.trim()).filter(Boolean) ?? [];
   if (facts.length < 1) {

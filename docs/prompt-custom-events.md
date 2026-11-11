@@ -1,6 +1,6 @@
 # Prompt: experiencias personalizadas (eventos multijugador)
 
-Brief ejecutado para cumpleaños y eventos futuros (hasta 20 jugadores).
+Brief para **cualquier ocasión** (fiesta, homenaje, misterio, reto de equipo; hasta 20 jugadores). Ver [product-generic-experiences.md](./product-generic-experiences.md).
 
 ## Objetivo
 
