@@ -129,8 +129,21 @@ export function App() {
     queryKey: ["state", sessionId],
     queryFn: () => fetchState(sessionId!),
     enabled: Boolean(sessionId),
+    retry: (failureCount, error) =>
+      failureCount < 2 && !String(error?.message ?? "").includes("Sesión no encontrada"),
     refetchInterval: (q) => (q.state.data?.status === "playing" ? 15_000 : false),
   });
+
+  function clearSessionAndReturnHome() {
+    localStorage.removeItem("escapeai.sessionId");
+    localStorage.removeItem("escapeai.roomId");
+    localStorage.removeItem("escapeai.eventCode");
+    localStorage.removeItem("escapeai.teamId");
+    setSessionId(null);
+    setNarrator(null);
+    setActionError(null);
+    queryClient.removeQueries({ queryKey: ["state"] });
+  }
 
   const actionMutation = useMutation({
     mutationFn: (action: Parameters<typeof sendAction>[1]) =>
@@ -172,19 +185,47 @@ export function App() {
             : null
         }
         onClassicStart={() => startGame.mutate(selectedRoomId)}
-        onEventSession={(id) => {
+        onEventSession={(id, initialState) => {
+          localStorage.setItem("escapeai.sessionId", id);
           setSessionId(id);
           setNarrator(null);
           setActionError(null);
+          if (initialState) {
+            queryClient.setQueryData(["state", id], initialState);
+          }
         }}
       />
     );
   }
 
-  if (stateQuery.isLoading || !state) {
+  if (stateQuery.isError) {
+    return (
+      <main className="shell lobby">
+        <p className="error">
+          Esta partida ya no está en el servidor (caducó o el navegador guardó un enlace viejo).
+        </p>
+        <button type="button" className="primary wide" onClick={clearSessionAndReturnHome}>
+          Volver al inicio
+        </button>
+      </main>
+    );
+  }
+
+  if (stateQuery.isLoading && !state) {
     return (
       <main className="shell">
         <p className="muted">Cargando sesión…</p>
+      </main>
+    );
+  }
+
+  if (!state) {
+    return (
+      <main className="shell lobby">
+        <p className="muted">Preparando partida…</p>
+        <button type="button" className="ghost wide" onClick={clearSessionAndReturnHome}>
+          Cancelar
+        </button>
       </main>
     );
   }
