@@ -27,8 +27,8 @@ En **Project → Settings → Environment Variables**:
 
 | Variable | Preview + Production | Notas |
 | -------- | -------------------- | ----- |
-| `UPSTASH_REDIS_REST_URL` | **recomendado** | Vercel → Storage → Upstash Redis |
-| `UPSTASH_REDIS_REST_TOKEN` | **recomendado** | Se crea al vincular la base |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | **recomendado** | Consola Upstash o alias manual |
+| `KV_REST_API_URL` / `KV_REST_API_TOKEN` | **recomendado** | Lo que crea **Vercel Storage** al vincular Upstash (sin prefijo) |
 | `SESSION_TTL_SEC` | opcional | Por defecto `172800` (48 h) |
 | `SESSION_DATA_DIR` | solo local | Carpeta JSON en desarrollo |
 | `OPENAI_API_KEY` | opcional | Narración con IA |
