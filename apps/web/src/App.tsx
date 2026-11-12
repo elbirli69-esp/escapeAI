@@ -5,6 +5,7 @@ import { createSession, fetchRooms, fetchState, sendAction } from "./api";
 import { ExperienceLobby } from "./ExperienceLobby";
 import { InteractivePuzzle } from "./InteractivePuzzle";
 import { SceneHero } from "./SceneHero";
+import { SpatialSitePlayMap } from "./SpatialSitePlayMap";
 import { useRoomAmbience } from "./hooks/useRoomAmbience";
 
 function themeClass(theme?: string): string {
@@ -340,6 +341,14 @@ function GameView(props: {
 
       {props.actionError && (
         <FlashBanner message={props.actionError} onDismiss={props.onDismissError} />
+      )}
+
+      {state.spatialSiteMap && <SpatialSitePlayMap map={state.spatialSiteMap} />}
+
+      {state.spatialRoomLabel && !state.spatialSiteMap?.currentSpatialSceneId && (
+        <p className="site-spatial-banner sm" data-testid="escape-spatial-room-label">
+          Estás en: <strong>{state.spatialRoomLabel}</strong>
+        </p>
       )}
 
       <SceneHero

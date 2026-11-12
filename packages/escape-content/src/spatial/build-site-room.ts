@@ -1,4 +1,4 @@
-import type { ScannedEnvironment, ScannedSite, SpatialAdventureProposal } from "@escapeai/shared";
+import type { ScannedEnvironment, ScannedSite, SpatialAdventureProposal, SpatialSiteMapPublic } from "@escapeai/shared";
 import {
   buildAreaQuizPrompt,
   buildNeighborhoodQuizQuestion,
@@ -18,14 +18,12 @@ import {
   derivePlantKeyword,
   deriveQrAnswer,
 } from "./derive-answers.js";
-
-function sceneIdForRoom(roomId: string): string {
-  return `space-${roomId.slice(0, 8)}`;
-}
-
-function bridgePuzzleForLink(linkIndex: number): string {
-  return `site_passage_${linkIndex}`;
-}
+import {
+  bridgePuzzleIdForLink,
+  buildInteriorExits,
+  findSiteLink,
+  sceneIdForInventoryRoom,
+} from "./build-site-links.js";
 
 export function buildSpatialSiteRoom(
   site: ScannedSite,
@@ -43,7 +41,7 @@ export function buildSpatialSiteRoom(
   const puzzles: RoomDefinition["puzzles"] = {};
 
   const geo = site.geoContext;
-  let startSceneId = sceneIdForRoom(ordered[0]!.id);
+  let startSceneId = sceneIdForInventoryRoom(ordered[0]!.id);
 
   if (geo) {
     startSceneId = "site_context";
@@ -59,7 +57,7 @@ export function buildSpatialSiteRoom(
         : ["site_text_geo", "site_local_curiosity"],
       exits: [
         {
-          toSceneId: sceneIdForRoom(ordered[0]!.id),
+          toSceneId: sceneIdForInventoryRoom(ordered[0]!.id),
           label: "Empezar el recorrido interior",
           when: { type: "puzzle_solved", puzzleId: hasGeoAnchor(geo) ? "site_area_geo" : "site_text_geo" },
         },
@@ -119,56 +117,72 @@ export function buildSpatialSiteRoom(
 
   for (let i = 0; i < ordered.length; i++) {
     const env = ordered[i]!;
-    const sid = sceneIdForRoom(env.id);
+    const sid = sceneIdForInventoryRoom(env.id);
     const puzzleIds: string[] = [];
-    const exits: RoomDefinition["scenes"][string]["exits"] = [];
+    let gatePuzzleId = "site_clock";
 
     if (proposal.id === "spatial-site-recorrido") {
       if (i === 0) puzzleIds.push("site_clock");
       if (i === 1) puzzleIds.push("site_book");
-      if (i === 0 && ordered.length > 1) {
-        exits.push({
-          toSceneId: sceneIdForRoom(ordered[1]!.id),
-          label: site.links[0]?.label ?? "Siguiente habitación",
-          when: { type: "puzzle_solved", puzzleId: "site_clock" },
-        });
-      }
+      gatePuzzleId = i === 0 ? "site_clock" : "site_book";
     } else if (proposal.id === "spatial-site-hunt") {
       if (i === 0) puzzleIds.push("site_count");
       if (i === 1 || (i === 0 && ordered.length === 1)) puzzleIds.push("site_plant");
-      if (i === 0 && ordered.length > 1) {
-        exits.push({
-          toSceneId: sceneIdForRoom(ordered[1]!.id),
-          label: site.links[0]?.label ?? "Buscar la planta",
-          when: { type: "puzzle_solved", puzzleId: "site_count" },
-        });
-      }
+      gatePuzzleId = i === 0 ? "site_count" : "site_plant";
     } else if (proposal.id === "spatial-site-urban") {
       if (i === ordered.length - 1) puzzleIds.push("site_urban_qr");
-      if (i < ordered.length - 1) {
-        const link = site.links[i];
-        const bridgeId = bridgePuzzleForLink(i);
-        puzzleIds.push(bridgeId);
-        exits.push({
-          toSceneId: sceneIdForRoom(ordered[i + 1]!.id),
-          label: link?.label ?? "Siguiente estancia",
-          when: { type: "puzzle_solved", puzzleId: bridgeId },
-        });
+      gatePuzzleId = "site_urban_qr";
+      if (site.mapLayout === "linear" && i < ordered.length - 1) {
+        const next = ordered[i + 1]!;
+        const link = findSiteLink(site, env.id, next.id);
+        if (link) {
+          const bridgeId = bridgePuzzleIdForLink(link);
+          puzzleIds.push(bridgeId);
+        }
+      }
+      if (site.mapLayout === "hub" && i === 0) {
+        for (let j = 1; j < ordered.length; j++) {
+          const link = findSiteLink(site, env.id, ordered[j]!.id);
+          if (link) puzzleIds.push(bridgePuzzleIdForLink(link));
+        }
       }
     }
+
+    if (site.mapLayout === "hub" && i === 0 && proposal.id !== "spatial-site-urban") {
+      for (let j = 1; j < ordered.length; j++) {
+        const link = findSiteLink(site, env.id, ordered[j]!.id);
+        if (link) puzzleIds.push(bridgePuzzleIdForLink(link));
+      }
+    }
+
+    const exits =
+      proposal.id === "spatial-site-urban" && site.mapLayout === "linear" && i < ordered.length - 1
+        ? (() => {
+            const next = ordered[i + 1]!;
+            const link = findSiteLink(site, env.id, next.id);
+            const bridgeId = link ? bridgePuzzleIdForLink(link) : "site_passage_fallback";
+            return [
+              {
+                toSceneId: sceneIdForInventoryRoom(next.id),
+                label: link?.label ?? "Siguiente estancia",
+                when: { type: "puzzle_solved" as const, puzzleId: bridgeId },
+              },
+            ];
+          })()
+        : buildInteriorExits(site, ordered, i, gatePuzzleId);
 
     scenes[sid] = {
       id: sid,
       title: env.name,
-      description: `Escena generada del inventario «${env.name}».`,
+      description: `Muévete en el espacio real: estás jugando en «${env.name}».`,
       image: "/media/pilot-entrance.jpg",
       mood: env.environmentType,
-      puzzles: puzzleIds,
+      puzzles: [...new Set(puzzleIds)],
       exits,
     };
   }
 
-  const hubScene = sceneIdForRoom(ordered[ordered.length - 1]!.id);
+  const hubScene = sceneIdForInventoryRoom(ordered[ordered.length - 1]!.id);
   scenes[hubScene]!.exits = [
     ...(scenes[hubScene]!.exits ?? []),
     {
@@ -250,19 +264,19 @@ export function buildSpatialSiteRoom(
     normalize: "uppercase",
   };
 
-  site.links.forEach((link, i) => {
-    const bridgeId = bridgePuzzleForLink(i);
+  for (const link of site.links) {
+    const bridgeId = bridgePuzzleIdForLink(link);
     if (!puzzles[bridgeId]) {
       puzzles[bridgeId] = {
         id: bridgeId,
         type: "code",
         label: link.label,
-        prompt: `Confirma que cruzaste: ${link.label} (texto SITE-${link.id.slice(0, 4).toUpperCase()}).`,
+        prompt: `Confirma el pasaje «${link.label}» (código SITE-${link.id.slice(0, 4).toUpperCase()} en la puerta o QR).`,
         answer: `SITE-${link.id.slice(0, 4).toUpperCase()}`,
         normalize: "uppercase",
       };
     }
-  });
+  }
 
   puzzles.site_finale = {
     id: "site_finale",
@@ -280,6 +294,17 @@ export function buildSpatialSiteRoom(
     };
   }
 
+  const spatialSiteMap: SpatialSiteMapPublic = {
+    siteName: site.name,
+    mapLayout: site.mapLayout,
+    rooms: ordered.map((env) => ({
+      inventoryId: env.id,
+      sceneId: sceneIdForInventoryRoom(env.id),
+      label: env.name,
+    })),
+    links: site.links,
+  };
+
   return {
     id: roomId,
     name: proposal.title,
@@ -291,6 +316,7 @@ export function buildSpatialSiteRoom(
     winCondition: { type: "puzzle_solved", puzzleId: "site_finale" },
     scenes,
     puzzles,
+    spatialSiteMap,
     items: {
       site_map: {
         name: `Mapa de ${site.name}`,

@@ -7,6 +7,7 @@ import type {
   ScannedEnvironment,
   ScannedEnvironmentSummary,
   ScannedSite,
+  ScannedSiteSummary,
 } from "@escapeai/shared";
 import {
   ENVIRONMENT_TYPES,
@@ -24,6 +25,7 @@ import type { EventPreview } from "@escapeai/shared";
 import {
   fetchScannedEnvironment,
   listScannedEnvironments,
+  listScannedSites,
   saveScannedEnvironment,
 } from "../api";
 import { SiteAdventurePicker } from "./SiteAdventurePicker";
@@ -44,7 +46,8 @@ type Step =
   | "load"
   | "site_builder"
   | "site_done"
-  | "site_adventures";
+  | "site_adventures"
+  | "site_load";
 
 type CaptureBatch = {
   captureId: string;
@@ -84,6 +87,8 @@ export function ScannerFlow(props: { onBack: () => void }) {
   const [loadId, setLoadId] = useState("");
   const [eventPreview, setEventPreview] = useState<EventPreview | null>(null);
   const [savedSite, setSavedSite] = useState<ScannedSite | null>(null);
+  const [siteList, setSiteList] = useState<ScannedSiteSummary[]>([]);
+  const [editSiteId, setEditSiteId] = useState<string | undefined>();
 
   const webcamRef = useRef<Webcam>(null);
   const capability = useMemo(() => getScannerCapability(), []);
@@ -313,8 +318,23 @@ export function ScannerFlow(props: { onBack: () => void }) {
             <button type="button" className="ghost" onClick={() => void loadSavedList()} disabled={busy}>
               Recuperar inventario
             </button>
-            <button type="button" className="ghost" onClick={() => setStep("site_builder")} disabled={busy}>
+            <button type="button" className="ghost" onClick={() => { setEditSiteId(undefined); setStep("site_builder"); }} disabled={busy}>
               Recinto multi-habitación
+            </button>
+            <button
+              type="button"
+              className="ghost"
+              disabled={busy}
+              onClick={() => {
+                void listScannedSites()
+                  .then((items) => {
+                    setSiteList(items);
+                    setStep("site_load");
+                  })
+                  .catch((e) => setError(e instanceof Error ? e.message : "Error"));
+              }}
+            >
+              Recintos guardados
             </button>
           </div>
         </form>
@@ -497,12 +517,39 @@ export function ScannerFlow(props: { onBack: () => void }) {
         </section>
       )}
 
+      {step === "site_load" && (
+        <section data-testid="escape-site-load">
+          <h2>Recintos guardados</h2>
+          <ul className="scanner-saved-list">
+            {siteList.map((s) => (
+              <li key={s.id}>
+                <button
+                  type="button"
+                  className="ghost"
+                  onClick={() => {
+                    setEditSiteId(s.id);
+                    setStep("site_builder");
+                  }}
+                >
+                  {s.name} — {s.roomCount} hab. {s.city ? `· ${s.city}` : ""}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <button type="button" className="ghost" onClick={() => setStep("choose")}>
+            Volver
+          </button>
+        </section>
+      )}
+
       {step === "site_builder" && (
         <SiteBuilder
           seedRoom={saved ?? undefined}
-          onBack={() => setStep(saved ? "done" : "choose")}
+          existingSiteId={editSiteId}
+          onBack={() => setStep(editSiteId ? "site_load" : saved ? "done" : "choose")}
           onSaved={(site) => {
             setSavedSite(site);
+            setEditSiteId(undefined);
             setStep("site_done");
           }}
         />

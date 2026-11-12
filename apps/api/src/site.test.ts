@@ -61,5 +61,6 @@ describe("scanned site flow", () => {
     expect(geoPuzzle?.locationMode).toBe("quiz");
     expect(geoPuzzle!.radiusMeters!).toBeGreaterThan(1000);
     expect(room.startSceneId).toBe("site_context");
+    expect(room.spatialSiteMap?.siteName).toBe("Piso demo");
   });
 });

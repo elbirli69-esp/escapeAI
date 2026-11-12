@@ -1013,6 +1013,29 @@ button {
   background: rgba(217, 119, 6, 0.1);
 }
 
+.site-map-node--active {
+  outline: 3px solid #22c55e;
+  outline-offset: 2px;
+}
+
+.site-map-edge-static {
+  font-size: 0.75rem;
+  text-align: center;
+  max-width: 5rem;
+}
+
+.site-spatial-banner {
+  margin: 0.5rem 0 1rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--panel-border);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.site-spatial-banner strong {
+  font-weight: 700;
+}
+
 .site-map-node-index {
   display: block;
   font-size: 0.7rem;
