@@ -89,7 +89,7 @@ export function ExperienceLobby(props: {
 
   if (mode === "home") {
     return (
-      <main className="shell lobby">
+      <main className="shell lobby" data-testid="escape-lobby-home">
         <header className="lobby-hero">
           <p className="eyebrow">escapeAI</p>
           <h1 className="display">Tu escape, a tu medida</h1>
@@ -111,7 +111,12 @@ export function ExperienceLobby(props: {
             <strong>Panel organizador</strong>
             <span className="meta">Ranking en vivo para TV o proyector</span>
           </button>
-          <button type="button" className="room-card-v2" onClick={() => setMode("catalog")}>
+          <button
+            type="button"
+            className="room-card-v2"
+            data-testid="escape-mode-catalog"
+            onClick={() => setMode("catalog")}
+          >
             <strong>Catálogo clásico</strong>
             <span className="meta">Pilot, Faro y demás salas YAML</span>
           </button>
@@ -217,14 +222,21 @@ export function ExperienceLobby(props: {
               Título del evento (opcional)
               <input value={eventTitle} onChange={(e) => setEventTitle(e.target.value)} />
             </label>
-            <button type="submit" className="primary wide" disabled={createMutation.isPending}>
+            <button
+              type="submit"
+              className="primary wide"
+              data-testid="escape-event-create-submit"
+              disabled={createMutation.isPending}
+            >
               {createMutation.isPending ? "Generando sala…" : "Generar y obtener código"}
             </button>
           </form>
         ) : (
           <div className="join-card">
             <p className="eyebrow">Código para compartir</p>
-            <p className="join-code">{created.joinCode}</p>
+            <p className="join-code" data-testid="escape-join-code-display">
+              {created.joinCode}
+            </p>
             <p>
               <strong>{created.title}</strong> · {created.sceneCount} escenas ·{" "}
               {Math.round(created.timeLimitSec / 60)} min · {created.teamCount} equipos
@@ -316,6 +328,7 @@ export function ExperienceLobby(props: {
           <label>
             Código del evento
             <input
+              data-testid="escape-join-code-input"
               value={joinCode || created?.joinCode || ""}
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
               placeholder="ABCDEF"
@@ -354,6 +367,7 @@ export function ExperienceLobby(props: {
             <button
               type="button"
               className={room.id === props.selectedRoomId ? "room-card-v2 active" : "room-card-v2"}
+              data-testid={`escape-room-${room.id}`}
               onClick={() => props.onSelectRoom(room.id)}
             >
               <div className="room-card-copy">
@@ -367,6 +381,7 @@ export function ExperienceLobby(props: {
       <button
         type="button"
         className="primary wide"
+        data-testid="escape-start-classic"
         disabled={props.classicBusy}
         onClick={props.onClassicStart}
       >
