@@ -41,8 +41,10 @@ puzzles:
     id: visual_station
     type: visual
     label: Enigma visual
-    prompt: Observa la fotografía. ¿Cuántas puertas rojas ves? (número)
+    visualLayout: dual
+    prompt: Desliza el separador entre imágenes. ¿Cuántas puertas rojas en la de la izquierda? (número)
     pexelsQuery: red doors building
+    pexelsQueryB: red brick wall doors
     answer: "3"
     normalize: trim
     maxHints: 1
@@ -52,17 +54,17 @@ puzzles:
   camera_station:
     id: camera_station
     type: camera
-    label: Búsqueda real
-    cameraMode: keyword
-    cameraPrompt: Fotografía algo redondo de tu entorno (una taza, un reloj…).
-    prompt: Tras la foto, escribe en MAYÚSCULAS un objeto redondo que hayas capturado.
-    answer: TAZA
-    cameraSynonyms: [TAZÓN, PLATO, BOL]
-    normalize: uppercase
+    label: Lectura con OCR
+    cameraMode: ocr_hint
+    ocrLang: spa+eng
+    cameraPrompt: Fotografía un texto impreso (etiqueta, libro, pantalla). El OCR solo da pista en tu móvil.
+    prompt: Escribe la primera cifra que veas (en demo, 7 si no hay texto claro).
+    answer: "7"
+    normalize: trim
     maxHints: 1
     hints:
       - level: 1
-        text: Cualquier palabra válida en mayúsculas sirve en demo; en eventos se personaliza.
+        text: El OCR es solo ayuda; en demo puedes escribir 7 directamente.
   voice_finale:
     id: voice_finale
     type: voice
@@ -72,6 +74,7 @@ puzzles:
     normalize: lowercase
     voiceMatchMode: fuzzy
     allowTextFallback: true
+    voiceOffline: true
     voiceLocale: es-ES
     maxHints: 1
     hints:

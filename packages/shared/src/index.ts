@@ -97,6 +97,12 @@ export type PublicPuzzle = {
   voiceLocale?: string;
   voiceMatchMode?: VoiceMatchMode;
   allowTextFallback?: boolean;
+  /** Permite botón de reconocimiento offline (Vosk) además de Web Speech. */
+  voiceOffline?: boolean;
+  /** URL del modelo Vosk (.tar.gz); opcional. */
+  voskModelUrl?: string;
+  /** Idiomas Tesseract (p. ej. spa+eng). */
+  ocrLang?: string;
   interactionHints?: string[];
 };
 

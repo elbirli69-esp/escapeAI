@@ -467,6 +467,9 @@ export function toPublicState(session: SessionRecord, nowMs = Date.now()): Publi
         voiceLocale: puzzle.voiceLocale,
         voiceMatchMode: puzzle.voiceMatchMode,
         allowTextFallback: puzzle.allowTextFallback,
+        voiceOffline: puzzle.voiceOffline,
+        voskModelUrl: puzzle.voskModelUrl,
+        ocrLang: puzzle.ocrLang,
         interactionHints: puzzle.interactionHints,
       };
     }),

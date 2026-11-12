@@ -10,7 +10,9 @@ Catálogo de proyectos **compatibles con nuestro stack** (React 18, Vite PWA, Ho
 | Howler.js | Integrado |
 | react-webcam / react-zoom-pan-pinch | Integrado |
 | Fuzzy / sinónimos | `packages/shared/src/answer-match.ts` (sin npm `fastest-levenshtein`) |
-| tesseract.js / vosk-browser | **Pendiente P1** |
+| tesseract.js (lazy OCR) | `import()` en captura; pista local |
+| vosk-browser (lazy STT) | Botón «Modo offline»; chunk ~6 MB no precacheado |
+| react-compare-image | `visualLayout: dual` en lab |
 
 **Bundle (build producción web):** entry ~308 kB (~94 kB gzip) + chunk Tone ~229 kB al reproducir beeps.
 

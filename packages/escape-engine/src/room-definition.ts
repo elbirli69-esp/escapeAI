@@ -33,6 +33,9 @@ export type RoomPuzzle = {
   voiceLocale?: string;
   voiceMatchMode?: "exact" | "fuzzy" | "digits";
   allowTextFallback?: boolean;
+  voiceOffline?: boolean;
+  voskModelUrl?: string;
+  ocrLang?: string;
   visualLayout?: "single" | "dual";
   pexelsQueryB?: string;
   interactionHints?: string[];

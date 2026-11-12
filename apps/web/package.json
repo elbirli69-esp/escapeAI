@@ -15,10 +15,13 @@
     "@tanstack/react-query": "^5.59.0",
     "howler": "^2.2.4",
     "react": "^18.3.1",
+    "react-compare-image": "^3.5.23",
     "react-dom": "^18.3.1",
     "react-webcam": "^7.2.0",
     "react-zoom-pan-pinch": "^4.2.0",
-    "tone": "^15.1.22"
+    "tesseract.js": "^7.0.0",
+    "tone": "^15.1.22",
+    "vosk-browser": "^0.0.8"
   },
   "devDependencies": {
     "@types/howler": "^2.2.13",
