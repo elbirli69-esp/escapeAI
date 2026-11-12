@@ -220,6 +220,34 @@ export {
   type NormalizeMode,
   type VoiceMatchMode,
 } from "./answer-match.js";
+export type {
+  DetectedObject,
+  EnvironmentConstraints,
+  EnvironmentType,
+  EscapeObjectCategory,
+  RelativePosition,
+  RoomZone,
+  SaveScannedEnvironmentRequest,
+  ScanMetadata,
+  ScannedEnvironment,
+  ScannedEnvironmentSummary,
+} from "./scanner.js";
+export {
+  defaultEnvironmentConstraints,
+  ENVIRONMENT_TYPES,
+  OBJECT_CATEGORIES,
+  SCANNER_DETECTOR_ID,
+} from "./scanner.js";
+export { sanitizeScannedEnvironmentInput, toScannedEnvironmentSummary } from "./scanner-sanitize.js";
+export type { SanitizeScannerResult } from "./scanner-sanitize.js";
+export {
+  bboxToZone,
+  defaultLabelForCategory,
+  mapCocoLabelToCategory,
+  type RawDetection,
+} from "./scanner-taxonomy.js";
+export { categoryDisplayName, fuseDetectionsIntoObjects, mergeObjectLists } from "./scanner-fusion.js";
+export { mapCameraError, mapDetectorLoadError, type ScannerCapability } from "./scanner-errors.js";
 export {
   haversineDistanceMeters,
   isValidGeoCoordinates,

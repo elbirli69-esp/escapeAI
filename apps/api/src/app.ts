@@ -9,6 +9,8 @@ import type { CreateSessionRequest, GameAction, GameEvent } from "@escapeai/shar
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { createEventStore } from "./event-store.js";
+import { createScannedEnvironmentStore } from "./scanned-environment-store.js";
+import { mountScannerRoutes } from "./scanner-routes.js";
 import { mountEventRoutes, startEventSession, syncPlayerStatusFromSession } from "./events-routes.js";
 import { mountMediaRoutes } from "./media-routes.js";
 import { resolveLlmConfig } from "./llm-config.js";
@@ -34,6 +36,7 @@ export function getDefaultCorsOrigins(): string[] {
 export async function createApp(store?: SessionStore): Promise<Hono> {
   const sessionStore = store ?? (await createSessionStore());
   const eventStore = await createEventStore();
+  const scannedStore = await createScannedEnvironmentStore();
   const app = new Hono().basePath("/api");
 
   app.use("*", cors({ origin: getDefaultCorsOrigins() }));
@@ -53,6 +56,7 @@ export async function createApp(store?: SessionStore): Promise<Hono> {
   });
 
   mountEventRoutes(app, eventStore);
+  mountScannerRoutes(app, scannedStore);
   mountMediaRoutes(app);
 
   app.get("/rooms", (c) => {

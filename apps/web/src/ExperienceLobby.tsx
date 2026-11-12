@@ -6,7 +6,7 @@ import type {
   PublicState,
 } from "@escapeai/shared";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import type { EventDurationMin } from "@escapeai/shared";
 import {
   createCustomEvent,
@@ -19,8 +19,11 @@ import { EventJoinQr } from "./EventJoinQr";
 import { EventOrganizerBoard } from "./EventOrganizerBoard";
 import { formatRoomDuration, VisualCard } from "./VisualCard";
 import { readJoinCodeFromLocation, stripJoinParamFromUrl } from "./lib/event-join-url";
+const ScannerFlow = lazy(() =>
+  import("./scanner/ScannerFlow").then((m) => ({ default: m.ScannerFlow })),
+);
 
-type LobbyMode = "home" | "create" | "join" | "organizer" | "catalog";
+type LobbyMode = "home" | "create" | "join" | "organizer" | "catalog" | "scan";
 
 const HOME_MODES: Array<{
   mode: LobbyMode;
@@ -29,6 +32,13 @@ const HOME_MODES: Array<{
   image: string;
   imageAlt: string;
 }> = [
+  {
+    mode: "scan",
+    title: "Escanear espacio",
+    description: "ScannerAI: inventario local sin subir fotos",
+    image: "/media/pilot-basement.jpg",
+    imageAlt: "Habitación con objetos para escanear",
+  },
   {
     mode: "create",
     title: "Crear experiencia",
@@ -142,6 +152,14 @@ export function ExperienceLobby(props: {
     }
   }
 
+  if (mode === "scan") {
+    return (
+      <Suspense fallback={<main className="shell lobby"><p className="muted">Cargando escáner…</p></main>}>
+        <ScannerFlow onBack={() => setMode("home")} />
+      </Suspense>
+    );
+  }
+
   if (mode === "home") {
     return (
       <main className="shell lobby" data-testid="escape-lobby-home">
@@ -167,7 +185,9 @@ export function ExperienceLobby(props: {
                   ? "escape-mode-catalog"
                   : card.mode === "create"
                     ? "escape-mode-create"
-                    : card.mode === "join"
+                    : card.mode === "scan"
+                      ? "escape-mode-scan"
+                      : card.mode === "join"
                       ? "escape-mode-join"
                       : card.mode === "organizer"
                         ? "escape-mode-organizer"
