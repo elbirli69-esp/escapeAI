@@ -1,7 +1,5 @@
 import { expect, type Page } from "@playwright/test";
 
-const API = "http://127.0.0.1:8787/api";
-
 export async function clearGameStorage(page: Page): Promise<void> {
   await page.goto("/");
   await page.evaluate(() => {
@@ -46,19 +44,4 @@ export async function expectWon(page: Page): Promise<void> {
   await expect(page.getByTestId("escape-game-status")).toHaveAttribute("data-status", "won", {
     timeout: 30_000,
   });
-}
-
-export async function postAction(
-  page: Page,
-  action: Record<string, unknown>,
-): Promise<void> {
-  const sessionId = await page.evaluate(() => localStorage.getItem("escapeai.sessionId"));
-  if (!sessionId) throw new Error("No sessionId in localStorage");
-  const res = await page.request.post(`${API}/sessions/${sessionId}/actions`, {
-    data: action,
-  });
-  expect(res.ok()).toBeTruthy();
-  const puzzleId = String(action.puzzleId);
-  await page.reload();
-  await page.getByTestId(`escape-puzzle-tab-${puzzleId}`).waitFor({ timeout: 15_000 });
 }

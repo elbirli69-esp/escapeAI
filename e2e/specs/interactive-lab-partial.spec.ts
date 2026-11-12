@@ -1,22 +1,24 @@
-import { test } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import {
   clearGameStorage,
   expectNoFlashError,
   expectWon,
-  postAction,
   selectPuzzle,
   startClassicRoom,
   submitAnswer,
 } from "../fixtures/game.js";
+import { captureCameraThroughUi, mockCameraForPlaywright } from "../fixtures/media-mock.js";
 import { stubMediaRoutes } from "../fixtures/routes.js";
 
 test.describe("interactive-lab", () => {
   test.beforeEach(async ({ page }) => {
     await clearGameStorage(page);
     await stubMediaRoutes(page);
+    await mockCameraForPlaywright(page);
   });
 
-  test("sonido, visual, cámara (API), voz texto", async ({ page }) => {
+  test("sonido, visual, cámara y voz por la UI", async ({ page }) => {
+    test.setTimeout(120_000);
     await startClassicRoom(page, "interactive-lab");
 
     await selectPuzzle(page, "sound_station");
@@ -26,20 +28,17 @@ test.describe("interactive-lab", () => {
     await expectNoFlashError(page);
 
     await selectPuzzle(page, "visual_station");
-    await page.getByRole("button", { name: "He estudiado la imagen" }).waitFor({
-      timeout: 15_000,
-    });
-    await page.getByRole("button", { name: "He estudiado la imagen" }).click();
+    const viewBtn = page.getByRole("button", { name: "He estudiado la imagen" });
+    await expect(viewBtn).toBeEnabled({ timeout: 15_000 });
+    await viewBtn.click();
     await submitAnswer(page, "3");
     await expectNoFlashError(page);
 
     await selectPuzzle(page, "camera_station");
-    await postAction(page, {
-      type: "complete_interaction",
-      puzzleId: "camera_station",
-      step: "capture",
+    await captureCameraThroughUi(page);
+    await expect(page.getByTestId("escape-camera-station")).toHaveAttribute("data-done", "true", {
+      timeout: 15_000,
     });
-    await selectPuzzle(page, "camera_station");
     await submitAnswer(page, "7");
     await expectNoFlashError(page);
 

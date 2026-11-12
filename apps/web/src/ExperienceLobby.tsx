@@ -42,6 +42,9 @@ export function ExperienceLobby(props: {
   const [joinCode, setJoinCode] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  /** Código activo del panel organizador (solo tras enviar el formulario). */
+  const [organizerBoardCode, setOrganizerBoardCode] = useState<string | null>(null);
+  const [organizerDraft, setOrganizerDraft] = useState("");
 
   const templatesQuery = useQuery({
     queryKey: ["adventures"],
@@ -107,7 +110,15 @@ export function ExperienceLobby(props: {
             <strong>Entrar como equipo</strong>
             <span className="meta">Código del organizador + nombre del equipo</span>
           </button>
-          <button type="button" className="room-card-v2" onClick={() => setMode("organizer")}>
+          <button
+            type="button"
+            className="room-card-v2"
+            onClick={() => {
+              setOrganizerBoardCode(null);
+              setOrganizerDraft("");
+              setMode("organizer");
+            }}
+          >
             <strong>Panel organizador</strong>
             <span className="meta">Ranking en vivo para TV o proyector</span>
           </button>
@@ -249,6 +260,7 @@ export function ExperienceLobby(props: {
               className="primary wide"
               onClick={() => {
                 setJoinCode(created.joinCode);
+                setOrganizerBoardCode(created.joinCode);
                 setMode("organizer");
               }}
             >
@@ -271,7 +283,7 @@ export function ExperienceLobby(props: {
   }
 
   if (mode === "organizer") {
-    const code = created?.joinCode || joinCode;
+    const code = organizerBoardCode;
     return (
       <>
         {!code ? (
@@ -284,15 +296,17 @@ export function ExperienceLobby(props: {
               className="wizard"
               onSubmit={(e) => {
                 e.preventDefault();
-                setJoinCode(joinCode.toUpperCase());
+                const next = organizerDraft.trim().toUpperCase();
+                if (!next) return;
+                setOrganizerBoardCode(next);
               }}
             >
               <label>
                 Código del evento
                 <input
                   data-testid="escape-organizer-code-input"
-                  value={joinCode}
-                  onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                  value={organizerDraft}
+                  onChange={(e) => setOrganizerDraft(e.target.value.toUpperCase())}
                   required
                 />
               </label>
@@ -302,7 +316,14 @@ export function ExperienceLobby(props: {
             </form>
           </main>
         ) : (
-          <EventOrganizerBoard joinCode={code} onBack={() => setMode("home")} />
+          <EventOrganizerBoard
+            joinCode={code}
+            onBack={() => {
+              setOrganizerBoardCode(null);
+              setOrganizerDraft("");
+              setMode("home");
+            }}
+          />
         )}
       </>
     );
