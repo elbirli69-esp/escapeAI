@@ -139,6 +139,7 @@ function ClassicPuzzleForm(props: {
         }}
       >
         <input
+          data-testid="escape-answer-input"
           value={props.answer}
           onChange={(e) => props.onAnswerChange(e.target.value)}
           placeholder={props.answerPlaceholder ?? "Tu respuesta"}
@@ -148,7 +149,8 @@ function ClassicPuzzleForm(props: {
         <button
           type="submit"
           className="primary"
-          disabled={props.busy || props.submitDisabled}
+          data-testid="escape-submit-answer"
+          disabled={props.busy || props.submitDisabled || !props.answer.trim()}
         >
           Enviar
         </button>
