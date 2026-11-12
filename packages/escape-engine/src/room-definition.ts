@@ -66,6 +66,18 @@ export type RoomPuzzle = {
   quizPrompt?: string;
 };
 
+export type RoomCharacter = {
+  id: string;
+  displayName: string;
+  voiceTone?: string;
+  backstoryPublic?: string;
+  /** Hechos que el GM/LLM puede usar (nunca soluciones crudas). */
+  authorizedKnowledge?: string[];
+  forbiddenTopics?: string[];
+  fallbackLines?: string[];
+  greeting?: string;
+};
+
 export type RoomScene = {
   id: string;
   title: string;
@@ -75,6 +87,7 @@ export type RoomScene = {
   mood?: string;
   puzzles?: string[];
   items?: string[];
+  characters?: string[];
   exits?: Array<{
     toSceneId: string;
     label: string;
@@ -100,6 +113,7 @@ export type RoomDefinition = {
   items?: Record<string, RoomItem>;
   scenes: Record<string, RoomScene>;
   puzzles: Record<string, RoomPuzzle>;
+  characters?: Record<string, RoomCharacter>;
   /** Mapa esquemático de recinto ScannerAI (partidas multi-habitación). */
   spatialSiteMap?: import("@escapeai/shared").SpatialSiteMapPublic;
 };

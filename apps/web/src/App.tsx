@@ -277,7 +277,12 @@ export function App() {
   );
 }
 
-type DiaryLine = { key: string; text: string; kind: "engine" | "gamemaster" };
+type DiaryLine = {
+  key: string;
+  text: string;
+  kind: "engine" | "gamemaster";
+  channel?: NarrativeIntervention["kind"];
+};
 
 function buildDiaryTimeline(
   engine: string[],
@@ -290,8 +295,78 @@ function buildDiaryTimeline(
   }));
   const gmLines: DiaryLine[] = [...gm]
     .sort((a, b) => a.sequence - b.sequence || a.createdAt - b.createdAt)
-    .map((g) => ({ key: g.id, text: g.text, kind: "gamemaster" }));
+    .map((g) => ({
+      key: g.id,
+      text: g.text,
+      kind: "gamemaster" as const,
+      channel: g.kind,
+    }));
   return [...engineLines, ...gmLines];
+}
+
+function CharacterChat(props: {
+  characters: NonNullable<PublicState["sceneCharacters"]>;
+  busy: boolean;
+  onSend: (characterId: string, message: string) => void;
+}) {
+  const [characterId, setCharacterId] = useState(props.characters[0]?.id ?? "");
+  const [message, setMessage] = useState("");
+  const active = props.characters.find((c) => c.id === characterId) ?? props.characters[0];
+
+  useEffect(() => {
+    if (!props.characters.some((c) => c.id === characterId)) {
+      setCharacterId(props.characters[0]?.id ?? "");
+    }
+  }, [props.characters, characterId]);
+
+  return (
+    <section className="panel glass" data-testid="escape-character-chat">
+      <h2>Hablar</h2>
+      {props.characters.length > 1 && (
+        <div className="puzzle-tabs" role="tablist" aria-label="Personajes">
+          {props.characters.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              className={c.id === characterId ? "tab active" : "tab"}
+              onClick={() => setCharacterId(c.id)}
+            >
+              {c.displayName}
+            </button>
+          ))}
+        </div>
+      )}
+      {active?.greeting && <p className="sm character-greeting">{active.greeting}</p>}
+      <form
+        className="character-chat-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const trimmed = message.trim();
+          if (!trimmed || !characterId) return;
+          props.onSend(characterId, trimmed);
+          setMessage("");
+        }}
+      >
+        <label className="sr-only" htmlFor="character-message">
+          Mensaje para {active?.displayName}
+        </label>
+        <input
+          id="character-message"
+          type="text"
+          className="character-input"
+          data-testid="escape-character-input"
+          placeholder={`Pregunta a ${active?.displayName ?? "…"}`}
+          value={message}
+          disabled={props.busy}
+          maxLength={280}
+          onChange={(e) => setMessage(e.target.value)}
+        />
+        <button type="submit" className="chip chip-action" disabled={props.busy || !message.trim()}>
+          Enviar
+        </button>
+      </form>
+    </section>
+  );
 }
 
 function GameView(props: {
@@ -410,6 +485,16 @@ function GameView(props: {
 
       <p className="scene prose">{state.sceneDescription}</p>
 
+      {(state.sceneCharacters?.length ?? 0) > 0 && (
+        <CharacterChat
+          characters={state.sceneCharacters!}
+          busy={props.busy}
+          onSend={(characterId, message) =>
+            props.onAction({ type: "talk_to_character", characterId, message })
+          }
+        />
+      )}
+
       <section className="panel glass">
         <h2>Diario de campo</h2>
         <ul className="log" data-testid="escape-narrative-log">
@@ -419,7 +504,11 @@ function GameView(props: {
               className={line.kind === "gamemaster" ? "log-gm" : "log-engine"}
               data-testid={line.kind === "gamemaster" ? "escape-gm-line" : undefined}
             >
-              {line.kind === "gamemaster" && <span className="log-tag">Director</span>}
+              {line.kind === "gamemaster" && (
+                <span className="log-tag">
+                  {line.channel === "character" ? "Personaje" : "Director"}
+                </span>
+              )}
               {line.text}
             </li>
           ))}

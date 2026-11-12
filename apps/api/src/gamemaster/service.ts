@@ -6,6 +6,7 @@ import type {
   NarrativeIntervention,
 } from "@escapeai/shared";
 import { randomUUID } from "node:crypto";
+import { buildGmViewContextForCharacter } from "./characters.js";
 import { buildGmViewContext, buildGmViewContextForHint, collectForbiddenAnswerTokens } from "./context.js";
 import { staticInterventionText } from "./fallbacks.js";
 import { hintSpoilerLevel } from "./hints.js";
@@ -27,6 +28,8 @@ import { validateIntervention } from "./validation.js";
 
 const MAX_LLM_PER_SESSION = Number(process.env.GM_MAX_LLM_CALLS ?? 40);
 const LLM_COOLDOWN_MS = Number(process.env.GM_LLM_COOLDOWN_MS ?? 3000);
+const MAX_CHARACTER_LLM = Number(process.env.GM_MAX_CHARACTER_LLM ?? 30);
+const CHARACTER_COOLDOWN_MS = Number(process.env.GM_CHARACTER_COOLDOWN_MS ?? 2000);
 
 export class GameMasterService {
   constructor(private readonly store: GmInterventionStore) {}
@@ -125,6 +128,11 @@ export class GameMasterService {
         meta = markStuckNotified(meta, puzzleId);
         await this.store.saveMeta(session.sessionId, meta);
       }
+      if (trigger.type === "CHARACTER_TURN") {
+        meta.characterTurnCount += 1;
+        meta.lastCharacterTurnMs = Date.now();
+        await this.store.saveMeta(session.sessionId, meta);
+      }
     }
 
     return created;
@@ -139,7 +147,13 @@ export class GameMasterService {
     forbidden: string[],
     policy: string,
   ): Promise<NarrativeIntervention | null> {
-    const dedupe = `${trigger.type}:${trigger.payload?.puzzleId ?? trigger.payload?.sceneId ?? trigger.payload?.itemId ?? trigger.sourceEventId}`;
+    const dedupe = `${trigger.type}:${
+      trigger.payload?.puzzleId ??
+      trigger.payload?.sceneId ??
+      trigger.payload?.itemId ??
+      trigger.payload?.characterId ??
+      trigger.sourceEventId
+    }`;
     if (recentInterventions.some((i) => i.meta.trigger === dedupe)) {
       return null;
     }
@@ -159,29 +173,45 @@ export class GameMasterService {
     }
 
     const now = Date.now();
+    const characterBudgetOk =
+      trigger.type !== "CHARACTER_TURN" || meta.characterTurnCount < MAX_CHARACTER_LLM;
+    const characterCooldownOk =
+      trigger.type !== "CHARACTER_TURN" || now - meta.lastCharacterTurnMs >= CHARACTER_COOLDOWN_MS;
+
     const canLlm =
       policy === "llm_optional" &&
       meta.llmCallCount < MAX_LLM_PER_SESSION &&
-      now - meta.lastLlmCallMs >= LLM_COOLDOWN_MS;
+      now - meta.lastLlmCallMs >= LLM_COOLDOWN_MS &&
+      characterBudgetOk &&
+      characterCooldownOk;
 
     if (canLlm) {
       const ctx =
-        trigger.type === "HINT_GRANTED" && trigger.payload?.puzzleId
-          ? buildGmViewContextForHint(
+        trigger.type === "CHARACTER_TURN" && trigger.payload?.characterId
+          ? buildGmViewContextForCharacter(
               session,
-              String(trigger.payload.puzzleId),
-              Number(trigger.payload.level ?? 1),
+              String(trigger.payload.characterId),
+              String(trigger.payload.message ?? ""),
               recentInterventions,
               meta.visitedSceneIds,
               recentAuthorizedEvents,
             )
-          : buildGmViewContext(
-              session,
-              recentInterventions,
-              meta.visitedSceneIds,
-              recentAuthorizedEvents,
-            );
-      if (!ctx && trigger.type === "HINT_GRANTED") {
+          : trigger.type === "HINT_GRANTED" && trigger.payload?.puzzleId
+            ? buildGmViewContextForHint(
+                session,
+                String(trigger.payload.puzzleId),
+                Number(trigger.payload.level ?? 1),
+                recentInterventions,
+                meta.visitedSceneIds,
+                recentAuthorizedEvents,
+              )
+            : buildGmViewContext(
+                session,
+                recentInterventions,
+                meta.visitedSceneIds,
+                recentAuthorizedEvents,
+              );
+      if (!ctx && (trigger.type === "HINT_GRANTED" || trigger.type === "CHARACTER_TURN")) {
         return null;
       }
       const llm = await generateNarrationLlmWithRetry(ctx!, trigger.type);
@@ -230,6 +260,10 @@ export class GameMasterService {
     }
 
     const teamId = session.playerContext?.playerId;
+    const characterId =
+      trigger.type === "CHARACTER_TURN" && trigger.payload?.characterId
+        ? String(trigger.payload.characterId)
+        : undefined;
 
     const presentation: NarrativeIntervention["presentation"] =
       trigger.type === "TIME_WARNING" || trigger.type === "TEAM_STUCK" ? "banner" : "inline";
@@ -240,6 +274,7 @@ export class GameMasterService {
       teamId,
       sourceEventId: trigger.sourceEventId,
       kind: staticPack.kind,
+      characterId,
       text,
       spoilerLevel,
       clueRefs,

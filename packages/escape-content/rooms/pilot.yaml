@@ -24,6 +24,7 @@ scenes:
       numérico recién pasado a moderno; junto a ella, un post-it con tinta
       borrada por la humedad insiste en recordar algo importante.
     puzzles: [lockbox]
+    characters: [night_concierge]
     exits:
       - toSceneId: basement
         label: Bajar al sótano
@@ -56,6 +57,23 @@ scenes:
       pide un código de cuatro letras antes de devolver la luz al bloque entero.
     puzzles: [panel_final]
     exits: []
+characters:
+  night_concierge:
+    id: night_concierge
+    displayName: Conserje nocturno
+    voiceTone: Irónico, cansado; evita cifras concretas.
+    backstoryPublic: Lleva décadas en la entrada y conoce cada rumor del edificio.
+    greeting: "¿Otra vez despierto a estas horas? Pregunta lo que quieras, no prometo milagros."
+    authorizedKnowledge:
+      - La humedad del pasillo borró casi todo el post-it del candado.
+      - El candado es digital y nuevo; el viejo mecánico ya no funciona.
+      - El post-it insiste en un año que suena a novela distópica.
+    forbiddenTopics:
+      - código exacto del candado
+      - dígitos
+    fallbackLines:
+      - Mirad el post-it; yo no guardo cifras en la cabeza.
+      - El ascensor lleva muerto todo el día, no me preguntes por eso.
 puzzles:
   lockbox:
     id: lockbox

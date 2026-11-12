@@ -27,6 +27,11 @@ function validateRoom(room: RoomDefinition): void {
         throw new Error(`Unknown puzzle ${puzzleId} in scene ${scene.id}`);
       }
     }
+    for (const characterId of scene.characters ?? []) {
+      if (!room.characters?.[characterId]) {
+        throw new Error(`Unknown character ${characterId} in scene ${scene.id}`);
+      }
+    }
   }
   for (const puzzle of Object.values(room.puzzles)) {
     if (puzzle.type !== "location") continue;

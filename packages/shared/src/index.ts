@@ -10,7 +10,8 @@ export type GameActionType =
   | "request_hint"
   | "take_item"
   | "use_item"
-  | "complete_interaction";
+  | "complete_interaction"
+  | "talk_to_character";
 
 export type InteractionStep = "listen" | "speak" | "capture" | "view" | "arrive";
 
@@ -59,6 +60,19 @@ export type UseItemAction = {
   puzzleId?: string;
 };
 
+export type TalkToCharacterAction = {
+  type: "talk_to_character";
+  characterId: string;
+  message: string;
+};
+
+export type PublicCharacter = {
+  id: string;
+  displayName: string;
+  voiceTone?: string;
+  greeting?: string;
+};
+
 export type GameAction =
   | SubmitAnswerAction
   | SubmitLocationAction
@@ -66,7 +80,8 @@ export type GameAction =
   | RequestHintAction
   | TakeItemAction
   | UseItemAction
-  | CompleteInteractionAction;
+  | CompleteInteractionAction
+  | TalkToCharacterAction;
 
 export type PublicPuzzleType =
   | "code"
@@ -177,6 +192,8 @@ export type PublicState = {
   spatialSiteMap?: import("./spatial-site-public.js").SpatialSiteMapPublic;
   /** Texto «Estás en: …» cuando la escena es una habitación del recinto. */
   spatialRoomLabel?: string;
+  /** Personajes con los que se puede hablar en la escena actual. */
+  sceneCharacters?: PublicCharacter[];
 };
 
 export type GameEvent =
@@ -185,7 +202,8 @@ export type GameEvent =
   | { type: "scene_entered"; sceneId: string }
   | { type: "hint_requested"; puzzleId: string; level: number }
   | { type: "game_won" }
-  | { type: "game_lost" };
+  | { type: "game_lost" }
+  | { type: "character_talk"; characterId: string; message: string };
 
 export type ApplyResult = {
   ok: boolean;
@@ -246,6 +264,7 @@ export type {
   NarrativePresentation,
   NarrativeSpoilerLevel,
 } from "./gamemaster.js";
+export { sanitizePlayerUtterance } from "./utterance.js";
 export {
   matchPlayerAnswer,
   normalizeAnswerText,
