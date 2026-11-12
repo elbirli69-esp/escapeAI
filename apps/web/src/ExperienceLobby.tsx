@@ -290,12 +290,13 @@ export function ExperienceLobby(props: {
               <label>
                 Código del evento
                 <input
+                  data-testid="escape-organizer-code-input"
                   value={joinCode}
                   onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                   required
                 />
               </label>
-              <button type="submit" className="primary wide">
+              <button type="submit" className="primary wide" data-testid="escape-organizer-open">
                 Ver ranking
               </button>
             </form>

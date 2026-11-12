@@ -27,8 +27,5 @@ Variables: API en memoria (sin Redis). Los `webServer` de Playwright levantan AP
 | `events-mvp.spec.ts` | Crear evento, 2 sesiones, candado 1995 |
 | `interactive-lab-partial.spec.ts` | Sensoriales (cámara vía API) |
 | `geo-lab-mocked.spec.ts` | GPS mock + quiz |
-
-## P2 (pendiente)
-
-- `lighthouse` victoria UI
-- Panel organizador en vivo
+| `catalog-lighthouse-win.spec.ts` | Victoria faro (`HIGH` → aceite → `SOS`) |
+| `organizer-panel.spec.ts` | Ranking tras unir equipo |
