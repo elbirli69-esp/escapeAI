@@ -128,6 +128,7 @@ export function toScannedSiteSummary(site: ScannedSite): ScannedSiteSummary {
     roomCount: site.roomIds.length,
     linkCount: site.links.length,
     city: site.geoContext?.city,
+    hasOutdoor: site.outdoorRoomId !== undefined,
     updatedAt: site.updatedAt,
   };
 }

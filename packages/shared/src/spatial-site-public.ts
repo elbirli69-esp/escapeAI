@@ -4,6 +4,7 @@ export type SpatialSiteVisitStep = {
   order: number;
   label: string;
   sceneId: string;
+  kind?: "indoor" | "outdoor";
 };
 
 /** Mapa del recinto expuesto al jugador (sin datos de escaneo). */

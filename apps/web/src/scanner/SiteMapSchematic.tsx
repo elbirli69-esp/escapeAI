@@ -4,6 +4,7 @@ import type { SiteLink, SiteMapLayout } from "@escapeai/shared";
 export type SiteMapRoom = {
   id: string;
   label: string;
+  isOutdoor?: boolean;
 };
 
 type EdgeView = {
@@ -98,14 +99,20 @@ export function SiteMapSchematic(props: {
   );
 }
 
-function RoomNode(props: { label: string; index: number; variant?: "hub"; active?: boolean }) {
+function RoomNode(props: {
+  label: string;
+  index: number;
+  variant?: "hub";
+  active?: boolean;
+  isOutdoor?: boolean;
+}) {
   return (
     <div
-      className={`site-map-node${props.variant === "hub" ? " site-map-node--hub" : ""}${props.active ? " site-map-node--active" : ""}`}
+      className={`site-map-node${props.variant === "hub" ? " site-map-node--hub" : ""}${props.isOutdoor ? " site-map-node--outdoor" : ""}${props.active ? " site-map-node--active" : ""}`}
       title={props.label}
     >
       <span className="site-map-node-index">{props.index + 1}</span>
-      <span className="site-map-node-label">{props.label}</span>
+      <span className="site-map-node-label">{props.label}{props.isOutdoor ? " · ext." : ""}</span>
     </div>
   );
 }
@@ -176,6 +183,7 @@ function LinearMap(props: {
           <RoomNode
             label={room.label}
             index={i}
+            isOutdoor={room.isOutdoor}
             active={sceneActive(props.highlightSceneId, room.id, props.rooms)}
           />
           {i < props.rooms.length - 1 && linkByPair.get(`${i}-${i + 1}`) ? (
@@ -218,6 +226,7 @@ function HubMap(props: {
         label={hub.label}
         index={0}
         variant="hub"
+        isOutdoor={hub.isOutdoor}
         active={sceneActive(props.highlightSceneId, hub.id, props.rooms)}
       />
       <div className="site-map-hub-spokes">
@@ -240,6 +249,7 @@ function HubMap(props: {
               <RoomNode
                 label={room.label}
                 index={toIndex}
+                isOutdoor={room.isOutdoor}
                 active={sceneActive(props.highlightSceneId, room.id, props.rooms)}
               />
             </div>
