@@ -534,6 +534,7 @@ export function toPublicState(session: SessionRecord, nowMs = Date.now()): Publi
       return {
         id,
         label: puzzle.label ?? humanizeId(id),
+        cardImage: puzzle.cardImage,
         prompt: puzzle.prompt,
         puzzleType: puzzle.type,
         solved: session.solvedPuzzles.has(id),

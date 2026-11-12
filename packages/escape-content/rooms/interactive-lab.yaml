@@ -2,7 +2,7 @@ id: interactive-lab
 name: Laboratorio sensorial
 tagline: Sonido, voz, cámara e imágenes — prueba todas las pistas.
 theme: urban
-coverImage: /media/pilot-cover.jpg
+coverImage: /media/pilot-basement.jpg
 timeLimitSec: 1800
 startSceneId: hub
 winCondition:
@@ -13,7 +13,7 @@ scenes:
   hub:
     id: hub
     title: Hub de pruebas
-    image: /media/pilot-entrance.jpg
+    image: /media/pilot-control.jpg
     mood: Luces LED y altavoces ocultos en la pared.
     description: >
       Cuatro estaciones esperan: una emite un código en Morse (simplificado a dígitos
@@ -25,6 +25,7 @@ puzzles:
     id: sound_station
     type: sound
     label: Estación sonora
+    cardImage: /media/pilot-control.jpg
     prompt: Pulsa reproducir y escucha el patrón de tonos (2 pips = 2, pausa larga = separador). Respuesta de una cifra.
     soundMode: beeps
     beepPattern: [120, 80, 120, 80, 120, 300, 360, 80, 360, 80, 360]
@@ -41,6 +42,7 @@ puzzles:
     id: visual_station
     type: visual
     label: Enigma visual
+    cardImage: /media/pilot-entrance.jpg
     visualLayout: dual
     prompt: Desliza el separador entre imágenes. ¿Cuántas puertas rojas en la de la izquierda? (número)
     pexelsQuery: red doors building
@@ -55,6 +57,7 @@ puzzles:
     id: camera_station
     type: camera
     label: Lectura con OCR
+    cardImage: /media/pilot-basement.jpg
     cameraMode: ocr_hint
     ocrLang: spa+eng
     cameraPrompt: Fotografía un texto impreso (etiqueta, libro, pantalla). El OCR solo da pista en tu móvil.
@@ -69,6 +72,7 @@ puzzles:
     id: voice_finale
     type: voice
     label: Sello de voz
+    cardImage: /media/pilot-cover.jpg
     prompt: Di en voz alta la frase mágica para cerrar el laboratorio.
     answer: "luego"
     normalize: lowercase

@@ -66,9 +66,9 @@ Hacer la aplicación **mucho más visual y autoexplicativa**:
 
 ### P2 — Contenido y marca
 
-- [ ] Arte dedicado para `interactive-lab` y `geo-lab` (hoy reutilizan `pilot-cover`).
-- [ ] 1 imagen por puzzle interactivo en laboratorio (sound/camera/voice) como “cartas de instrucción”.
-- [ ] Modo TV/proyector: tipografía más grande, ranking con fotos de equipo (avatar opcional).
+- [x] Arte propio en catálogo/YAML para `interactive-lab` y `geo-lab` (portadas y escenas distintas).
+- [x] `cardImage` por puzzle en laboratorio + componente `PuzzleInstructionCard`.
+- [x] Modo TV (`?projector=1` + botón), avatares por iniciales en ranking.
 
 ### P3 — Motion y audio (opcional)
 

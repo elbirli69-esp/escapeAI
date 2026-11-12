@@ -90,6 +90,7 @@ export type VisualLayout = "single" | "dual";
 export type PublicPuzzle = {
   id: string;
   label?: string;
+  cardImage?: string;
   prompt: string;
   puzzleType: PublicPuzzleType;
   solved: boolean;
