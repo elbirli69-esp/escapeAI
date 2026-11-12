@@ -208,6 +208,33 @@ function SoundStation(props: {
     };
   }, []);
 
+  async function playTts() {
+    const text = props.puzzle.ttsText?.trim();
+    if (!text) return;
+    setErr(null);
+    setPlaying(true);
+    setListenSec(0);
+    const start = Date.now();
+    timerRef.current = setInterval(() => {
+      setListenSec(Math.floor((Date.now() - start) / 1000));
+    }, 400);
+    try {
+      const { speakWithWebSpeech } = await import("./lib/speech-tts");
+      await speakWithWebSpeech(text, props.puzzle.voiceLocale ?? "es-ES");
+      const elapsed = (Date.now() - start) / 1000;
+      const waitMore = Math.max(0, minSec - elapsed);
+      if (waitMore > 0) {
+        await new Promise((r) => setTimeout(r, waitMore * 1000));
+      }
+      markListened();
+    } catch {
+      setErr("No se pudo leer el mensaje. Usa otro navegador o activa voces del sistema.");
+    } finally {
+      setPlaying(false);
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+  }
+
   async function playBeeps() {
     setErr(null);
     setPlaying(true);
@@ -273,7 +300,10 @@ function SoundStation(props: {
     howl.play();
   }
 
-  const useBeeps = props.puzzle.soundMode === "beeps" || !props.puzzle.audioUrl;
+  const useTts =
+    props.puzzle.soundMode === "tts" && Boolean(props.puzzle.ttsText?.trim());
+  const useBeeps =
+    props.puzzle.soundMode === "beeps" || (!useTts && !props.puzzle.audioUrl);
 
   return (
     <InteractionPanel title="Altavoz" done={listened}>
@@ -283,7 +313,16 @@ function SoundStation(props: {
         </p>
       ))}
       {err && <p className="error sm">{err}</p>}
-      {useBeeps ? (
+      {useTts ? (
+        <button
+          type="button"
+          className="primary"
+          disabled={props.busy || playing || listened}
+          onClick={() => void playTts()}
+        >
+          {playing ? "Leyendo mensaje…" : listened ? "Escuchado" : "Escuchar mensaje"}
+        </button>
+      ) : useBeeps ? (
         <button
           type="button"
           className="primary"

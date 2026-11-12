@@ -544,6 +544,7 @@ export function toPublicState(session: SessionRecord, nowMs = Date.now()): Publi
         completedSteps: steps ? [...steps] : [],
         audioUrl: puzzle.audioUrl,
         soundMode: puzzle.soundMode,
+        ttsText: puzzle.ttsText,
         beepPattern: puzzle.beepPattern,
         minListenSec: puzzle.minListenSec,
         visualUrl: puzzle.visualUrl,

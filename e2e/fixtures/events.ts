@@ -15,15 +15,15 @@ export const SARA_EVENT = {
 export async function createEventFromLobby(page: Page): Promise<string> {
   await page.goto("/");
   await page.getByTestId("escape-lobby-home").waitFor();
-  await page.getByRole("button", { name: "Crear experiencia" }).click();
+  await page.getByTestId("escape-mode-create").click();
 
-  await page.locator('select').first().selectOption(SARA_EVENT.adventureType);
+  await page.getByText("Homenaje personal", { exact: true }).click();
   await page.getByLabel(/Nombre central/).fill(SARA_EVENT.subjectName);
   await page.getByLabel(/Apodo/).fill(SARA_EVENT.nickname);
   await page.getByLabel(/Datos jugables/).fill(SARA_EVENT.facts);
   await page.getByLabel(/Título del evento/).fill(SARA_EVENT.eventTitle);
   await page.getByLabel(/Equipos/).fill(String(SARA_EVENT.teamCount));
-  await page.locator('select').nth(1).selectOption(SARA_EVENT.durationMin);
+  await page.getByLabel(/Duración/).selectOption(SARA_EVENT.durationMin);
 
   await page.getByTestId("escape-event-create-submit").click();
   await page.getByTestId("escape-join-code-display").waitFor({ timeout: 60_000 });
@@ -39,7 +39,7 @@ export async function joinEventAsTeam(
 ): Promise<void> {
   await page.goto("/");
   await page.getByTestId("escape-lobby-home").waitFor();
-  await page.getByRole("button", { name: "Entrar como equipo" }).click();
+  await page.getByTestId("escape-mode-join").click();
   await page.getByTestId("escape-join-code-input").fill(joinCode);
   await page.getByLabel("Nombre del equipo").fill(teamName);
   await page.getByRole("button", { name: /Empezar partida del equipo/ }).click();
