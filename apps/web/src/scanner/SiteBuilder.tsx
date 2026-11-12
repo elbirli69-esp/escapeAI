@@ -5,7 +5,9 @@ import type {
   ScannedSite,
   SiteGeoContext,
   SiteLink,
+  SiteMapLayout,
 } from "@escapeai/shared";
+import { SiteMapSchematic } from "./SiteMapSchematic";
 import { DEFAULT_SITE_AREA_RADIUS_METERS } from "@escapeai/shared";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { listScannedEnvironments, saveScannedSite } from "../api";
@@ -15,17 +17,34 @@ function newLinkId(): string {
   return `link-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-function buildLinearLinks(roomIds: string[]): SiteLink[] {
+function buildLinksForLayout(roomIds: string[], layout: SiteMapLayout, prev?: SiteLink[]): SiteLink[] {
+  const labelFor = (from: string, to: string) =>
+    prev?.find((l) => l.fromRoomId === from && l.toRoomId === to)?.label ?? "Pasaje";
+  const kindFor = (from: string, to: string) =>
+    prev?.find((l) => l.fromRoomId === from && l.toRoomId === to)?.transitionKind ?? "door";
+
+  if (layout === "hub" && roomIds.length > 1) {
+    const hub = roomIds[0]!;
+    return roomIds.slice(1).map((to) => ({
+      id: prev?.find((l) => l.fromRoomId === hub && l.toRoomId === to)?.id ?? newLinkId(),
+      fromRoomId: hub,
+      toRoomId: to,
+      label: labelFor(hub, to),
+      transitionKind: kindFor(hub, to),
+      confirmed: false,
+    }));
+  }
+
   const links: SiteLink[] = [];
   for (let i = 0; i < roomIds.length - 1; i++) {
     const from = roomIds[i]!;
     const to = roomIds[i + 1]!;
     links.push({
-      id: newLinkId(),
+      id: prev?.find((l) => l.fromRoomId === from && l.toRoomId === to)?.id ?? newLinkId(),
       fromRoomId: from,
       toRoomId: to,
-      label: "Pasaje",
-      transitionKind: "door",
+      label: labelFor(from, to),
+      transitionKind: kindFor(from, to),
       confirmed: false,
     });
   }
@@ -40,6 +59,7 @@ export function SiteBuilder(props: {
   const [inventories, setInventories] = useState<ScannedEnvironmentSummary[]>([]);
   const [name, setName] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>(props.seedRoom ? [props.seedRoom.id] : []);
+  const [mapLayout, setMapLayout] = useState<SiteMapLayout>("linear");
   const [links, setLinks] = useState<SiteLink[]>([]);
   const [city, setCity] = useState("");
   const [neighborhood, setNeighborhood] = useState("");
@@ -58,16 +78,23 @@ export function SiteBuilder(props: {
     void loadInventories().catch(() => setInventories([]));
   }, [loadInventories]);
 
-  const orderedLabels = useMemo(
+  const mapRooms = useMemo(
     () =>
-      selectedIds.map((id) => inventories.find((i) => i.id === id)?.name ?? id.slice(0, 8)),
+      selectedIds.map((id) => ({
+        id,
+        label: inventories.find((i) => i.id === id)?.name ?? id.slice(0, 8),
+      })),
     [selectedIds, inventories],
   );
+
+  const syncLinks = (roomIds: string[], layout: SiteMapLayout) => {
+    setLinks((prev) => buildLinksForLayout(roomIds, layout, prev));
+  };
 
   const toggleRoom = (id: string) => {
     setSelectedIds((prev) => {
       const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
-      setLinks(buildLinearLinks(next));
+      syncLinks(next, mapLayout);
       return next;
     });
   };
@@ -80,9 +107,22 @@ export function SiteBuilder(props: {
       const tmp = next[index]!;
       next[index] = next[j]!;
       next[j] = tmp;
-      setLinks(buildLinearLinks(next));
+      syncLinks(next, mapLayout);
       return next;
     });
+  };
+
+  const changeLayout = (layout: SiteMapLayout) => {
+    setMapLayout(layout);
+    syncLinks(selectedIds, layout);
+  };
+
+  const updateLinkLabel = (linkId: string, label: string) => {
+    setLinks((prev) => prev.map((l) => (l.id === linkId ? { ...l, label } : l)));
+  };
+
+  const updateLinkKind = (linkId: string, transitionKind: SiteLink["transitionKind"]) => {
+    setLinks((prev) => prev.map((l) => (l.id === linkId ? { ...l, transitionKind } : l)));
   };
 
   const captureAnchor = async () => {
@@ -123,7 +163,7 @@ export function SiteBuilder(props: {
       name: name.trim(),
       roomIds: selectedIds,
       links: links.map((l) => ({ ...l, confirmed: true })),
-      mapLayout: "linear",
+      mapLayout,
       geoContext,
     };
 
@@ -168,10 +208,10 @@ export function SiteBuilder(props: {
       </ul>
 
       {selectedIds.length > 0 && (
-        <ol>
-          {orderedLabels.map((label, i) => (
-            <li key={selectedIds[i]}>
-              {label}
+        <ol className="site-map-order-list">
+          {mapRooms.map((room, i) => (
+            <li key={room.id}>
+              {room.label}
               <button type="button" className="ghost sm" onClick={() => moveRoom(i, -1)}>
                 ↑
               </button>
@@ -182,6 +222,15 @@ export function SiteBuilder(props: {
           ))}
         </ol>
       )}
+
+      <SiteMapSchematic
+        rooms={mapRooms}
+        links={links}
+        mapLayout={mapLayout}
+        onLayoutChange={changeLayout}
+        onLinkLabelChange={updateLinkLabel}
+        onLinkKindChange={updateLinkKind}
+      />
 
       <h3>Contexto urbano (opcional)</h3>
       <label>
