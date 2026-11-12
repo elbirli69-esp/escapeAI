@@ -39,6 +39,7 @@ pnpm dev
 ## Documentación
 
 - [Arquitectura](./docs/architecture.md)
+- [Prompt Playwright E2E](./docs/prompt-playwright-e2e.md) — casos de uso automatizados
 - [Diseñar salas (YAML)](./docs/authoring-rooms.md)
 - [Despliegue en Vercel](./docs/deploy-vercel.md)
 - [Checklist lanzamiento público](./docs/public-launch-checklist.md)

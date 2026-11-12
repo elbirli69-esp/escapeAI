@@ -1,5 +1,7 @@
 # QA manual — puzzles sensoriales (móvil)
 
+Automatización browser: [prompt Playwright E2E](./prompt-playwright-e2e.md).
+
 Probar en **HTTPS** (producción o túnel). Un móvil por equipo.
 
 ## Laboratorio `interactive-lab`
