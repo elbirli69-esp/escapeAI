@@ -525,8 +525,15 @@ export function toPublicState(session: SessionRecord, nowMs = Date.now()): Publi
   const sceneOrder = Object.keys(session.room.scenes);
   const siteMap = session.room.spatialSiteMap;
   const spatialRoom = siteMap?.rooms.find((r) => r.sceneId === session.currentSceneId);
+  const visitIdx = siteMap
+    ? siteMap.suggestedVisit.findIndex((s) => s.sceneId === session.currentSceneId)
+    : -1;
   const spatialSiteMap = siteMap
-    ? { ...siteMap, currentSpatialSceneId: spatialRoom ? session.currentSceneId : undefined }
+    ? {
+        ...siteMap,
+        currentSpatialSceneId: spatialRoom ? session.currentSceneId : undefined,
+        currentVisitOrder: visitIdx >= 0 ? visitIdx + 1 : undefined,
+      }
     : undefined;
 
   return {

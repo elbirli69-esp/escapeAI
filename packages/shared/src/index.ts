@@ -296,7 +296,7 @@ export type {
   SiteMapLayout,
 } from "./scanned-site.js";
 export { DEFAULT_SITE_AREA_RADIUS_METERS } from "./scanned-site.js";
-export type { SpatialSiteMapPublic } from "./spatial-site-public.js";
+export type { SpatialSiteMapPublic, SpatialSiteVisitStep } from "./spatial-site-public.js";
 export type { SanitizeSiteResult } from "./scanned-site-sanitize.js";
 export { sanitizeScannedSiteInput, toScannedSiteSummary } from "./scanned-site-sanitize.js";
 export {

@@ -303,6 +303,11 @@ export function buildSpatialSiteRoom(
       label: env.name,
     })),
     links: site.links,
+    suggestedVisit: ordered.map((env, index) => ({
+      order: index + 1,
+      label: env.name,
+      sceneId: sceneIdForInventoryRoom(env.id),
+    })),
   };
 
   return {

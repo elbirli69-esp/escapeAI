@@ -15,6 +15,7 @@ const room: RoomDefinition = {
       { inventoryId: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", sceneId: "space-aaaaaaaa", label: "Salón" },
     ],
     links: [],
+    suggestedVisit: [{ order: 1, label: "Salón", sceneId: "space-aaaaaaaa" }],
   },
   scenes: {
     "space-aaaaaaaa": {
@@ -34,5 +35,6 @@ describe("spatial site public state", () => {
     const state = toPublicState(session);
     expect(state.spatialRoomLabel).toBe("Salón");
     expect(state.spatialSiteMap?.siteName).toBe("Casa");
+    expect(state.spatialSiteMap?.currentVisitOrder).toBe(1);
   });
 });
