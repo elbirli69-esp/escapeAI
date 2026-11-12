@@ -8,9 +8,13 @@ import type {
   JoinEventResponse,
   PublicState,
   CreateSpatialEventRequest,
+  CreateSpatialSiteEventRequest,
   SaveScannedEnvironmentRequest,
+  SaveScannedSiteRequest,
   ScannedEnvironment,
   ScannedEnvironmentSummary,
+  ScannedSite,
+  SiteProposalsResponse,
   SpatialAdventureProposal,
   SpatialProposalsResponse,
 } from "@escapeai/shared";
@@ -156,6 +160,48 @@ export async function createSpatialEvent(
   body: CreateSpatialEventRequest,
 ): Promise<{ preview: EventPreview; proposal: SpatialAdventureProposal; prepChecklist: SpatialAdventureProposal["prepChecklist"] }> {
   const res = await fetch(`${base}/scanned-environments/${encodeURIComponent(scannedEnvironmentId)}/events`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { error?: string }).error ?? "No se pudo crear el evento");
+  return data as {
+    preview: EventPreview;
+    proposal: SpatialAdventureProposal;
+    prepChecklist: SpatialAdventureProposal["prepChecklist"];
+  };
+}
+
+export async function saveScannedSite(body: SaveScannedSiteRequest): Promise<ScannedSite> {
+  const isUpdate = Boolean(body.id);
+  const url = isUpdate
+    ? `${base}/scanned-sites/${encodeURIComponent(body.id!)}`
+    : `${base}/scanned-sites`;
+  const res = await fetch(url, {
+    method: isUpdate ? "PUT" : "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { error?: string }).error ?? "No se pudo guardar el recinto");
+  return (data as { site: ScannedSite }).site;
+}
+
+export async function fetchSpatialSiteProposals(scannedSiteId: string): Promise<SiteProposalsResponse> {
+  const res = await fetch(`${base}/scanned-sites/${encodeURIComponent(scannedSiteId)}/proposals`, {
+    method: "POST",
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { error?: string }).error ?? "No se pudieron generar propuestas");
+  return data as SiteProposalsResponse;
+}
+
+export async function createSpatialSiteEvent(
+  scannedSiteId: string,
+  body: CreateSpatialSiteEventRequest,
+): Promise<{ preview: EventPreview; proposal: SpatialAdventureProposal; prepChecklist: SpatialAdventureProposal["prepChecklist"] }> {
+  const res = await fetch(`${base}/scanned-sites/${encodeURIComponent(scannedSiteId)}/events`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),

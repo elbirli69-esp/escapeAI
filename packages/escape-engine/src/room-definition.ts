@@ -55,6 +55,8 @@ export type RoomPuzzle = {
   interactionHints?: string[];
   /** Llegar al punto (`reach`) o quiz en el sitio (`quiz`). */
   locationMode?: "reach" | "quiz";
+  /** `area_context` usa GPS solo para fijar ciudad/barrio y cuestiones del entorno, no waypoints interiores. */
+  locationIntent?: "waypoint" | "area_context";
   targetLat?: number;
   targetLon?: number;
   radiusMeters?: number;

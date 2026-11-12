@@ -10,7 +10,9 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { createEventStore } from "./event-store.js";
 import { createScannedEnvironmentStore } from "./scanned-environment-store.js";
+import { createScannedSiteStore } from "./scanned-site-store.js";
 import { mountScannerRoutes } from "./scanner-routes.js";
+import { mountSiteRoutes } from "./site-routes.js";
 import { mountEventRoutes, startEventSession, syncPlayerStatusFromSession } from "./events-routes.js";
 import { mountMediaRoutes } from "./media-routes.js";
 import { resolveLlmConfig } from "./llm-config.js";
@@ -37,6 +39,7 @@ export async function createApp(store?: SessionStore): Promise<Hono> {
   const sessionStore = store ?? (await createSessionStore());
   const eventStore = await createEventStore();
   const scannedStore = await createScannedEnvironmentStore();
+  const siteStore = await createScannedSiteStore();
   const app = new Hono().basePath("/api");
 
   app.use("*", cors({ origin: getDefaultCorsOrigins() }));
@@ -57,6 +60,7 @@ export async function createApp(store?: SessionStore): Promise<Hono> {
 
   mountEventRoutes(app, eventStore);
   mountScannerRoutes(app, scannedStore, eventStore);
+  mountSiteRoutes(app, siteStore, scannedStore, eventStore);
   mountMediaRoutes(app);
 
   app.get("/rooms", (c) => {

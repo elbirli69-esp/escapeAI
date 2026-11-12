@@ -20,6 +20,10 @@ export type CreateEventRequest = {
   adventureType: AdventureType;
   /** Inventario escaneado usado al crear el evento (snapshot de sala, no se actualiza con el inventario). */
   scannedEnvironmentId?: string;
+  /** Recinto multi-habitación (snapshot de habitaciones enlazadas). */
+  scannedSiteId?: string;
+  siteVersion?: number;
+  roomInventoryVersions?: Record<string, number>;
   inventoryVersion?: number;
   spatialProposalId?: string;
   /** Equipos que compiten (2–5). Un móvil por equipo. */
