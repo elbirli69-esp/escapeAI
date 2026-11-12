@@ -144,6 +144,7 @@ function ClassicPuzzleForm(props: {
         }}
       >
         <input
+          data-testid="escape-answer-input"
           value={props.answer}
           onChange={(e) => props.onAnswerChange(e.target.value)}
           placeholder={props.answerPlaceholder ?? "Tu respuesta"}
@@ -153,6 +154,7 @@ function ClassicPuzzleForm(props: {
         <button
           type="submit"
           className="primary"
+          data-testid="escape-submit-answer"
           disabled={props.busy || props.submitDisabled}
         >
           Enviar
@@ -438,6 +440,7 @@ function CameraStation(props: {
   const [cameraLive, setCameraLive] = useState(false);
   const captured = props.puzzle.completedSteps.includes("capture");
   const [facing, setFacing] = useState<"user" | "environment">("environment");
+  const [videoReady, setVideoReady] = useState(false);
   const [ocrHint, setOcrHint] = useState<string | null>(null);
   const [ocrBusy, setOcrBusy] = useState(false);
   const isOcr = props.puzzle.cameraMode === "ocr_hint";
@@ -450,13 +453,18 @@ function CameraStation(props: {
 
   const startCamera = useCallback(() => {
     setCameraErr(null);
+    setVideoReady(false);
     setCameraLive(true);
   }, []);
 
   const takePhoto = useCallback(() => {
-    const shot = webcamRef.current?.getScreenshot({ width: 1280, height: 720 });
+    let shot: string | null | undefined;
+    for (let i = 0; i < 8; i++) {
+      shot = webcamRef.current?.getScreenshot({ width: 1280, height: 720 });
+      if (shot) break;
+    }
     if (!shot) {
-      setCameraErr("No se pudo capturar. Prueba otra vez.");
+      setCameraErr("No se pudo capturar. Espera un segundo y prueba otra vez.");
       return;
     }
     setPreview(shot);
@@ -497,7 +505,11 @@ function CameraStation(props: {
   }, []);
 
   return (
-    <InteractionPanel title="Cámara · entorno real" done={captured}>
+    <InteractionPanel
+      title="Cámara · entorno real"
+      done={captured}
+      data-testid="escape-camera-station"
+    >
       <p className="muted">{props.puzzle.cameraPrompt}</p>
       {cameraErr && <p className="error sm">{cameraErr}</p>}
       {!preview ? (
@@ -509,9 +521,11 @@ function CameraStation(props: {
               screenshotFormat="image/jpeg"
               videoConstraints={videoConstraints}
               className="camera-preview"
+              onUserMedia={() => setVideoReady(true)}
               onUserMediaError={() => {
                 setCameraErr("No se pudo abrir la cámara.");
                 setCameraLive(false);
+                setVideoReady(false);
               }}
             />
           ) : (
@@ -522,7 +536,13 @@ function CameraStation(props: {
               <button type="button" className="ghost sm" onClick={() => setFacing((f) => (f === "environment" ? "user" : "environment"))}>
                 Cambiar cámara
               </button>
-              <button type="button" className="primary" disabled={props.busy} onClick={takePhoto}>
+              <button
+                type="button"
+                className="primary"
+                data-testid="escape-camera-capture"
+                disabled={props.busy || !videoReady}
+                onClick={takePhoto}
+              >
                 Capturar foto
               </button>
             </div>
@@ -722,9 +742,18 @@ function VoiceStation(props: {
   );
 }
 
-function InteractionPanel(props: { title: string; done?: boolean; children: ReactNode }) {
+function InteractionPanel(props: {
+  title: string;
+  done?: boolean;
+  children: ReactNode;
+  "data-testid"?: string;
+}) {
   return (
-    <section className={`panel glass interaction-panel ${props.done ? "done" : ""}`}>
+    <section
+      className={`panel glass interaction-panel ${props.done ? "done" : ""}`}
+      data-testid={props["data-testid"]}
+      data-done={props.done ? "true" : "false"}
+    >
       <h3 className="interaction-title">
         {props.title}
         {props.done && <span className="chip"> ✓</span>}

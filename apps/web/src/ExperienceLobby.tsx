@@ -86,6 +86,9 @@ export function ExperienceLobby(props: {
   const [joinCode, setJoinCode] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  /** Código activo del panel organizador (solo tras enviar el formulario). */
+  const [organizerBoardCode, setOrganizerBoardCode] = useState<string | null>(null);
+  const [organizerDraft, setOrganizerDraft] = useState("");
 
   useEffect(() => {
     const code = readJoinCodeFromLocation();
@@ -141,7 +144,7 @@ export function ExperienceLobby(props: {
 
   if (mode === "home") {
     return (
-      <main className="shell lobby">
+      <main className="shell lobby" data-testid="escape-lobby-home">
         <header className="lobby-hero">
           <p className="eyebrow">escapeAI</p>
           <h1 className="display">Tu escape, a tu medida</h1>
@@ -159,7 +162,14 @@ export function ExperienceLobby(props: {
               imageSrc={card.image}
               imageAlt={card.imageAlt}
               layout="stack"
-              onClick={() => setMode(card.mode)}
+              data-testid={card.mode === "catalog" ? "escape-mode-catalog" : undefined}
+              onClick={() => {
+                if (card.mode === "organizer") {
+                  setOrganizerBoardCode(null);
+                  setOrganizerDraft("");
+                }
+                setMode(card.mode);
+              }}
             />
           ))}
         </div>
@@ -274,64 +284,70 @@ export function ExperienceLobby(props: {
               Título del evento (opcional)
               <input value={eventTitle} onChange={(e) => setEventTitle(e.target.value)} />
             </label>
-            <button type="submit" className="primary wide" disabled={createMutation.isPending}>
+            <button
+              type="submit"
+              className="primary wide"
+              data-testid="escape-event-create-submit"
+              disabled={createMutation.isPending}
+            >
               {createMutation.isPending ? "Generando sala…" : "Generar y obtener código"}
             </button>
           </form>
         ) : (
-          <div className={`event-poster join-card-poster ${themeClass(created.theme)}`}>
-            {created.coverImage && (
-              <img src={created.coverImage} alt="" className="event-poster-bg" loading="eager" />
-            )}
-            <div className="event-poster-scrim" aria-hidden />
-            <div className="event-poster-body">
-              <p className="eyebrow">Código para compartir</p>
-              <div className="event-poster-invite">
-                <div className="event-poster-invite-copy">
-                  <p className="join-code poster-code">{created.joinCode}</p>
-                  <p>
-                    <strong>{created.title}</strong> · {created.sceneCount} escenas ·{" "}
-                    {Math.round(created.timeLimitSec / 60)} min · {created.teamCount} equipos
-                  </p>
-                  <p className="muted">
-                    Escanea el QR o escribe el código. Un móvil por equipo.
-                  </p>
+          <>
+            <div className={`event-poster join-card-poster ${themeClass(created.theme)}`}>
+              {created.coverImage && (
+                <img src={created.coverImage} alt="" className="event-poster-bg" loading="eager" />
+              )}
+              <div className="event-poster-scrim" aria-hidden />
+              <div className="event-poster-body">
+                <p className="eyebrow">Código para compartir</p>
+                <div className="event-poster-invite">
+                  <div className="event-poster-invite-copy">
+                    <p className="join-code poster-code" data-testid="escape-join-code-display">
+                      {created.joinCode}
+                    </p>
+                    <p>
+                      <strong>{created.title}</strong> · {created.sceneCount} escenas ·{" "}
+                      {Math.round(created.timeLimitSec / 60)} min · {created.teamCount} equipos
+                    </p>
+                    <p className="muted">Escanea el QR o escribe el código. Un móvil por equipo.</p>
+                  </div>
+                  <EventJoinQr joinCode={created.joinCode} size="md" />
                 </div>
-                <EventJoinQr joinCode={created.joinCode} size="md" />
               </div>
             </div>
-          </div>
-        )}
-        {created && (
-          <div className="join-card-actions">
-            <button
-              type="button"
-              className="primary wide"
-              onClick={() => {
-                setJoinCode(created.joinCode);
-                setMode("organizer");
-              }}
-            >
-              Abrir panel / proyector
-            </button>
-            <button
-              type="button"
-              className="ghost wide"
-              onClick={() => {
-                setJoinCode(created.joinCode);
-                setMode("join");
-              }}
-            >
-              Probar como equipo
-            </button>
-          </div>
+            <div className="join-card-actions">
+              <button
+                type="button"
+                className="primary wide"
+                onClick={() => {
+                  setJoinCode(created.joinCode);
+                  setOrganizerBoardCode(created.joinCode);
+                  setMode("organizer");
+                }}
+              >
+                Abrir panel / proyector
+              </button>
+              <button
+                type="button"
+                className="ghost wide"
+                onClick={() => {
+                  setJoinCode(created.joinCode);
+                  setMode("join");
+                }}
+              >
+                Probar como equipo
+              </button>
+            </div>
+          </>
         )}
       </main>
     );
   }
 
   if (mode === "organizer") {
-    const code = created?.joinCode || joinCode;
+    const code = organizerBoardCode;
     return (
       <>
         {!code ? (
@@ -344,24 +360,34 @@ export function ExperienceLobby(props: {
               className="wizard"
               onSubmit={(e) => {
                 e.preventDefault();
-                setJoinCode(joinCode.toUpperCase());
+                const next = organizerDraft.trim().toUpperCase();
+                if (!next) return;
+                setOrganizerBoardCode(next);
               }}
             >
               <label>
                 Código del evento
                 <input
-                  value={joinCode}
-                  onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                  data-testid="escape-organizer-code-input"
+                  value={organizerDraft}
+                  onChange={(e) => setOrganizerDraft(e.target.value.toUpperCase())}
                   required
                 />
               </label>
-              <button type="submit" className="primary wide">
+              <button type="submit" className="primary wide" data-testid="escape-organizer-open">
                 Ver ranking
               </button>
             </form>
           </main>
         ) : (
-          <EventOrganizerBoard joinCode={code} onBack={() => setMode("home")} />
+          <EventOrganizerBoard
+            joinCode={code}
+            onBack={() => {
+              setOrganizerBoardCode(null);
+              setOrganizerDraft("");
+              setMode("home");
+            }}
+          />
         )}
       </>
     );
@@ -388,6 +414,7 @@ export function ExperienceLobby(props: {
           <label>
             Código del evento
             <input
+              data-testid="escape-join-code-input"
               value={joinCode || created?.joinCode || ""}
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
               placeholder="ABCDEF"
@@ -447,6 +474,7 @@ export function ExperienceLobby(props: {
                 eyebrow={room.summary !== (room.tagline ?? "") ? room.summary : undefined}
                 active={room.id === props.selectedRoomId}
                 layout="stack"
+                data-testid={`escape-room-${room.id}`}
                 onClick={() => props.onSelectRoom(room.id)}
               />
             </li>
@@ -456,6 +484,7 @@ export function ExperienceLobby(props: {
       <button
         type="button"
         className="primary wide"
+        data-testid="escape-start-classic"
         disabled={props.classicBusy}
         onClick={props.onClassicStart}
       >

@@ -13,7 +13,7 @@ function themeClass(theme?: string): string {
 
 function FlashBanner(props: { message: string; onDismiss?: () => void }) {
   return (
-    <div className="flash-banner" role="alert">
+    <div className="flash-banner" role="alert" data-testid="escape-flash-error">
       <span>{props.message}</span>
       {props.onDismiss && (
         <button
@@ -352,7 +352,7 @@ function GameView(props: {
 
       <section className="panel glass">
         <h2>Diario de campo</h2>
-        <ul className="log">
+        <ul className="log" data-testid="escape-narrative-log">
           {state.narrative.slice(-10).map((line, i) => (
             <li key={`${i}-${line.slice(0, 12)}`}>{line}</li>
           ))}
@@ -403,6 +403,7 @@ function GameView(props: {
                 key={p.id}
                 type="button"
                 className={p.id === props.activePuzzleId ? "tab active" : "tab"}
+                data-testid={`escape-puzzle-tab-${p.id}`}
                 disabled={p.solved}
                 onClick={() => props.onSelectPuzzle(p.id)}
               >
@@ -435,7 +436,11 @@ function GameView(props: {
       )}
 
       {state.status !== "playing" && (
-        <section className={`panel end ${state.status === "won" ? "end-won" : "end-lost"}`}>
+        <section
+          className={`panel end ${state.status === "won" ? "end-won" : "end-lost"}`}
+          data-testid="escape-game-status"
+          data-status={state.status}
+        >
           {state.roomCoverImage && (
             <figure className="end-hero">
               <img src={state.roomCoverImage} alt="" className="end-hero-img" />
@@ -465,6 +470,7 @@ function ExitActions(props: {
           type="button"
           className={exit.available ? "primary" : "ghost"}
           disabled={!exit.available || props.busy}
+          data-testid={`escape-exit-${exit.toSceneId}`}
           onClick={() => props.onMove(exit.toSceneId)}
         >
           {exit.label}

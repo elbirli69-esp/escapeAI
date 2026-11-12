@@ -35,6 +35,7 @@ pnpm dev
 | `pnpm dev`   | API + web en paralelo          |
 | `pnpm build` | Build de todos los paquetes    |
 | `pnpm test`  | Tests (motor + sala piloto)    |
+| `pnpm test:e2e` | Playwright (API + PWA)      |
 
 ## Documentación
 

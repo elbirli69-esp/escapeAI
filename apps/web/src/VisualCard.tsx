@@ -10,6 +10,7 @@ type VisualCardProps = {
   className?: string;
   onClick?: () => void;
   type?: "button" | "article";
+  "data-testid"?: string;
 };
 
 export function VisualCard(props: VisualCardProps) {
@@ -25,6 +26,7 @@ export function VisualCard(props: VisualCardProps) {
     className = "",
     onClick,
     type = "button",
+    "data-testid": dataTestId,
   } = props;
 
   const cardClass = [
@@ -65,7 +67,7 @@ export function VisualCard(props: VisualCardProps) {
   }
 
   return (
-    <button type="button" className={cardClass} onClick={onClick}>
+    <button type="button" className={cardClass} onClick={onClick} data-testid={dataTestId}>
       {media}
       {copy}
     </button>

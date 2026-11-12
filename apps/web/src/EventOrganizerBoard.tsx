@@ -53,6 +53,7 @@ export function EventOrganizerBoard(props: { joinCode: string; onBack?: () => vo
   return (
     <main
       className={`shell lobby organizer-board ${themeClass(board?.theme)} ${projectorTv ? "organizer-tv" : ""}`}
+      data-testid="escape-organizer-board"
     >
       {props.onBack && (
         <button type="button" className="ghost sm back-link" onClick={props.onBack}>
@@ -99,7 +100,7 @@ export function EventOrganizerBoard(props: { joinCode: string; onBack?: () => vo
       </div>
       {q.isError && <p className="error">No se pudo cargar el evento.</p>}
       {q.isLoading && <p className="muted">Actualizando equipos…</p>}
-      <ol className="leaderboard-list leaderboard-projector">
+      <ol className="leaderboard-list leaderboard-projector" data-testid="escape-leaderboard-list">
         {(board?.teams ?? []).map((t, i) => {
           const avatar = teamAvatarStyle(t.teamName);
           return (
