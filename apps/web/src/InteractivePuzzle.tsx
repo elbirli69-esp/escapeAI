@@ -1,5 +1,5 @@
 import type { InteractionStep, PublicPuzzle } from "@escapeai/shared";
-import { Howl } from "howler";
+import { Howl, Howler } from "howler";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import Webcam from "react-webcam";
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
@@ -184,7 +184,17 @@ function SoundStation(props: {
   const [err, setErr] = useState<string | null>(null);
   const howlRef = useRef<Howl | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const minListenTimerRef = useRef<number | null>(null);
   const playStartRef = useRef(0);
+  const listenedRef = useRef(listened);
+  listenedRef.current = listened;
+
+  const clearPlaybackTimers = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = null;
+    if (minListenTimerRef.current != null) window.clearTimeout(minListenTimerRef.current);
+    minListenTimerRef.current = null;
+  }, []);
 
   const markListened = useCallback(() => {
     if (listened) return;
@@ -193,20 +203,35 @@ function SoundStation(props: {
       puzzleId: props.puzzle.id,
       step: "listen",
     });
-    if (timerRef.current) clearInterval(timerRef.current);
+    clearPlaybackTimers();
     try {
       navigator.vibrate?.(40);
     } catch {
       /* ignore */
     }
-  }, [listened, props]);
+  }, [clearPlaybackTimers, listened, props]);
+
+  const finishListenAfterMin = useCallback(() => {
+    if (listenedRef.current) return;
+    const elapsed = (Date.now() - playStartRef.current) / 1000;
+    if (elapsed < minSec) return;
+    markListened();
+    setPlaying(false);
+    clearPlaybackTimers();
+    howlRef.current?.stop();
+  }, [clearPlaybackTimers, markListened, minSec]);
 
   useEffect(() => {
     return () => {
       howlRef.current?.unload();
-      if (timerRef.current) clearInterval(timerRef.current);
+      clearPlaybackTimers();
     };
-  }, []);
+  }, [clearPlaybackTimers]);
+
+  async function pauseRoomAmbience(): Promise<void> {
+    const { stopRoomAmbience } = await import("./lib/room-ambience");
+    await stopRoomAmbience();
+  }
 
   async function playTts() {
     const text = props.puzzle.ttsText?.trim();
@@ -219,6 +244,7 @@ function SoundStation(props: {
       setListenSec(Math.floor((Date.now() - start) / 1000));
     }, 400);
     try {
+      await pauseRoomAmbience();
       const { speakWithWebSpeech } = await import("./lib/speech-tts");
       await speakWithWebSpeech(text, props.puzzle.voiceLocale ?? "es-ES");
       const elapsed = (Date.now() - start) / 1000;
@@ -227,11 +253,12 @@ function SoundStation(props: {
         await new Promise((r) => setTimeout(r, waitMore * 1000));
       }
       markListened();
-    } catch {
-      setErr("No se pudo leer el mensaje. Usa otro navegador o activa voces del sistema.");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "No se pudo leer el mensaje.";
+      setErr(`${msg} Prueba «Pitidos de respaldo» abajo.`);
     } finally {
       setPlaying(false);
-      if (timerRef.current) clearInterval(timerRef.current);
+      clearPlaybackTimers();
     }
   }
 
@@ -244,6 +271,7 @@ function SoundStation(props: {
       setListenSec(Math.floor((Date.now() - start) / 1000));
     }, 400);
     try {
+      await pauseRoomAmbience();
       const pattern = props.puzzle.beepPattern ?? [200, 100, 200];
       const { playBeepPattern, patternDurationSec } = await import("./lib/beep-player");
       const patternSec = patternDurationSec(pattern);
@@ -258,52 +286,77 @@ function SoundStation(props: {
       setErr("No se pudo reproducir el patrón de tonos.");
     } finally {
       setPlaying(false);
-      if (timerRef.current) clearInterval(timerRef.current);
+      clearPlaybackTimers();
     }
   }
 
-  function playUrl() {
+  async function playUrl() {
     setErr(null);
     if (!props.puzzle.audioUrl) return;
+    await pauseRoomAmbience();
     howlRef.current?.unload();
+    clearPlaybackTimers();
+    void Howler.ctx?.resume();
     const howl = new Howl({
       src: [props.puzzle.audioUrl],
       html5: true,
+      volume: 1,
+      onplay: () => {
+        playStartRef.current = Date.now();
+        setListenSec(0);
+        timerRef.current = setInterval(() => {
+          setListenSec(Math.floor((Date.now() - playStartRef.current) / 1000));
+        }, 500);
+        minListenTimerRef.current = window.setTimeout(() => {
+          finishListenAfterMin();
+        }, minSec * 1000);
+      },
       onend: () => {
-        setPlaying(false);
-        if (timerRef.current) clearInterval(timerRef.current);
         const elapsed = (Date.now() - playStartRef.current) / 1000;
         const waitMs = Math.max(0, minSec - elapsed) * 1000;
         if (waitMs > 0) {
-          window.setTimeout(() => markListened(), waitMs);
+          window.setTimeout(() => finishListenAfterMin(), waitMs);
         } else {
-          markListened();
+          finishListenAfterMin();
         }
       },
-      onplayerror: () => {
+      onloaderror: () => {
         setPlaying(false);
-        if (timerRef.current) clearInterval(timerRef.current);
-        setErr("Pulsa reproducir de nuevo (el navegador bloqueó el audio).");
+        clearPlaybackTimers();
+        setErr("No se pudo cargar el audio. Crea un evento nuevo o usa pitidos si están disponibles.");
+      },
+      onplayerror: () => {
+        howl.once("unlock", () => howl.play());
+        setErr("Pulsa reproducir otra vez (desbloqueo de audio). Sube volumen multimedia.");
       },
       onstop: () => {
-        setPlaying(false);
-        if (timerRef.current) clearInterval(timerRef.current);
+        if (!listenedRef.current) {
+          setPlaying(false);
+          clearPlaybackTimers();
+        }
       },
     });
     howlRef.current = howl;
     setPlaying(true);
     setListenSec(0);
-    playStartRef.current = Date.now();
-    timerRef.current = setInterval(() => {
-      setListenSec(Math.floor((Date.now() - playStartRef.current) / 1000));
-    }, 500);
     howl.play();
+
+    window.setTimeout(() => {
+      if (listenedRef.current) return;
+      if (howlRef.current && !howlRef.current.playing()) {
+        setPlaying(false);
+        clearPlaybackTimers();
+        setErr("El audio no arrancó. Sube el volumen y vuelve a pulsar.");
+      }
+    }, 2500);
   }
 
   const useTts =
     props.puzzle.soundMode === "tts" && Boolean(props.puzzle.ttsText?.trim());
   const useBeeps =
     props.puzzle.soundMode === "beeps" || (!useTts && !props.puzzle.audioUrl);
+  const beepFallback =
+    useTts && Boolean(props.puzzle.beepPattern && props.puzzle.beepPattern.length > 2);
 
   return (
     <InteractionPanel title="Altavoz" done={listened}>
@@ -339,6 +392,16 @@ function SoundStation(props: {
           onClick={playUrl}
         >
           {playing ? "Reproduciendo…" : listened ? "Escuchado" : "Reproducir audio"}
+        </button>
+      )}
+      {beepFallback && !listened && (
+        <button
+          type="button"
+          className="ghost sm"
+          disabled={props.busy || playing}
+          onClick={() => void playBeeps()}
+        >
+          Pitidos de respaldo
         </button>
       )}
       <p className="muted sm">

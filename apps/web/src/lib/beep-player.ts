@@ -2,11 +2,14 @@ import * as Tone from "tone";
 
 /** Reproduce patrón on/off en ms; devuelve duración total en segundos. */
 export async function playBeepPattern(pattern: number[]): Promise<number> {
+  const { stopRoomAmbience } = await import("./room-ambience");
+  await stopRoomAmbience();
   await Tone.start();
+  const bus = new Tone.Volume(4).toDestination();
   const synth = new Tone.Synth({
-    oscillator: { type: "sine" },
-    envelope: { attack: 0.01, decay: 0.1, sustain: 0.1, release: 0.1 },
-  }).toDestination();
+    oscillator: { type: "square" },
+    envelope: { attack: 0.005, decay: 0.08, sustain: 0.15, release: 0.08 },
+  }).connect(bus);
 
   let cursor = Tone.now();
   let totalMs = 0;
