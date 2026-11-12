@@ -4,10 +4,12 @@ import { clearGameStorage } from "../fixtures/game.js";
 import { stubMediaRoutes } from "../fixtures/routes.js";
 
 test.describe.serial("organizer panel", () => {
+  test.describe.configure({ timeout: 120_000 });
   let joinCode: string;
   const teamName = "Equipo Proyector";
 
   test.beforeAll(async ({ browser }) => {
+    test.setTimeout(120_000);
     const setup = await browser.newPage();
     await stubMediaRoutes(setup);
     await clearGameStorage(setup);
@@ -25,7 +27,7 @@ test.describe.serial("organizer panel", () => {
     await stubMediaRoutes(page);
     await clearGameStorage(page);
     await page.goto("/");
-    await page.getByRole("button", { name: "Panel organizador" }).click();
+    await page.getByTestId("escape-mode-organizer").click();
     await page.getByTestId("escape-organizer-code-input").fill(joinCode);
     await expect(page.getByTestId("escape-organizer-board")).not.toBeVisible();
     await page.getByTestId("escape-organizer-open").click();

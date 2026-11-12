@@ -22,4 +22,17 @@ describe("generateAdventureRoom", () => {
     expect(room.puzzles.entry_lock.answer).toBe("1815");
     expect(room.puzzles.final_code.answer).toBe("ALAE");
   });
+
+  it("sound_intro procedural con tts o beeps", () => {
+    const room = generateAdventureRoom(baseInput, "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+    const sound = room.puzzles.sound_intro;
+    expect(sound.answer).toBe("18");
+    if (sound.soundMode === "tts") {
+      expect(sound.ttsText).toMatch(/uno|ocho|18|18/i);
+    } else {
+      expect(sound.soundMode).toBe("beeps");
+      expect(sound.beepPattern?.length).toBeGreaterThan(4);
+    }
+    expect(sound.interactionHints?.length).toBeGreaterThan(0);
+  });
 });

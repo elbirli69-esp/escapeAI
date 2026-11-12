@@ -68,10 +68,11 @@ function validateRoomContent(
     if (
       puzzle.type === "sound" &&
       !puzzle.audioUrl &&
-      !(puzzle.soundMode === "beeps" && puzzle.beepPattern && puzzle.beepPattern.length > 0)
+      !(puzzle.soundMode === "beeps" && puzzle.beepPattern && puzzle.beepPattern.length > 0) &&
+      !(puzzle.soundMode === "tts" && puzzle.ttsText?.trim())
     ) {
       errors.push(
-        `${prefix}: puzzle '${puzzle.id}' (sound) requiere audioUrl o soundMode beeps + beepPattern`,
+        `${prefix}: puzzle '${puzzle.id}' (sound) requiere audioUrl, soundMode beeps + beepPattern, o soundMode tts + ttsText`,
       );
     }
     if (puzzle.type === "visual" && !puzzle.visualUrl && !puzzle.pexelsQuery && !puzzle.falPrompt) {

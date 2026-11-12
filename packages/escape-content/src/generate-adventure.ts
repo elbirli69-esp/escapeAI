@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { AdventureType, CreateEventRequest, EventSubject } from "@escapeai/shared";
 import { durationMinToSec, resolveDurationMin } from "@escapeai/shared";
 import type { RoomDefinition } from "@escapeai/escape-engine";
+import { buildProceduralSoundIntro } from "./sound-digit-clues.js";
 
 const IMAGE_SETS: Record<AdventureType, { cover: string; scenes: [string, string, string] }> = {
   birthday: {
@@ -119,6 +120,12 @@ export function generateAdventureRoom(
     (input.subject.nickname?.trim() || input.subject.name.split(/\s+/)[0]) ?? "protagonista";
 
   const introTone = toneForType(input.adventureType, input.subject.name, nickname);
+  const soundIntro = buildProceduralSoundIntro({
+    eventId,
+    twoDigitAnswer: codes.yearCode.slice(0, 2),
+    nickname,
+    factSnippet: factA,
+  });
 
   return {
     id: `generated-${eventId.slice(0, 8)}`,
@@ -182,10 +189,11 @@ export function generateAdventureRoom(
         id: "sound_intro",
         type: "sound",
         label: "Mensaje oculto",
-        prompt:
-          "Sube el volumen y escucha. Las dos primeras cifras del candado numérico se anuncian en el ambiente.",
-        audioUrl:
-          "https://cdn.pixabay.com/audio/2024/09/23/audio_d76b709f16.mp3",
+        prompt: soundIntro.prompt,
+        soundMode: soundIntro.soundMode,
+        beepPattern: soundIntro.beepPattern,
+        ttsText: soundIntro.ttsText,
+        interactionHints: soundIntro.interactionHints,
         answer: codes.yearCode.slice(0, 2),
         normalize: "trim",
         minListenSec: 3,
@@ -199,7 +207,8 @@ export function generateAdventureRoom(
         id: "entry_lock",
         type: "code",
         label: "Primer candado",
-        prompt: introTone.lockPrompt,
+        prompt: `${introTone.lockPrompt} El audio de la misma sala ya dio el prefijo de dos cifras.`,
+        interactionHints: ["Combina el prefijo del mensaje oculto con el resto del código (año o cifra clave)."],
         answer: codes.yearCode,
         normalize: "trim",
         maxHints: 3,
@@ -214,6 +223,10 @@ export function generateAdventureRoom(
         type: "camera",
         label: "Prueba en el salón",
         cameraPrompt: `Haz una foto relacionada con: ${factA.slice(0, 60)}.`,
+        interactionHints: [
+          "Esta prueba no cambia el candado numérico: prueba que estuviste en el sitio del evento.",
+          `La respuesta enlaza con el token y con la sala final (${nickname}).`,
+        ],
         prompt: `Tras la foto, escribe en MAYÚSCULAS el apodo «${nickname}».`,
         answer: nickname.toUpperCase().replace(/[^A-ZÁÉÍÓÚÑ]/gi, "X").slice(0, 12) || "EQUIPO",
         normalize: "uppercase",
@@ -268,6 +281,10 @@ export function generateAdventureRoom(
         id: "voice_seal",
         type: "voice",
         label: "Sello vocal",
+        interactionHints: [
+          "Repite el apodo que ya usaste en la prueba de cámara.",
+          "El código de cuatro letras del mismo acto viene de las iniciales del nombre central.",
+        ],
         prompt: `Di en voz alta el apodo «${nickname}» para sellar la victoria (opcional antes del código final).`,
         answer: nickname.toLowerCase(),
         normalize: "lowercase",

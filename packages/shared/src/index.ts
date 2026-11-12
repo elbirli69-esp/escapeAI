@@ -100,6 +100,7 @@ export type PublicPuzzle = {
   completedSteps: InteractionStep[];
   audioUrl?: string;
   soundMode?: SoundMode;
+  ttsText?: string;
   beepPattern?: number[];
   minListenSec?: number;
   visualUrl?: string;

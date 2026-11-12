@@ -162,7 +162,17 @@ export function ExperienceLobby(props: {
               imageSrc={card.image}
               imageAlt={card.imageAlt}
               layout="stack"
-              data-testid={card.mode === "catalog" ? "escape-mode-catalog" : undefined}
+              data-testid={
+                card.mode === "catalog"
+                  ? "escape-mode-catalog"
+                  : card.mode === "create"
+                    ? "escape-mode-create"
+                    : card.mode === "join"
+                      ? "escape-mode-join"
+                      : card.mode === "organizer"
+                        ? "escape-mode-organizer"
+                        : undefined
+              }
               onClick={() => {
                 if (card.mode === "organizer") {
                   setOrganizerBoardCode(null);

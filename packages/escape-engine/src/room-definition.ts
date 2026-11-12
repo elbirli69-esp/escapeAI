@@ -27,6 +27,8 @@ export type RoomPuzzle = {
   /** URL de audio (sound). */
   audioUrl?: string;
   soundMode?: "url" | "beeps" | "tts";
+  /** Texto leído en el dispositivo (`soundMode: tts`). */
+  ttsText?: string;
   /** Duración on/off en ms para `soundMode: beeps`. */
   beepPattern?: number[];
   minListenSec?: number;
