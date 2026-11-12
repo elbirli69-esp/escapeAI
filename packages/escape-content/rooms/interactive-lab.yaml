@@ -18,7 +18,7 @@ scenes:
     description: >
       Cuatro estaciones esperan: una emite un código en Morse (simplificado a dígitos
       hablados), otra exige tu voz, otra la cámara y la última una imagen enigma.
-    puzzles: [sound_station, visual_station, camera_station, voice_finale]
+    puzzles: [sound_station, visual_station, camera_station, camera_object_lab, camera_count_lab, voice_finale]
     exits: []
 puzzles:
   sound_station:
@@ -68,6 +68,34 @@ puzzles:
     hints:
       - level: 1
         text: El OCR es solo ayuda; en demo puedes escribir 7 directamente.
+  camera_object_lab:
+    id: camera_object_lab
+    type: camera
+    label: Objeto en la sala
+    cardImage: /media/pilot-basement.jpg
+    cameraMode: keyword
+    cameraExpectedCategory: plant
+    allowCameraManualConfirm: true
+    cameraPrompt: Fotografía una planta (real o de prueba). La detección es solo pista local.
+    prompt: Escribe PLANTA para continuar en demo (la sala valida en servidor).
+    answer: PLANTA
+    normalize: uppercase
+    maxHints: 1
+    hints:
+      - level: 1
+        text: Si el detector falla, usa «Confirmo que estoy en el lugar».
+  camera_count_lab:
+    id: camera_count_lab
+    type: camera
+    label: Conteo con cámara
+    cardImage: /media/pilot-basement.jpg
+    cameraMode: count
+    cameraCountCategory: chair
+    allowCameraManualConfirm: true
+    cameraPrompt: Fotografía varias sillas si puedes; el conteo es orientativo.
+    prompt: En demo escribe 2 como respuesta.
+    answer: "2"
+    normalize: trim
   voice_finale:
     id: voice_finale
     type: voice

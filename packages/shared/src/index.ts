@@ -84,7 +84,7 @@ export type PublicItem = {
 };
 
 export type SoundMode = "url" | "beeps" | "tts";
-export type CameraMode = "keyword" | "count" | "ocr_hint";
+export type CameraMode = "keyword" | "count" | "ocr_hint" | "qr_scan";
 export type VisualLayout = "single" | "dual";
 
 export type PublicPuzzle = {
@@ -111,6 +111,12 @@ export type PublicPuzzle = {
   cameraPrompt?: string;
   cameraMode?: CameraMode;
   cameraSynonyms?: string[];
+  /** Pista cliente: categoría objetivo para comprobación visual (no sustituye la respuesta). */
+  cameraExpectedCategory?: import("./scanner.js").EscapeObjectCategory;
+  /** Pista cliente: categoría a contar en la imagen. */
+  cameraCountCategory?: import("./scanner.js").EscapeObjectCategory;
+  /** Permite botón «Confirmo que estoy en el lugar» si el detector falla. */
+  allowCameraManualConfirm?: boolean;
   voiceLocale?: string;
   voiceMatchMode?: VoiceMatchMode;
   allowTextFallback?: boolean;
@@ -248,6 +254,15 @@ export {
 } from "./scanner-taxonomy.js";
 export { categoryDisplayName, fuseDetectionsIntoObjects, mergeObjectLists } from "./scanner-fusion.js";
 export { mapCameraError, mapDetectorLoadError, type ScannerCapability } from "./scanner-errors.js";
+export {
+  buildCountHint,
+  buildObjectCheckHint,
+  buildQrHint,
+  countCategory,
+  summarizeDetections,
+  type CameraCaptureHint,
+  type CameraCaptureHintKind,
+} from "./camera-hint.js";
 export type {
   ClueOutputType,
   CreateSpatialEventRequest,

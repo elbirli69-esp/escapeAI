@@ -482,7 +482,12 @@ function CameraStation(props: {
   const [videoReady, setVideoReady] = useState(false);
   const [ocrHint, setOcrHint] = useState<string | null>(null);
   const [ocrBusy, setOcrBusy] = useState(false);
+  const [visionHint, setVisionHint] = useState<string | null>(null);
+  const [visionBusy, setVisionBusy] = useState(false);
+  const [manualConfirmed, setManualConfirmed] = useState(false);
   const isOcr = props.puzzle.cameraMode === "ocr_hint";
+  const isQr = props.puzzle.cameraMode === "qr_scan";
+  const allowManual = props.puzzle.allowCameraManualConfirm !== false;
 
   const videoConstraints = {
     facingMode: facing,
@@ -496,6 +501,47 @@ function CameraStation(props: {
     setCameraLive(true);
   }, []);
 
+  useEffect(() => {
+    if (!preview || isOcr) return;
+    if (
+      !isQr &&
+      !props.puzzle.cameraExpectedCategory &&
+      !props.puzzle.cameraCountCategory &&
+      props.puzzle.cameraMode !== "count"
+    ) {
+      return;
+    }
+    setVisionBusy(true);
+    void (async () => {
+      try {
+        const { analyzeCameraCapture } = await import("./lib/camera-vision-hint");
+        const hint = await analyzeCameraCapture(props.puzzle, preview);
+        setVisionHint(hint?.message ?? null);
+      } catch {
+        setVisionHint("No se pudo analizar la foto. Confirma manualmente o repite la captura.");
+      } finally {
+        setVisionBusy(false);
+      }
+    })();
+  }, [preview, isOcr, isQr, props.puzzle]);
+
+  const runOcrOnShot = useCallback((shot: string) => {
+    setOcrBusy(true);
+    setOcrHint(null);
+    void (async () => {
+      try {
+        const { recognizeTextFromDataUrl, extractDigitHint } = await import("./lib/ocr-from-image");
+        const text = await recognizeTextFromDataUrl(shot, props.puzzle.ocrLang ?? "spa+eng");
+        const hint = extractDigitHint(text) ?? text.slice(0, 40);
+        setOcrHint(hint || "(sin texto legible)");
+      } catch {
+        setOcrHint("No se pudo leer texto. Escribe la respuesta manualmente.");
+      } finally {
+        setOcrBusy(false);
+      }
+    })();
+  }, [props.puzzle.ocrLang]);
+
   const takePhoto = useCallback(() => {
     let shot: string | null | undefined;
     for (let i = 0; i < 8; i++) {
@@ -508,31 +554,15 @@ function CameraStation(props: {
     }
     setPreview(shot);
     setCameraLive(false);
+    setVisionHint(null);
+    setManualConfirmed(false);
     props.onAction({
       type: "complete_interaction",
       puzzleId: props.puzzle.id,
       step: "capture",
     });
-    if (isOcr) {
-      setOcrBusy(true);
-      setOcrHint(null);
-      void (async () => {
-        try {
-          const { recognizeTextFromDataUrl, extractDigitHint } = await import("./lib/ocr-from-image");
-          const text = await recognizeTextFromDataUrl(
-            shot,
-            props.puzzle.ocrLang ?? "spa+eng",
-          );
-          const hint = extractDigitHint(text) ?? text.slice(0, 40);
-          setOcrHint(hint || "(sin texto legible)");
-        } catch {
-          setOcrHint("No se pudo leer texto. Escribe la respuesta manualmente.");
-        } finally {
-          setOcrBusy(false);
-        }
-      })();
-    }
-  }, [isOcr, props]);
+    if (isOcr) runOcrOnShot(shot);
+  }, [isOcr, props, runOcrOnShot]);
 
   useEffect(() => {
     return () => {
@@ -598,6 +628,24 @@ function CameraStation(props: {
                   ? `Pista OCR (solo en tu móvil): «${ocrHint}»`
                   : null}
             </p>
+          )}
+          {!isOcr && (visionBusy || visionHint) && (
+            <p className="muted sm" data-testid="escape-camera-vision-hint">
+              {visionBusy ? "Analizando la foto en tu móvil…" : visionHint}
+            </p>
+          )}
+          {!isOcr && allowManual && preview && (
+            <button
+              type="button"
+              className="ghost sm"
+              data-testid="escape-camera-manual-confirm"
+              onClick={() => setManualConfirmed(true)}
+            >
+              {manualConfirmed ? "Lugar confirmado manualmente" : "Confirmo que estoy en el lugar"}
+            </button>
+          )}
+          {manualConfirmed && (
+            <p className="muted sm">La validación final sigue al enviar la respuesta en el panel del puzzle.</p>
           )}
         </>
       )}

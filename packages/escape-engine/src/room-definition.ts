@@ -39,8 +39,11 @@ export type RoomPuzzle = {
   falPrompt?: string;
   /** Instrucción de búsqueda en el entorno real (camera). */
   cameraPrompt?: string;
-  cameraMode?: "keyword" | "count" | "ocr_hint";
+  cameraMode?: "keyword" | "count" | "ocr_hint" | "qr_scan";
   cameraSynonyms?: string[];
+  cameraExpectedCategory?: import("@escapeai/shared").EscapeObjectCategory;
+  cameraCountCategory?: import("@escapeai/shared").EscapeObjectCategory;
+  allowCameraManualConfirm?: boolean;
   voiceLocale?: string;
   voiceMatchMode?: "exact" | "fuzzy" | "digits";
   allowTextFallback?: boolean;
