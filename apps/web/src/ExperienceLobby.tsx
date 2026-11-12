@@ -16,8 +16,50 @@ import {
   type RoomSummary,
 } from "./api";
 import { EventOrganizerBoard } from "./EventOrganizerBoard";
+import { formatRoomDuration, VisualCard } from "./VisualCard";
 
 type LobbyMode = "home" | "create" | "join" | "organizer" | "catalog";
+
+const HOME_MODES: Array<{
+  mode: LobbyMode;
+  title: string;
+  description: string;
+  image: string;
+  imageAlt: string;
+}> = [
+  {
+    mode: "create",
+    title: "Crear experiencia",
+    description: "Tipo, nombre central, datos → código para invitar",
+    image: "/media/pilot-control.jpg",
+    imageAlt: "Panel de control iluminado, ambiente de misterio urbano",
+  },
+  {
+    mode: "join",
+    title: "Entrar como equipo",
+    description: "Código del organizador + nombre del equipo",
+    image: "/media/pilot-entrance.jpg",
+    imageAlt: "Entrada de edificio con luces de neón",
+  },
+  {
+    mode: "organizer",
+    title: "Panel organizador",
+    description: "Ranking en vivo para TV o proyector",
+    image: "/media/lighthouse-dock.jpg",
+    imageAlt: "Muelle junto al mar, ambiente de competición",
+  },
+  {
+    mode: "catalog",
+    title: "Catálogo clásico",
+    description: "Pilot, Faro y demás salas YAML",
+    image: "/media/lighthouse-cover.jpg",
+    imageAlt: "Faro en la costa, tormenta inminente",
+  },
+];
+
+function themeClass(theme?: string): string {
+  return theme === "coastal" ? "theme-coastal" : "theme-urban";
+}
 
 export function ExperienceLobby(props: {
   rooms: RoomSummary[];
@@ -98,23 +140,18 @@ export function ExperienceLobby(props: {
             proyecta el ranking.
           </p>
         </header>
-        <div className="mode-grid">
-          <button type="button" className="room-card-v2" onClick={() => setMode("create")}>
-            <strong>Crear experiencia</strong>
-            <span className="meta">Tipo, nombre central, datos → código para invitar</span>
-          </button>
-          <button type="button" className="room-card-v2" onClick={() => setMode("join")}>
-            <strong>Entrar como equipo</strong>
-            <span className="meta">Código del organizador + nombre del equipo</span>
-          </button>
-          <button type="button" className="room-card-v2" onClick={() => setMode("organizer")}>
-            <strong>Panel organizador</strong>
-            <span className="meta">Ranking en vivo para TV o proyector</span>
-          </button>
-          <button type="button" className="room-card-v2" onClick={() => setMode("catalog")}>
-            <strong>Catálogo clásico</strong>
-            <span className="meta">Pilot, Faro y demás salas YAML</span>
-          </button>
+        <div className="mode-grid mode-grid-visual">
+          {HOME_MODES.map((card) => (
+            <VisualCard
+              key={card.mode}
+              title={card.title}
+              description={card.description}
+              imageSrc={card.image}
+              imageAlt={card.imageAlt}
+              layout="stack"
+              onClick={() => setMode(card.mode)}
+            />
+          ))}
         </div>
       </main>
     );
@@ -338,31 +375,48 @@ export function ExperienceLobby(props: {
     );
   }
 
+  const selectedRoom = props.rooms.find((r) => r.id === props.selectedRoomId);
+  const catalogTheme = themeClass(selectedRoom?.theme);
+
   return (
-    <main className={`shell lobby ${props.selectedRoomId ? "theme-urban" : ""}`}>
+    <main className={`shell lobby ${catalogTheme}`}>
       <button type="button" className="ghost sm back-link" onClick={() => setMode("home")}>
         ← Volver
       </button>
       <header className="lobby-hero">
-        <h1 className="display">Catálogo</h1>
+        <p className="eyebrow">Salas listas para jugar</p>
+        <h1 className="display">Elige tu escape</h1>
+        <p className="lede muted">
+          Cada carta muestra la atmósfera de la sala. Un móvil por jugador o por equipo.
+        </p>
       </header>
       {props.classicError && <p className="error">{props.classicError}</p>}
       {props.roomsLoading && <p className="muted">Cargando salas…</p>}
-      <ul className="room-grid">
-        {props.rooms.map((room) => (
-          <li key={room.id}>
-            <button
-              type="button"
-              className={room.id === props.selectedRoomId ? "room-card-v2 active" : "room-card-v2"}
-              onClick={() => props.onSelectRoom(room.id)}
-            >
-              <div className="room-card-copy">
-                <strong>{room.title}</strong>
-                {room.tagline && <span className="room-tagline">{room.tagline}</span>}
-              </div>
-            </button>
-          </li>
-        ))}
+      <ul className="room-grid room-grid-visual">
+        {props.rooms.map((room) => {
+          const themeLabel =
+            room.theme === "coastal" ? "Costa · faro" : room.theme === "urban" ? "Urbano · noche" : "Aventura";
+          const metaParts = [
+            formatRoomDuration(room.timeLimitSec),
+            room.sceneCount != null ? `${room.sceneCount} escenas` : null,
+            themeLabel,
+          ].filter(Boolean);
+          return (
+            <li key={room.id}>
+              <VisualCard
+                title={room.title}
+                description={room.tagline ?? room.summary}
+                imageSrc={room.coverImage}
+                imageAlt={`Portada: ${room.title}`}
+                meta={metaParts.join(" · ")}
+                eyebrow={room.summary !== (room.tagline ?? "") ? room.summary : undefined}
+                active={room.id === props.selectedRoomId}
+                layout="stack"
+                onClick={() => props.onSelectRoom(room.id)}
+              />
+            </li>
+          );
+        })}
       </ul>
       <button
         type="button"
