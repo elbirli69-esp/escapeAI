@@ -6,7 +6,7 @@ import type {
   PublicState,
 } from "@escapeai/shared";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { EventDurationMin } from "@escapeai/shared";
 import {
   createCustomEvent,
@@ -15,9 +15,53 @@ import {
   startEventSession,
   type RoomSummary,
 } from "./api";
+import { EventJoinQr } from "./EventJoinQr";
 import { EventOrganizerBoard } from "./EventOrganizerBoard";
+import { formatRoomDuration, VisualCard } from "./VisualCard";
+import { readJoinCodeFromLocation, stripJoinParamFromUrl } from "./lib/event-join-url";
 
 type LobbyMode = "home" | "create" | "join" | "organizer" | "catalog";
+
+const HOME_MODES: Array<{
+  mode: LobbyMode;
+  title: string;
+  description: string;
+  image: string;
+  imageAlt: string;
+}> = [
+  {
+    mode: "create",
+    title: "Crear experiencia",
+    description: "Tipo, nombre central, datos → código para invitar",
+    image: "/media/pilot-control.jpg",
+    imageAlt: "Panel de control iluminado, ambiente de misterio urbano",
+  },
+  {
+    mode: "join",
+    title: "Entrar como equipo",
+    description: "Código del organizador + nombre del equipo",
+    image: "/media/pilot-entrance.jpg",
+    imageAlt: "Entrada de edificio con luces de neón",
+  },
+  {
+    mode: "organizer",
+    title: "Panel organizador",
+    description: "Ranking en vivo para TV o proyector",
+    image: "/media/lighthouse-dock.jpg",
+    imageAlt: "Muelle junto al mar, ambiente de competición",
+  },
+  {
+    mode: "catalog",
+    title: "Catálogo clásico",
+    description: "Pilot, Faro y demás salas YAML",
+    image: "/media/lighthouse-cover.jpg",
+    imageAlt: "Faro en la costa, tormenta inminente",
+  },
+];
+
+function themeClass(theme?: string): string {
+  return theme === "coastal" ? "theme-coastal" : "theme-urban";
+}
 
 export function ExperienceLobby(props: {
   rooms: RoomSummary[];
@@ -45,6 +89,14 @@ export function ExperienceLobby(props: {
   /** Código activo del panel organizador (solo tras enviar el formulario). */
   const [organizerBoardCode, setOrganizerBoardCode] = useState<string | null>(null);
   const [organizerDraft, setOrganizerDraft] = useState("");
+
+  useEffect(() => {
+    const code = readJoinCodeFromLocation();
+    if (!code) return;
+    setJoinCode(code);
+    setMode("join");
+    stripJoinParamFromUrl();
+  }, []);
 
   const templatesQuery = useQuery({
     queryKey: ["adventures"],
@@ -101,53 +153,48 @@ export function ExperienceLobby(props: {
             proyecta el ranking.
           </p>
         </header>
-        <div className="mode-grid">
-          <button type="button" className="room-card-v2" onClick={() => setMode("create")}>
-            <strong>Crear experiencia</strong>
-            <span className="meta">Tipo, nombre central, datos → código para invitar</span>
-          </button>
-          <button type="button" className="room-card-v2" onClick={() => setMode("join")}>
-            <strong>Entrar como equipo</strong>
-            <span className="meta">Código del organizador + nombre del equipo</span>
-          </button>
-          <button
-            type="button"
-            className="room-card-v2"
-            onClick={() => {
-              setOrganizerBoardCode(null);
-              setOrganizerDraft("");
-              setMode("organizer");
-            }}
-          >
-            <strong>Panel organizador</strong>
-            <span className="meta">Ranking en vivo para TV o proyector</span>
-          </button>
-          <button
-            type="button"
-            className="room-card-v2"
-            data-testid="escape-mode-catalog"
-            onClick={() => setMode("catalog")}
-          >
-            <strong>Catálogo clásico</strong>
-            <span className="meta">Pilot, Faro y demás salas YAML</span>
-          </button>
+        <div className="mode-grid mode-grid-visual">
+          {HOME_MODES.map((card) => (
+            <VisualCard
+              key={card.mode}
+              title={card.title}
+              description={card.description}
+              imageSrc={card.image}
+              imageAlt={card.imageAlt}
+              layout="stack"
+              data-testid={card.mode === "catalog" ? "escape-mode-catalog" : undefined}
+              onClick={() => {
+                if (card.mode === "organizer") {
+                  setOrganizerBoardCode(null);
+                  setOrganizerDraft("");
+                }
+                setMode(card.mode);
+              }}
+            />
+          ))}
         </div>
       </main>
     );
   }
 
+  const selectedTemplate = templates.find((t) => t.id === adventureType);
+
   if (mode === "create") {
     return (
-      <main className="shell lobby">
+      <main className={`shell lobby ${themeClass(selectedTemplate?.theme)}`}>
         <button type="button" className="ghost sm back-link" onClick={() => setMode("home")}>
           ← Volver
         </button>
-        <h1 className="display">Configurar aventura</h1>
+        <header className="lobby-hero">
+          <p className="eyebrow">Evento a medida</p>
+          <h1 className="display">Configurar aventura</h1>
+          <p className="lede muted">Elige el tono visual; los datos del grupo se convierten en pistas.</p>
+        </header>
         {formError && <p className="error">{formError}</p>}
 
         {!created ? (
           <form
-            className="wizard"
+            className="wizard wizard-wide"
             onSubmit={(e) => {
               e.preventDefault();
               const factLines = facts
@@ -168,29 +215,33 @@ export function ExperienceLobby(props: {
               });
             }}
           >
-            <label>
-              Tipo de aventura
-              <select
-                value={adventureType}
-                onChange={(e) => setAdventureType(e.target.value as AdventureType)}
-              >
+            <fieldset className="template-picker">
+              <legend className="picker-legend">Tipo de aventura</legend>
+              {templatesQuery.isLoading && <p className="muted">Cargando plantillas…</p>}
+              <ul className="room-grid room-grid-visual template-grid">
                 {templates.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.title}
-                  </option>
+                  <li key={t.id}>
+                    <VisualCard
+                      title={t.title}
+                      description={t.tagline ?? t.description}
+                      imageSrc={t.coverImage}
+                      imageAlt={`Plantilla: ${t.title}`}
+                      active={adventureType === t.id}
+                      layout="stack"
+                      onClick={() => setAdventureType(t.id)}
+                    />
+                  </li>
                 ))}
-              </select>
-            </label>
-            {templates
-              .filter((t) => t.id === adventureType)
-              .map((t) => (
-                <p key={t.id} className="muted">
-                  {t.description}{" "}
-                  <button type="button" className="ghost sm" onClick={() => applyTemplate(t)}>
-                    Usar datos sugeridos
-                  </button>
-                </p>
-              ))}
+              </ul>
+            </fieldset>
+            {selectedTemplate && (
+              <p className="template-detail muted">
+                {selectedTemplate.description}{" "}
+                <button type="button" className="ghost sm" onClick={() => applyTemplate(selectedTemplate)}>
+                  Usar datos sugeridos
+                </button>
+              </p>
+            )}
 
             <label>
               Equipos en competición (2–5)
@@ -243,40 +294,53 @@ export function ExperienceLobby(props: {
             </button>
           </form>
         ) : (
-          <div className="join-card">
-            <p className="eyebrow">Código para compartir</p>
-            <p className="join-code" data-testid="escape-join-code-display">
-              {created.joinCode}
-            </p>
-            <p>
-              <strong>{created.title}</strong> · {created.sceneCount} escenas ·{" "}
-              {Math.round(created.timeLimitSec / 60)} min · {created.teamCount} equipos
-            </p>
-            <p className="muted">
-              Cada equipo entra con el código y su nombre de grupo. Recomendado: un móvil por equipo.
-            </p>
-            <button
-              type="button"
-              className="primary wide"
-              onClick={() => {
-                setJoinCode(created.joinCode);
-                setOrganizerBoardCode(created.joinCode);
-                setMode("organizer");
-              }}
-            >
-              Abrir panel / proyector
-            </button>
-            <button
-              type="button"
-              className="ghost wide"
-              onClick={() => {
-                setJoinCode(created.joinCode);
-                setMode("join");
-              }}
-            >
-              Probar como equipo
-            </button>
-          </div>
+          <>
+            <div className={`event-poster join-card-poster ${themeClass(created.theme)}`}>
+              {created.coverImage && (
+                <img src={created.coverImage} alt="" className="event-poster-bg" loading="eager" />
+              )}
+              <div className="event-poster-scrim" aria-hidden />
+              <div className="event-poster-body">
+                <p className="eyebrow">Código para compartir</p>
+                <div className="event-poster-invite">
+                  <div className="event-poster-invite-copy">
+                    <p className="join-code poster-code" data-testid="escape-join-code-display">
+                      {created.joinCode}
+                    </p>
+                    <p>
+                      <strong>{created.title}</strong> · {created.sceneCount} escenas ·{" "}
+                      {Math.round(created.timeLimitSec / 60)} min · {created.teamCount} equipos
+                    </p>
+                    <p className="muted">Escanea el QR o escribe el código. Un móvil por equipo.</p>
+                  </div>
+                  <EventJoinQr joinCode={created.joinCode} size="md" />
+                </div>
+              </div>
+            </div>
+            <div className="join-card-actions">
+              <button
+                type="button"
+                className="primary wide"
+                onClick={() => {
+                  setJoinCode(created.joinCode);
+                  setOrganizerBoardCode(created.joinCode);
+                  setMode("organizer");
+                }}
+              >
+                Abrir panel / proyector
+              </button>
+              <button
+                type="button"
+                className="ghost wide"
+                onClick={() => {
+                  setJoinCode(created.joinCode);
+                  setMode("join");
+                }}
+              >
+                Probar como equipo
+              </button>
+            </div>
+          </>
         )}
       </main>
     );
@@ -373,32 +437,49 @@ export function ExperienceLobby(props: {
     );
   }
 
+  const selectedRoom = props.rooms.find((r) => r.id === props.selectedRoomId);
+  const catalogTheme = themeClass(selectedRoom?.theme);
+
   return (
-    <main className={`shell lobby ${props.selectedRoomId ? "theme-urban" : ""}`}>
+    <main className={`shell lobby ${catalogTheme}`}>
       <button type="button" className="ghost sm back-link" onClick={() => setMode("home")}>
         ← Volver
       </button>
       <header className="lobby-hero">
-        <h1 className="display">Catálogo</h1>
+        <p className="eyebrow">Salas listas para jugar</p>
+        <h1 className="display">Elige tu escape</h1>
+        <p className="lede muted">
+          Cada carta muestra la atmósfera de la sala. Un móvil por jugador o por equipo.
+        </p>
       </header>
       {props.classicError && <p className="error">{props.classicError}</p>}
       {props.roomsLoading && <p className="muted">Cargando salas…</p>}
-      <ul className="room-grid">
-        {props.rooms.map((room) => (
-          <li key={room.id}>
-            <button
-              type="button"
-              className={room.id === props.selectedRoomId ? "room-card-v2 active" : "room-card-v2"}
-              data-testid={`escape-room-${room.id}`}
-              onClick={() => props.onSelectRoom(room.id)}
-            >
-              <div className="room-card-copy">
-                <strong>{room.title}</strong>
-                {room.tagline && <span className="room-tagline">{room.tagline}</span>}
-              </div>
-            </button>
-          </li>
-        ))}
+      <ul className="room-grid room-grid-visual">
+        {props.rooms.map((room) => {
+          const themeLabel =
+            room.theme === "coastal" ? "Costa · faro" : room.theme === "urban" ? "Urbano · noche" : "Aventura";
+          const metaParts = [
+            formatRoomDuration(room.timeLimitSec),
+            room.sceneCount != null ? `${room.sceneCount} escenas` : null,
+            themeLabel,
+          ].filter(Boolean);
+          return (
+            <li key={room.id}>
+              <VisualCard
+                title={room.title}
+                description={room.tagline ?? room.summary}
+                imageSrc={room.coverImage}
+                imageAlt={`Portada: ${room.title}`}
+                meta={metaParts.join(" · ")}
+                eyebrow={room.summary !== (room.tagline ?? "") ? room.summary : undefined}
+                active={room.id === props.selectedRoomId}
+                layout="stack"
+                data-testid={`escape-room-${room.id}`}
+                onClick={() => props.onSelectRoom(room.id)}
+              />
+            </li>
+          );
+        })}
       </ul>
       <button
         type="button"

@@ -36,7 +36,7 @@ export const ROOM_CATALOG: Array<{
     title: "Laboratorio sensorial",
     summary: "Sonido, voz, cámara e imágenes en un solo hub de pruebas.",
     tagline: "Demuestra todas las pistas interactivas en el móvil.",
-    coverImage: "/media/pilot-cover.jpg",
+    coverImage: "/media/pilot-basement.jpg",
     theme: "urban",
   },
   {
@@ -44,7 +44,7 @@ export const ROOM_CATALOG: Array<{
     title: "Rally GPS (demo)",
     summary: "Llega a un waypoint y responde un quiz según tu ubicación.",
     tagline: "Geolocalización validada en el motor, sin guardar tu trayecto.",
-    coverImage: "/media/pilot-cover.jpg",
+    coverImage: "/media/lighthouse-dock.jpg",
     theme: "urban",
   },
 ];

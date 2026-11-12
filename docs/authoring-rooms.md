@@ -43,6 +43,7 @@ puzzles:
   door_code:
     id: door_code
     type: code
+    cardImage: /media/mi-pista.jpg   # opcional: carta instructiva en la PWA
     prompt: Lo que ve el jugador.
     answer: "42"
     normalize: uppercase    # opcional: uppercase | lowercase | trim

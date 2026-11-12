@@ -2,7 +2,7 @@ id: geo-lab
 name: Rally GPS (demo)
 tagline: Llega al punto y responde preguntas del entorno.
 theme: urban
-coverImage: /media/pilot-cover.jpg
+coverImage: /media/lighthouse-dock.jpg
 timeLimitSec: 2400
 startSceneId: waypoint
 winCondition:
@@ -13,7 +13,7 @@ scenes:
   waypoint:
     id: waypoint
     title: Hito urbano
-    image: /media/pilot-entrance.jpg
+    image: /media/lighthouse-dock.jpg
     mood: El móvil es tu brújula; el motor valida el GPS en servidor.
     description: >
       Demo en Madrid (Km 0, Puerta del Sol). En producción defines lat/lon y radio
@@ -29,7 +29,7 @@ scenes:
     id: quiz_zone
     title: Quiz en el sitio
     description: Vuelve al mismo punto (o mantente allí) y confirma posición antes de responder.
-    image: /media/pilot-basement.jpg
+    image: /media/pilot-control.jpg
     puzzles: [ciudad_quiz]
     exits: []
 puzzles:
@@ -38,6 +38,7 @@ puzzles:
     type: location
     locationMode: reach
     label: Llegar al punto
+    cardImage: /media/lighthouse-dock.jpg
     waypointLabel: Puerta del Sol (demo)
     prompt: >
       Abre el mapa, acércate a la Puerta del Sol y pulsa «Estoy aquí» cuando el GPS
@@ -55,6 +56,7 @@ puzzles:
     type: location
     locationMode: quiz
     label: Quiz del entorno
+    cardImage: /media/pilot-entrance.jpg
     waypointLabel: Zona Puerta del Sol
     prompt: Confirma que sigues en el lugar y responde.
     quizPrompt: ¿En qué ciudad está este rally de demo? (una palabra, minúsculas)

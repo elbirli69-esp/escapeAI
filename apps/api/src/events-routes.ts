@@ -122,6 +122,9 @@ export function mountEventRoutes(app: Hono, eventStore: EventStore): void {
       joinCode: event.joinCode,
       title: event.title,
       teams,
+      adventureType: event.config.adventureType,
+      coverImage: event.room.coverImage,
+      theme: event.room.theme,
       players: teams,
     });
   });

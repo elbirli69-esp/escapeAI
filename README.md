@@ -40,6 +40,7 @@ pnpm dev
 ## Documentación
 
 - [Arquitectura](./docs/architecture.md)
+- [Plan UX/UI visual por tema](./docs/prompt-ux-ui-temas-visuales.md)
 - [Diseñar salas (YAML)](./docs/authoring-rooms.md)
 - [Despliegue en Vercel](./docs/deploy-vercel.md)
 - [Checklist lanzamiento público](./docs/public-launch-checklist.md)

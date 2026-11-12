@@ -15,9 +15,9 @@ const IMAGE_SETS: Record<AdventureType, { cover: string; scenes: [string, string
   mystery: {
     cover: "/media/lighthouse-cover.jpg",
     scenes: [
-      "/media/lighthouse-shore.jpg",
-      "/media/lighthouse-tower.jpg",
-      "/media/lighthouse-lamp.jpg",
+      "/media/lighthouse-dock.jpg",
+      "/media/lighthouse-supply.jpg",
+      "/media/lighthouse-cover.jpg",
     ],
   },
   team: {
@@ -26,11 +26,36 @@ const IMAGE_SETS: Record<AdventureType, { cover: string; scenes: [string, string
   },
 };
 
+const TEMPLATE_META: Record<
+  AdventureType,
+  { tagline: string; theme: "urban" | "coastal" }
+> = {
+  celebration: {
+    tagline: "Competid entre equipos con datos reales del grupo.",
+    theme: "urban",
+  },
+  birthday: {
+    tagline: "Un nombre en el centro, tono íntimo y festivo.",
+    theme: "urban",
+  },
+  mystery: {
+    tagline: "Costa, niebla y pistas que no esperan al amanecer.",
+    theme: "coastal",
+  },
+  team: {
+    tagline: "Reto puro: ranking, ritmo y un código que activa el edificio.",
+    theme: "urban",
+  },
+};
+
 export function listAdventureTemplates(): Array<{
   id: AdventureType;
   title: string;
   description: string;
   suggestedFacts: string[];
+  coverImage: string;
+  theme: "urban" | "coastal";
+  tagline: string;
 }> {
   return [
     {
@@ -42,6 +67,8 @@ export function listAdventureTemplates(): Array<{
         "Lugar o fecha simbólica (p. ej. año 2018)",
         "Frase o chiste interno del grupo",
       ],
+      coverImage: IMAGE_SETS.celebration.cover,
+      ...TEMPLATE_META.celebration,
     },
     {
       id: "birthday",
@@ -52,18 +79,24 @@ export function listAdventureTemplates(): Array<{
         "Apodo o canción favorita",
         "Detalle que solo los del grupo saben",
       ],
+      coverImage: IMAGE_SETS.birthday.cover,
+      ...TEMPLATE_META.birthday,
     },
     {
       id: "mystery",
       title: "Misterio",
       description: "Tono investigación costera o nocturna.",
       suggestedFacts: ["Sospechoso o pista clave", "Hora del suceso", "Objeto perdido"],
+      coverImage: IMAGE_SETS.mystery.cover,
+      ...TEMPLATE_META.mystery,
     },
     {
       id: "team",
       title: "Reto de equipo",
       description: "Escape genérico para competir entre equipos.",
       suggestedFacts: ["Nombre del reto", "Regla interna", "Meta del día"],
+      coverImage: IMAGE_SETS.team.cover,
+      ...TEMPLATE_META.team,
     },
   ];
 }

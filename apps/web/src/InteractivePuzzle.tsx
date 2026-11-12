@@ -5,6 +5,7 @@ import Webcam from "react-webcam";
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 import { LocationStation } from "./LocationStation";
 import { PermissionGate } from "./PermissionGate";
+import { PuzzleInstructionCard } from "./PuzzleInstructionCard";
 import { fetchFalImage, fetchPexelsImage } from "./api";
 
 type ActionSender = (
@@ -32,18 +33,22 @@ export function InteractivePuzzle(props: {
 
   if (puzzle.puzzleType === "code" || puzzle.puzzleType === "inventory") {
     return (
-      <ClassicPuzzleForm
-        puzzle={puzzle}
-        answer={props.answer}
-        busy={props.busy}
-        onAnswerChange={props.onAnswerChange}
-        onAction={props.onAction}
-      />
+      <div className="interactive-puzzle">
+        <PuzzleInstructionCard puzzle={puzzle} />
+        <ClassicPuzzleForm
+          puzzle={puzzle}
+          answer={props.answer}
+          busy={props.busy}
+          onAnswerChange={props.onAnswerChange}
+          onAction={props.onAction}
+        />
+      </div>
     );
   }
 
   return (
     <div className="interactive-puzzle">
+      <PuzzleInstructionCard puzzle={puzzle} />
       {puzzle.puzzleType === "sound" && (
         <SoundStation puzzle={puzzle} busy={props.busy} onAction={props.onAction} />
       )}
@@ -119,10 +124,10 @@ function ClassicPuzzleForm(props: {
     puzzle.puzzleType !== "location" || (puzzle.locationMode ?? "reach") === "quiz";
   return (
     <>
-      {showPrompt && puzzle.puzzleType !== "location" && (
+      {showPrompt && !puzzle.cardImage && puzzle.puzzleType !== "location" && (
         <p className="puzzle-prompt">{puzzle.prompt}</p>
       )}
-      {showPrompt && puzzle.puzzleType === "location" && puzzle.quizPrompt && (
+      {showPrompt && !puzzle.cardImage && puzzle.puzzleType === "location" && puzzle.quizPrompt && (
         <p className="puzzle-prompt">{puzzle.quizPrompt}</p>
       )}
       <form

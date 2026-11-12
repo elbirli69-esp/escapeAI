@@ -79,6 +79,8 @@ export type PublicItem = {
   id: string;
   name: string;
   description?: string;
+  /** Miniatura opcional (p. ej. /media/item.jpg). */
+  imageUrl?: string;
 };
 
 export type SoundMode = "url" | "beeps" | "tts";
@@ -88,6 +90,7 @@ export type VisualLayout = "single" | "dual";
 export type PublicPuzzle = {
   id: string;
   label?: string;
+  cardImage?: string;
   prompt: string;
   puzzleType: PublicPuzzleType;
   solved: boolean;
@@ -148,6 +151,7 @@ export type PublicState = {
   /** Orden de escenas para barra de progreso. */
   sceneOrder?: string[];
   roomTheme?: string;
+  roomCoverImage?: string;
   narrative: string[];
   puzzles: PublicPuzzle[];
   exits: PublicExit[];

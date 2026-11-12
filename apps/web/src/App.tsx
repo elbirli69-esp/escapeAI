@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { createSession, fetchRooms, fetchState, sendAction } from "./api";
 import { ExperienceLobby } from "./ExperienceLobby";
 import { InteractivePuzzle } from "./InteractivePuzzle";
+import { SceneHero } from "./SceneHero";
+import { useRoomAmbience } from "./hooks/useRoomAmbience";
 
 function themeClass(theme?: string): string {
   return theme === "coastal" ? "theme-coastal" : "theme-urban";
@@ -33,22 +35,6 @@ function formatTime(sec: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-function SceneHero(props: { image?: string; title: string; mood?: string }) {
-  return (
-    <figure className="scene-hero">
-      {props.image ? (
-        <img src={props.image} alt="" className="scene-hero-img" loading="eager" />
-      ) : (
-        <div className="scene-hero-placeholder" aria-hidden />
-      )}
-      <figcaption className="scene-hero-caption">
-        <h2 className="scene-hero-title">{props.title}</h2>
-        {props.mood && <p className="scene-hero-mood">{props.mood}</p>}
-      </figcaption>
-    </figure>
-  );
-}
-
 function ProgressRail(props: { order: string[]; current: string; theme?: string }) {
   const idx = props.order.indexOf(props.current);
   return (
@@ -66,6 +52,24 @@ function ProgressRail(props: { order: string[]; current: string; theme?: string 
   );
 }
 
+function endGameMessage(state: PublicState): { title: string; body: string } {
+  const coastal = state.roomTheme === "coastal";
+  if (state.status === "won") {
+    return {
+      title: "¡Escapaste!",
+      body: coastal
+        ? "El faro vuelve a encender su mensaje. La tormenta cede el paso."
+        : "Las luces del edificio obedecen otra vez. El candado guarda tu victoria.",
+    };
+  }
+  return {
+    title: "Tiempo agotado",
+    body: coastal
+      ? "La marea se lleva la última chispa del faro. Mañana habrá otra señal."
+      : "El conserje sigue dormido y el panel maestro en silencio. Reinténtalo.",
+  };
+}
+
 function ItemCard(props: {
   item: PublicItem;
   variant: "inventory" | "scene";
@@ -73,11 +77,16 @@ function ItemCard(props: {
   onTake?: () => void;
   onUse?: () => void;
 }) {
+  const thumb = props.item.imageUrl;
   return (
     <article className="item-card">
-      <div className="item-icon" aria-hidden>
-        {props.variant === "inventory" ? "🎒" : "✦"}
-      </div>
+      {thumb ? (
+        <img className="item-thumb" src={thumb} alt="" loading="lazy" decoding="async" />
+      ) : (
+        <div className="item-icon" aria-hidden>
+          {props.variant === "inventory" ? "🎒" : "✦"}
+        </div>
+      )}
       <div className="item-body">
         <strong>{props.item.name}</strong>
         {props.item.description && <p>{props.item.description}</p>}
@@ -279,6 +288,15 @@ function GameView(props: {
     (Math.max(0, sceneIdx) / Math.max(1, sceneOrder.length - 1)) * 100,
   );
 
+  const { ambienceOn, armFromGesture, toggleAmbience, reducedMotion } = useRoomAmbience(
+    state.roomTheme,
+    state.status === "playing",
+  );
+
+  useEffect(() => {
+    if (props.busy) armFromGesture();
+  }, [props.busy, armFromGesture]);
+
   return (
     <main className={`shell game ${themeClass(state.roomTheme)}`}>
       <header className="game-head">
@@ -304,6 +322,19 @@ function GameView(props: {
             {formatTime(state.timeRemainingSec)}
           </div>
           <span className="progress-label">{progress}% recorrido</span>
+          {!reducedMotion && (
+            <button
+              type="button"
+              className="ghost sm ambience-toggle"
+              aria-pressed={ambienceOn}
+              onClick={() => {
+                armFromGesture();
+                toggleAmbience();
+              }}
+            >
+              {ambienceOn ? "Ambiente · on" : "Ambiente · off"}
+            </button>
+          )}
         </div>
       </header>
 
@@ -410,14 +441,13 @@ function GameView(props: {
           data-testid="escape-game-status"
           data-status={state.status}
         >
-          <h2 className="display-sm">
-            {state.status === "won" ? "¡Escapaste!" : "Tiempo agotado"}
-          </h2>
-          <p>
-            {state.status === "won"
-              ? "La sala cede sus secretos. ¿Te atreves con otra?"
-              : "La tormenta —o el edificio— ganó esta vez."}
-          </p>
+          {state.roomCoverImage && (
+            <figure className="end-hero">
+              <img src={state.roomCoverImage} alt="" className="end-hero-img" />
+            </figure>
+          )}
+          <h2 className="display-sm">{endGameMessage(state).title}</h2>
+          <p>{endGameMessage(state).body}</p>
           <button type="button" className="primary wide" onClick={props.onNewGame}>
             Nueva partida
           </button>

@@ -16,6 +16,8 @@ export type RoomPuzzle = {
   type: PuzzleType;
   /** Título corto en la UI (si no, se usa id). */
   label?: string;
+  /** Imagen de carta instructiva (p. ej. /media/lab-sound.jpg). */
+  cardImage?: string;
   prompt: string;
   answer?: string;
   requiresItem?: string;
@@ -76,6 +78,7 @@ export type RoomScene = {
 export type RoomItem = {
   name: string;
   description: string;
+  image?: string;
 };
 
 export type RoomDefinition = {
