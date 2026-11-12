@@ -100,4 +100,6 @@ export type RoomDefinition = {
   items?: Record<string, RoomItem>;
   scenes: Record<string, RoomScene>;
   puzzles: Record<string, RoomPuzzle>;
+  /** Mapa esquemático de recinto ScannerAI (partidas multi-habitación). */
+  spatialSiteMap?: import("@escapeai/shared").SpatialSiteMapPublic;
 };

@@ -173,6 +173,10 @@ export type PublicState = {
   elapsedSec: number;
   timeLimitSec: number;
   timeRemainingSec: number;
+  /** Recinto multi-habitación: mapa y estancia activa (solo lectura en cliente). */
+  spatialSiteMap?: import("./spatial-site-public.js").SpatialSiteMapPublic;
+  /** Texto «Estás en: …» cuando la escena es una habitación del recinto. */
+  spatialRoomLabel?: string;
 };
 
 export type GameEvent =
@@ -292,6 +296,7 @@ export type {
   SiteMapLayout,
 } from "./scanned-site.js";
 export { DEFAULT_SITE_AREA_RADIUS_METERS } from "./scanned-site.js";
+export type { SpatialSiteMapPublic } from "./spatial-site-public.js";
 export type { SanitizeSiteResult } from "./scanned-site-sanitize.js";
 export { sanitizeScannedSiteInput, toScannedSiteSummary } from "./scanned-site-sanitize.js";
 export {

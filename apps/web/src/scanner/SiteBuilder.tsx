@@ -10,7 +10,7 @@ import type {
 import { SiteMapSchematic } from "./SiteMapSchematic";
 import { DEFAULT_SITE_AREA_RADIUS_METERS } from "@escapeai/shared";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { listScannedEnvironments, saveScannedSite } from "../api";
+import { fetchScannedSite, listScannedEnvironments, saveScannedSite } from "../api";
 import { getBrowserPosition } from "../lib/geo-position";
 
 function newLinkId(): string {
@@ -53,6 +53,7 @@ function buildLinksForLayout(roomIds: string[], layout: SiteMapLayout, prev?: Si
 
 export function SiteBuilder(props: {
   seedRoom?: ScannedEnvironment;
+  existingSiteId?: string;
   onBack: () => void;
   onSaved: (site: ScannedSite) => void;
 }) {
@@ -68,6 +69,7 @@ export function SiteBuilder(props: {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [geoStatus, setGeoStatus] = useState<string | null>(null);
+  const [existingId, setExistingId] = useState<string | undefined>(props.existingSiteId);
 
   const loadInventories = useCallback(async () => {
     const items = await listScannedEnvironments();
@@ -77,6 +79,26 @@ export function SiteBuilder(props: {
   useEffect(() => {
     void loadInventories().catch(() => setInventories([]));
   }, [loadInventories]);
+
+  useEffect(() => {
+    if (!props.existingSiteId) return;
+    void (async () => {
+      try {
+        const site = await fetchScannedSite(props.existingSiteId!);
+        setName(site.name);
+        setSelectedIds(site.roomIds);
+        setLinks(site.links);
+        setMapLayout(site.mapLayout);
+        setCity(site.geoContext?.city ?? "");
+        setNeighborhood(site.geoContext?.neighborhood ?? "");
+        setAnchorLat(site.geoContext?.anchorLat);
+        setAnchorLon(site.geoContext?.anchorLon);
+        setExistingId(site.id);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "No se pudo cargar el recinto");
+      }
+    })();
+  }, [props.existingSiteId]);
 
   const mapRooms = useMemo(
     () =>
@@ -160,6 +182,7 @@ export function SiteBuilder(props: {
         : undefined;
 
     const body: SaveScannedSiteRequest = {
+      id: existingId,
       name: name.trim(),
       roomIds: selectedIds,
       links: links.map((l) => ({ ...l, confirmed: true })),

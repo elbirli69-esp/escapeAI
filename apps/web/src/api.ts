@@ -14,6 +14,7 @@ import type {
   ScannedEnvironment,
   ScannedEnvironmentSummary,
   ScannedSite,
+  ScannedSiteSummary,
   SiteProposalsResponse,
   SpatialAdventureProposal,
   SpatialProposalsResponse,
@@ -171,6 +172,20 @@ export async function createSpatialEvent(
     proposal: SpatialAdventureProposal;
     prepChecklist: SpatialAdventureProposal["prepChecklist"];
   };
+}
+
+export async function listScannedSites(): Promise<ScannedSiteSummary[]> {
+  const res = await fetch(`${base}/scanned-sites`);
+  if (!res.ok) throw new Error("No se pudieron cargar recintos");
+  const data = await res.json();
+  return (data as { items: ScannedSiteSummary[] }).items;
+}
+
+export async function fetchScannedSite(id: string): Promise<ScannedSite> {
+  const res = await fetch(`${base}/scanned-sites/${encodeURIComponent(id)}`);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { error?: string }).error ?? "Recinto no encontrado");
+  return (data as { site: ScannedSite }).site;
 }
 
 export async function saveScannedSite(body: SaveScannedSiteRequest): Promise<ScannedSite> {

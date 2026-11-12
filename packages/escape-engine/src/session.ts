@@ -523,6 +523,11 @@ export function toPublicState(session: SessionRecord, nowMs = Date.now()): Publi
   }
 
   const sceneOrder = Object.keys(session.room.scenes);
+  const siteMap = session.room.spatialSiteMap;
+  const spatialRoom = siteMap?.rooms.find((r) => r.sceneId === session.currentSceneId);
+  const spatialSiteMap = siteMap
+    ? { ...siteMap, currentSpatialSceneId: spatialRoom ? session.currentSceneId : undefined }
+    : undefined;
 
   return {
     sessionId: session.sessionId,
@@ -595,6 +600,8 @@ export function toPublicState(session: SessionRecord, nowMs = Date.now()): Publi
     elapsedSec,
     timeLimitSec: session.room.timeLimitSec,
     timeRemainingSec,
+    spatialSiteMap,
+    spatialRoomLabel: spatialRoom?.label,
   };
 }
 
