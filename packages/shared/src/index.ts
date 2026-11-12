@@ -15,6 +15,8 @@ export type GameActionType =
 export type InteractionStep = "listen" | "speak" | "capture" | "view" | "arrive";
 
 export type LocationMode = "reach" | "quiz";
+/** waypoint = rally a coordenadas; area_context = zona urbana para preguntas del entorno (no navegación interior). */
+export type LocationIntent = "waypoint" | "area_context";
 
 export type CompleteInteractionAction = {
   type: "complete_interaction";
@@ -128,6 +130,8 @@ export type PublicPuzzle = {
   ocrLang?: string;
   interactionHints?: string[];
   locationMode?: LocationMode;
+  /** waypoint = llegar a un punto; area_context = confirmar zona urbana para quiz del entorno. */
+  locationIntent?: LocationIntent;
   targetLat?: number;
   targetLon?: number;
   radiusMeters?: number;
@@ -266,7 +270,9 @@ export {
 export type {
   ClueOutputType,
   CreateSpatialEventRequest,
+  CreateSpatialSiteEventRequest,
   PuzzleClueSpec,
+  SiteProposalsResponse,
   SpatialAdventureProposal,
   SpatialArchetype,
   SpatialDifficulty,
@@ -276,6 +282,30 @@ export type {
   SpatialProposalsResponse,
   SpatialPuzzlePlan,
 } from "./spatial-adventure.js";
+export type {
+  SaveScannedSiteRequest,
+  ScannedSite,
+  ScannedSiteSummary,
+  SiteGeoContext,
+  SiteLink,
+  SiteLinkKind,
+  SiteMapLayout,
+} from "./scanned-site.js";
+export { DEFAULT_SITE_AREA_RADIUS_METERS } from "./scanned-site.js";
+export type { SanitizeSiteResult } from "./scanned-site-sanitize.js";
+export { sanitizeScannedSiteInput, toScannedSiteSummary } from "./scanned-site-sanitize.js";
+export {
+  buildAreaQuizPrompt,
+  buildCityQuizQuestion,
+  buildNearbyCuriosityQuestion,
+  buildNeighborhoodQuizQuestion,
+  deriveCityQuizAnswer,
+  deriveNearbyKeyword,
+  deriveNeighborhoodQuizAnswer,
+  hasGeoAnchor,
+  normalizeGeoToken,
+  resolveSiteAreaRadius,
+} from "./geo-context.js";
 export {
   haversineDistanceMeters,
   isValidGeoCoordinates,

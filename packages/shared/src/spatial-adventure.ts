@@ -71,3 +71,12 @@ export type CreateSpatialEventRequest = {
   eventTitle?: string;
   subject?: { name: string; nickname?: string };
 };
+
+export type SiteProposalsResponse = {
+  scannedSiteId: string;
+  siteVersion: number;
+  roomInventoryVersions: Record<string, number>;
+  proposals: SpatialAdventureProposal[];
+};
+
+export type CreateSpatialSiteEventRequest = CreateSpatialEventRequest;

@@ -22,6 +22,7 @@ export function LocationStation(props: {
   const targetLon = puzzle.targetLon;
   const radius = puzzle.radiusMeters ?? 40;
   const mode = puzzle.locationMode ?? "reach";
+  const areaContext = puzzle.locationIntent === "area_context";
   const [gateOpen, setGateOpen] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [denied, setDenied] = useState(false);
@@ -72,12 +73,22 @@ export function LocationStation(props: {
       <p className="puzzle-prompt">{puzzle.prompt}</p>
       {puzzle.waypointLabel && (
         <p className="muted sm">
-          Objetivo: <strong>{puzzle.waypointLabel}</strong> (radio ~{radius} m)
+          {areaContext ? (
+            <>
+              Zona urbana: <strong>{puzzle.waypointLabel}</strong> (radio amplio ~{Math.round(radius / 1000)} km;
+              no es un waypoint interior)
+            </>
+          ) : (
+            <>
+              Objetivo: <strong>{puzzle.waypointLabel}</strong> (radio ~{radius} m)
+            </>
+          )}
         </p>
       )}
       <p className="muted sm privacy">
-        Solo enviamos una lectura puntual de lat/lon al motor para comprobar distancia. No guardamos
-        historial de movimiento.
+        {areaContext
+          ? "Una lectura puntual de GPS ayuda a situar ciudad o barrio para el quiz del entorno. No usamos GPS para moverte entre habitaciones."
+          : "Solo enviamos una lectura puntual de lat/lon al motor para comprobar distancia. No guardamos historial de movimiento."}
       </p>
 
       <PermissionGate

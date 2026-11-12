@@ -255,12 +255,24 @@ function submitLocation(
     accuracyMeters,
   );
 
+  const areaContext = puzzle.locationIntent === "area_context";
   if (!check.ok) {
     if (check.reason === "too_far") {
       const dist = Math.round(check.distanceMeters ?? 0);
+      if (areaContext) {
+        return {
+          error: `El GPS no encaja con la zona urbana configurada (unos ${dist} m). En interiores es normal: prueba cerca de una ventana o confirma ciudad/barrio con el organizador.`,
+        };
+      }
       return { error: `Aún estás a unos ${dist} m. Acércate al punto marcado.` };
     }
     if (check.reason === "accuracy_too_low") {
+      if (areaContext) {
+        return {
+          error:
+            "La señal GPS es muy imprecisa en interiores. Espera unos segundos junto a una ventana; solo necesitamos ubicarte en la ciudad o barrio, no en una habitación concreta.",
+        };
+      }
       return {
         error: "La señal GPS es muy imprecisa. Sal al exterior o espera a que el móvil fije posición.",
       };
@@ -566,6 +578,7 @@ export function toPublicState(session: SessionRecord, nowMs = Date.now()): Publi
         ocrLang: puzzle.ocrLang,
         interactionHints: puzzle.interactionHints,
         locationMode: puzzle.locationMode,
+        locationIntent: puzzle.locationIntent,
         targetLat: puzzle.targetLat,
         targetLon: puzzle.targetLon,
         radiusMeters: puzzle.radiusMeters,

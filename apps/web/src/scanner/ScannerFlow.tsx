@@ -6,6 +6,7 @@ import type {
   RawDetection,
   ScannedEnvironment,
   ScannedEnvironmentSummary,
+  ScannedSite,
 } from "@escapeai/shared";
 import {
   ENVIRONMENT_TYPES,
@@ -25,12 +26,25 @@ import {
   listScannedEnvironments,
   saveScannedEnvironment,
 } from "../api";
+import { SiteAdventurePicker } from "./SiteAdventurePicker";
+import { SiteBuilder } from "./SiteBuilder";
 import { SpatialAdventurePicker } from "./SpatialAdventurePicker";
 import { SCAN_ZONE_GUIDES } from "./scan-zones";
 import { detectOnCanvas, getScannerCapability, loadObjectDetector, scannerDetectorId } from "./detector";
 import { newObjectIdFromClient } from "./scanner-helpers";
 
-type Step = "choose" | "scan" | "review" | "constraints" | "done" | "adventures" | "event_created" | "load";
+type Step =
+  | "choose"
+  | "scan"
+  | "review"
+  | "constraints"
+  | "done"
+  | "adventures"
+  | "event_created"
+  | "load"
+  | "site_builder"
+  | "site_done"
+  | "site_adventures";
 
 type CaptureBatch = {
   captureId: string;
@@ -69,6 +83,7 @@ export function ScannerFlow(props: { onBack: () => void }) {
   const [savedList, setSavedList] = useState<ScannedEnvironmentSummary[]>([]);
   const [loadId, setLoadId] = useState("");
   const [eventPreview, setEventPreview] = useState<EventPreview | null>(null);
+  const [savedSite, setSavedSite] = useState<ScannedSite | null>(null);
 
   const webcamRef = useRef<Webcam>(null);
   const capability = useMemo(() => getScannerCapability(), []);
@@ -298,6 +313,9 @@ export function ScannerFlow(props: { onBack: () => void }) {
             <button type="button" className="ghost" onClick={() => void loadSavedList()} disabled={busy}>
               Recuperar inventario
             </button>
+            <button type="button" className="ghost" onClick={() => setStep("site_builder")} disabled={busy}>
+              Recinto multi-habitación
+            </button>
           </div>
         </form>
       )}
@@ -469,11 +487,49 @@ export function ScannerFlow(props: { onBack: () => void }) {
             <button type="button" className="primary" onClick={() => setStep("adventures")}>
               Generar aventuras
             </button>
+            <button type="button" className="ghost" onClick={() => setStep("site_builder")}>
+              Añadir a un recinto
+            </button>
             <button type="button" className="ghost" onClick={props.onBack}>
               Volver al inicio
             </button>
           </div>
         </section>
+      )}
+
+      {step === "site_builder" && (
+        <SiteBuilder
+          seedRoom={saved ?? undefined}
+          onBack={() => setStep(saved ? "done" : "choose")}
+          onSaved={(site) => {
+            setSavedSite(site);
+            setStep("site_done");
+          }}
+        />
+      )}
+
+      {step === "site_done" && savedSite && (
+        <section data-testid="escape-site-done">
+          <h2>Recinto guardado</h2>
+          <p>
+            ID: <code>{savedSite.id}</code> · {savedSite.roomIds.length} habitaciones
+          </p>
+          <button type="button" className="primary" onClick={() => setStep("site_adventures")}>
+            Generar aventuras del recinto
+          </button>
+        </section>
+      )}
+
+      {step === "site_adventures" && savedSite && (
+        <SiteAdventurePicker
+          scannedSiteId={savedSite.id}
+          siteName={savedSite.name}
+          onBack={() => setStep("site_done")}
+          onEventCreated={(preview) => {
+            setEventPreview(preview);
+            setStep("event_created");
+          }}
+        />
       )}
 
       {step === "adventures" && saved && (
