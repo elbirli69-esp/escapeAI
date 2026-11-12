@@ -9,7 +9,7 @@ const STUCK_IDLE_MS = Number(process.env.GM_STUCK_IDLE_MS ?? 4 * 60 * 1000);
 const STUCK_FAST_ATTEMPTS = Number(process.env.GM_STUCK_FAST_ATTEMPTS ?? 5);
 
 export function updateProgressMeta(
-  session: SessionRecord,
+  _session: SessionRecord,
   action: GameAction,
   events: GameEvent[],
   meta: GmSessionMeta,
