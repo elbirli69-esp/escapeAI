@@ -1,5 +1,5 @@
 import type { InteractionStep, PublicPuzzle } from "@escapeai/shared";
-import { Howl } from "howler";
+import { Howl, Howler } from "howler";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import Webcam from "react-webcam";
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
@@ -184,7 +184,10 @@ function SoundStation(props: {
   const [err, setErr] = useState<string | null>(null);
   const howlRef = useRef<Howl | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const minListenTimerRef = useRef<number | null>(null);
   const playStartRef = useRef(0);
+  const listenedRef = useRef(listened);
+  listenedRef.current = listened;
 
   const markListened = useCallback(() => {
     if (listened) return;
@@ -201,12 +204,29 @@ function SoundStation(props: {
     }
   }, [listened, props]);
 
+  const clearPlaybackTimers = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = null;
+    if (minListenTimerRef.current) clearTimeout(minListenTimerRef.current);
+    minListenTimerRef.current = null;
+  }, []);
+
+  const finishListenAfterMin = useCallback(() => {
+    if (listenedRef.current) return;
+    const elapsed = (Date.now() - playStartRef.current) / 1000;
+    if (elapsed < minSec) return;
+    markListened();
+    setPlaying(false);
+    clearPlaybackTimers();
+    howlRef.current?.stop();
+  }, [clearPlaybackTimers, markListened, minSec]);
+
   useEffect(() => {
     return () => {
       howlRef.current?.unload();
-      if (timerRef.current) clearInterval(timerRef.current);
+      clearPlaybackTimers();
     };
-  }, []);
+  }, [clearPlaybackTimers]);
 
   async function playBeeps() {
     setErr(null);
@@ -239,38 +259,68 @@ function SoundStation(props: {
     setErr(null);
     if (!props.puzzle.audioUrl) return;
     howlRef.current?.unload();
+    clearPlaybackTimers();
+    void Howler.ctx?.resume();
+
     const howl = new Howl({
       src: [props.puzzle.audioUrl],
       html5: true,
-      onend: () => {
+      volume: 1,
+      onloaderror: (_id, message) => {
         setPlaying(false);
-        if (timerRef.current) clearInterval(timerRef.current);
+        clearPlaybackTimers();
+        setErr(
+          message
+            ? `No se pudo cargar el audio (${message}). Comprueba volumen y conexión.`
+            : "No se pudo cargar el audio. Comprueba volumen y conexión.",
+        );
+      },
+      onplay: () => {
+        playStartRef.current = Date.now();
+        setListenSec(0);
+        timerRef.current = setInterval(() => {
+          setListenSec(Math.floor((Date.now() - playStartRef.current) / 1000));
+        }, 500);
+        minListenTimerRef.current = window.setTimeout(() => {
+          finishListenAfterMin();
+        }, minSec * 1000);
+      },
+      onend: () => {
         const elapsed = (Date.now() - playStartRef.current) / 1000;
         const waitMs = Math.max(0, minSec - elapsed) * 1000;
         if (waitMs > 0) {
-          window.setTimeout(() => markListened(), waitMs);
+          window.setTimeout(() => finishListenAfterMin(), waitMs);
         } else {
-          markListened();
+          finishListenAfterMin();
         }
       },
       onplayerror: () => {
-        setPlaying(false);
-        if (timerRef.current) clearInterval(timerRef.current);
-        setErr("Pulsa reproducir de nuevo (el navegador bloqueó el audio).");
+        howl.once("unlock", () => {
+          howl.play();
+        });
+        setErr("Pulsa reproducir otra vez si no oyes nada (desbloqueo de audio).");
       },
       onstop: () => {
-        setPlaying(false);
-        if (timerRef.current) clearInterval(timerRef.current);
+        if (!listenedRef.current) {
+          setPlaying(false);
+          clearPlaybackTimers();
+        }
       },
     });
     howlRef.current = howl;
     setPlaying(true);
     setListenSec(0);
-    playStartRef.current = Date.now();
-    timerRef.current = setInterval(() => {
-      setListenSec(Math.floor((Date.now() - playStartRef.current) / 1000));
-    }, 500);
     howl.play();
+
+    window.setTimeout(() => {
+      if (listenedRef.current) return;
+      const active = howlRef.current;
+      if (active && !active.playing()) {
+        setPlaying(false);
+        clearPlaybackTimers();
+        setErr("El audio no arrancó. Sube el volumen del móvil y pulsa reproducir de nuevo.");
+      }
+    }, 2500);
   }
 
   const useBeeps = props.puzzle.soundMode === "beeps" || !props.puzzle.audioUrl;

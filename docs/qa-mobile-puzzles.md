@@ -29,7 +29,7 @@ Probar en **HTTPS** (producción o túnel). Un móvil por equipo.
 
 - Sin autoplay antes de pulsar.
 - Patrón corto + `minListenSec`: no debe quedar bloqueado (espera hasta cumplir mínimo).
-- URL: `listen` tras fin del clip y `minListenSec`.
+- URL: `listen` tras cumplir `minListenSec` (no hace falta esperar clips largos enteros); si el clip es corto, se espera hasta el mínimo.
 
 ## Rally `geo-lab`
 

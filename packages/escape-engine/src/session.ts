@@ -458,7 +458,7 @@ function requireInteractionSteps(session: SessionRecord, puzzle: RoomPuzzle): st
     if (!done.has(step)) {
       switch (step) {
         case "listen":
-          return "Escucha el audio hasta el final antes de responder.";
+          return "Reproduce la pista y espera al menos el tiempo mínimo antes de responder.";
         case "speak":
           return "Usa el micrófono y di la frase antes de validar.";
         case "capture":
