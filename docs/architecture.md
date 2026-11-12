@@ -5,7 +5,7 @@
 1. **Motor determinista en servidor** — puzzles, inventario, escenas y victoria/derrota viven en `@escapeai/escape-engine`.
 2. **Contenido en datos** — salas en YAML (`@escapeai/escape-content`), no hardcodeadas en la UI.
 3. **Cliente ligero (PWA)** — Vite + React; muestra `PublicState` y envía acciones tipadas.
-4. **IA después** — el endpoint `GET /sessions/:id/ai-context` expone contexto sin soluciones; el orquestador consumirá eventos (`hint_requested`, `puzzle_failed`, etc.).
+4. **IA después** — `GET /sessions/:id/ai-context` expone contexto sin soluciones; hoy el **orquestador** (`orchestrator.ts`) narra en eventos seleccionados. Diseño de **GameMasterAI**: [gamemaster-ai-gm0.md](./gamemaster-ai-gm0.md).
 
 ## Monorepo
 
@@ -14,7 +14,7 @@
 | `packages/shared`    | DTOs compartidos (`PublicState`, acciones) |
 | `packages/escape-engine` | Sesión, `applyAction`, validación   |
 | `packages/escape-content` | Salas YAML + loader                 |
-| `apps/api`           | Hono, sesiones en memoria (MVP)        |
+| `apps/api`           | Hono, sesiones/eventos (memoria, archivo o Upstash KV), ScannerAI |
 | `apps/web`           | PWA jugador                            |
 
 ## Persistencia (MVP)

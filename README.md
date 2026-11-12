@@ -40,6 +40,7 @@ pnpm dev
 ## Documentación
 
 - [Arquitectura](./docs/architecture.md)
+- [GameMasterAI — GM-0 (auditoría y diseño)](./docs/gamemaster-ai-gm0.md)
 - [Plan UX/UI visual por tema](./docs/prompt-ux-ui-temas-visuales.md)
 - [Sensory escape room v3 (pistas hiladas)](./docs/prompt-sensory-escape-room-v3.md)
 - [Diseñar salas (YAML)](./docs/authoring-rooms.md)
