@@ -6,7 +6,9 @@ import type {
   GameEvent,
   InteractionStep,
   PublicState,
+  VoiceMatchMode,
 } from "@escapeai/shared";
+import { matchPlayerAnswer } from "@escapeai/shared";
 import type { PlayerContext } from "./player-context.js";
 import type { Condition, RoomDefinition, RoomPuzzle } from "./room-definition.js";
 
@@ -183,10 +185,16 @@ function submitAnswer(
   const attempts = (session.puzzleAttempts.get(puzzleId) ?? 0) + 1;
   session.puzzleAttempts.set(puzzleId, attempts);
 
-  const value = normalizeAnswer(rawValue, puzzle.normalize);
-  const expected = normalizeAnswer(puzzle.answer ?? "", puzzle.normalize);
+  const voiceMode: VoiceMatchMode =
+    puzzle.voiceMatchMode ?? (puzzle.type === "voice" ? "fuzzy" : "exact");
 
-  if (value !== expected) {
+  if (
+    !matchPlayerAnswer(rawValue, puzzle.answer ?? "", {
+      normalize: puzzle.normalize,
+      voiceMatchMode: voiceMode,
+      synonyms: puzzle.cameraSynonyms,
+    })
+  ) {
     session.narrative.push("Respuesta incorrecta.");
     return { event: { type: "puzzle_failed", puzzleId, attempts } };
   }
@@ -370,13 +378,6 @@ function requireInteractionSteps(session: SessionRecord, puzzle: RoomPuzzle): st
   return undefined;
 }
 
-function normalizeAnswer(value: string, mode?: RoomPuzzle["normalize"]): string {
-  let v = value.trim();
-  if (mode === "uppercase") v = v.toUpperCase();
-  if (mode === "lowercase") v = v.toLowerCase();
-  return v;
-}
-
 function getAvailableExits(session: SessionRecord) {
   const scene = session.room.scenes[session.currentSceneId];
   return (scene.exits ?? []).map((exit) => ({
@@ -444,11 +445,21 @@ export function toPublicState(session: SessionRecord, nowMs = Date.now()): Publi
         maxHints: puzzle.maxHints ?? (puzzle.hints?.length ?? 0),
         completedSteps: steps ? [...steps] : [],
         audioUrl: puzzle.audioUrl,
+        soundMode: puzzle.soundMode,
+        beepPattern: puzzle.beepPattern,
+        minListenSec: puzzle.minListenSec,
         visualUrl: puzzle.visualUrl,
         pexelsQuery: puzzle.pexelsQuery,
+        pexelsQueryB: puzzle.pexelsQueryB,
+        visualLayout: puzzle.visualLayout,
         falPrompt: puzzle.falPrompt,
         cameraPrompt: puzzle.cameraPrompt,
+        cameraMode: puzzle.cameraMode,
+        cameraSynonyms: puzzle.cameraSynonyms,
         voiceLocale: puzzle.voiceLocale,
+        voiceMatchMode: puzzle.voiceMatchMode,
+        allowTextFallback: puzzle.allowTextFallback,
+        interactionHints: puzzle.interactionHints,
       };
     }),
     exits: getAvailableExits(session),

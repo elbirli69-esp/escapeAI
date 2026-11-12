@@ -155,6 +155,7 @@ export function generateAdventureRoom(
           "https://cdn.pixabay.com/audio/2024/09/23/audio_d76b709f16.mp3",
         answer: codes.yearCode.slice(0, 2),
         normalize: "trim",
+        minListenSec: 3,
         maxHints: 2,
         hints: [
           { level: 1, text: "Son las dos primeras cifras del código numérico de la sala." },
@@ -237,6 +238,8 @@ export function generateAdventureRoom(
         prompt: `Di en voz alta el apodo «${nickname}» para sellar la victoria (opcional antes del código final).`,
         answer: nickname.toLowerCase(),
         normalize: "lowercase",
+        voiceMatchMode: "fuzzy",
+        allowTextFallback: true,
         voiceLocale: "es-ES",
         maxHints: 1,
         hints: [{ level: 1, text: `Pronuncia: ${nickname}` }],

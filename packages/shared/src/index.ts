@@ -1,4 +1,5 @@
 import type { AdventureType } from "./events.js";
+import type { VoiceMatchMode } from "./answer-match.js";
 
 export type GameStatus = "playing" | "won" | "lost";
 
@@ -67,6 +68,10 @@ export type PublicItem = {
   description?: string;
 };
 
+export type SoundMode = "url" | "beeps" | "tts";
+export type CameraMode = "keyword" | "count" | "ocr_hint";
+export type VisualLayout = "single" | "dual";
+
 export type PublicPuzzle = {
   id: string;
   label?: string;
@@ -78,11 +83,21 @@ export type PublicPuzzle = {
   maxHints: number;
   completedSteps: InteractionStep[];
   audioUrl?: string;
+  soundMode?: SoundMode;
+  beepPattern?: number[];
+  minListenSec?: number;
   visualUrl?: string;
   pexelsQuery?: string;
+  pexelsQueryB?: string;
+  visualLayout?: VisualLayout;
   falPrompt?: string;
   cameraPrompt?: string;
+  cameraMode?: CameraMode;
+  cameraSynonyms?: string[];
   voiceLocale?: string;
+  voiceMatchMode?: VoiceMatchMode;
+  allowTextFallback?: boolean;
+  interactionHints?: string[];
 };
 
 export type PublicExit = {
@@ -165,3 +180,12 @@ export type AiContext = {
 };
 
 export * from "./events.js";
+export {
+  matchPlayerAnswer,
+  normalizeAnswerText,
+  spanishSpokenToDigits,
+  stripDiacritics,
+  type MatchAnswerOptions,
+  type NormalizeMode,
+  type VoiceMatchMode,
+} from "./answer-match.js";

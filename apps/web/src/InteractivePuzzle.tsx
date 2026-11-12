@@ -1,6 +1,11 @@
 import type { InteractionStep, PublicPuzzle } from "@escapeai/shared";
+import { Howl } from "howler";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import Webcam from "react-webcam";
+import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
+import { PermissionGate } from "./PermissionGate";
 import { fetchFalImage, fetchPexelsImage } from "./api";
+import { playBeepPattern } from "./lib/beep-player";
 
 type ActionSender = (
   action:
@@ -42,7 +47,11 @@ export function InteractivePuzzle(props: {
         <CameraStation puzzle={puzzle} busy={props.busy} onAction={props.onAction} />
       )}
       {puzzle.puzzleType === "voice" && (
-        <VoiceStation puzzle={puzzle} busy={props.busy} onAction={props.onAction} />
+        <VoiceStation
+          puzzle={puzzle}
+          busy={props.busy}
+          onAction={props.onAction}
+        />
       )}
 
       {isAnswerable(puzzle.puzzleType) && puzzle.puzzleType !== "voice" && (
@@ -136,21 +145,114 @@ function SoundStation(props: {
   onAction: ActionSender;
 }) {
   const listened = props.puzzle.completedSteps.includes("listen");
+  const minSec = props.puzzle.minListenSec ?? 2;
+  const [listenSec, setListenSec] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const howlRef = useRef<Howl | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const markListened = useCallback(() => {
+    if (listened) return;
+    props.onAction({
+      type: "complete_interaction",
+      puzzleId: props.puzzle.id,
+      step: "listen",
+    });
+    if (timerRef.current) clearInterval(timerRef.current);
+    try {
+      navigator.vibrate?.(40);
+    } catch {
+      /* ignore */
+    }
+  }, [listened, props]);
+
+  useEffect(() => {
+    return () => {
+      howlRef.current?.unload();
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
+  async function playBeeps() {
+    setErr(null);
+    setPlaying(true);
+    setListenSec(0);
+    const start = Date.now();
+    timerRef.current = setInterval(() => {
+      setListenSec(Math.floor((Date.now() - start) / 1000));
+    }, 400);
+    try {
+      const pattern = props.puzzle.beepPattern ?? [200, 100, 200];
+      await playBeepPattern(pattern);
+      if ((Date.now() - start) / 1000 >= minSec) markListened();
+    } catch {
+      setErr("No se pudo reproducir el patrón de tonos.");
+    } finally {
+      setPlaying(false);
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+  }
+
+  function playUrl() {
+    setErr(null);
+    if (!props.puzzle.audioUrl) return;
+    howlRef.current?.unload();
+    const howl = new Howl({
+      src: [props.puzzle.audioUrl],
+      html5: true,
+      onend: () => {
+        setPlaying(false);
+        if (timerRef.current) clearInterval(timerRef.current);
+        markListened();
+      },
+      onplayerror: () => setErr("Pulsa reproducir de nuevo (el navegador bloqueó el audio)."),
+    });
+    howlRef.current = howl;
+    setPlaying(true);
+    setListenSec(0);
+    const start = Date.now();
+    timerRef.current = setInterval(() => {
+      const sec = Math.floor((Date.now() - start) / 1000);
+      setListenSec(sec);
+      if (sec >= minSec && !listened) markListened();
+    }, 500);
+    howl.play();
+  }
+
+  const useBeeps = props.puzzle.soundMode === "beeps" || !props.puzzle.audioUrl;
+
   return (
     <InteractionPanel title="Altavoz" done={listened}>
-      <audio
-        controls
-        className="audio-player"
-        src={props.puzzle.audioUrl}
-        onEnded={() =>
-          props.onAction({
-            type: "complete_interaction",
-            puzzleId: props.puzzle.id,
-            step: "listen",
-          })
-        }
-      />
-      <p className="muted sm">Reproduce el audio hasta el final para desbloquear la respuesta.</p>
+      {props.puzzle.interactionHints?.map((h) => (
+        <p key={h} className="muted sm">
+          {h}
+        </p>
+      ))}
+      {err && <p className="error sm">{err}</p>}
+      {useBeeps ? (
+        <button
+          type="button"
+          className="primary"
+          disabled={props.busy || playing || listened}
+          onClick={() => void playBeeps()}
+        >
+          {playing ? "Reproduciendo tonos…" : listened ? "Escuchado" : "Reproducir pista"}
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="primary"
+          disabled={props.busy || playing || listened}
+          onClick={playUrl}
+        >
+          {playing ? "Reproduciendo…" : listened ? "Escuchado" : "Reproducir audio"}
+        </button>
+      )}
+      <p className="muted sm">
+        Tiempo: {listenSec}s / mínimo {minSec}s
+        {listened ? " · Listo para responder" : " · Escucha antes de enviar"}
+      </p>
     </InteractionPanel>
   );
 }
@@ -161,8 +263,11 @@ function VisualStation(props: {
   onAction: ActionSender;
 }) {
   const [url, setUrl] = useState(props.puzzle.visualUrl ?? "");
+  const [urlB, setUrlB] = useState("");
   const [err, setErr] = useState<string | null>(null);
+  const [dwellSec, setDwellSec] = useState(0);
   const viewed = props.puzzle.completedSteps.includes("view");
+  const dual = props.puzzle.visualLayout === "dual" && props.puzzle.pexelsQueryB;
 
   useEffect(() => {
     let cancelled = false;
@@ -179,6 +284,10 @@ function VisualStation(props: {
           const res = await fetchPexelsImage(props.puzzle.pexelsQuery);
           if (!cancelled) setUrl(res.url);
         }
+        if (props.puzzle.pexelsQueryB) {
+          const resB = await fetchPexelsImage(props.puzzle.pexelsQueryB);
+          if (!cancelled) setUrlB(resB.url);
+        }
       } catch (e) {
         if (!cancelled) setErr((e as Error).message);
       }
@@ -187,15 +296,52 @@ function VisualStation(props: {
     return () => {
       cancelled = true;
     };
-  }, [props.puzzle.visualUrl, props.puzzle.pexelsQuery, props.puzzle.falPrompt]);
+  }, [
+    props.puzzle.visualUrl,
+    props.puzzle.pexelsQuery,
+    props.puzzle.pexelsQueryB,
+    props.puzzle.falPrompt,
+  ]);
+
+  useEffect(() => {
+    if (!url || viewed) return;
+    const t = setInterval(() => setDwellSec((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [url, viewed]);
+
+  useEffect(() => {
+    if (dwellSec >= 2 && !viewed && url) {
+      props.onAction({
+        type: "complete_interaction",
+        puzzleId: props.puzzle.id,
+        step: "view",
+      });
+    }
+  }, [dwellSec, viewed, url, props]);
+
+  function markViewed() {
+    if (viewed || !url) return;
+    props.onAction({
+      type: "complete_interaction",
+      puzzleId: props.puzzle.id,
+      step: "view",
+    });
+  }
 
   return (
     <InteractionPanel title="Prueba visual" done={viewed}>
       {err && <p className="error sm">{err}</p>}
       {url ? (
-        <figure className="visual-puzzle">
-          <img src={url} alt="" loading="lazy" />
-        </figure>
+        <TransformWrapper minScale={1} maxScale={4} centerOnInit>
+          <TransformComponent wrapperClass="visual-zoom-wrap" contentClass="visual-zoom-content">
+            <figure className="visual-puzzle">
+              <img src={url} alt="" loading="lazy" />
+              {dual && urlB && (
+                <img src={urlB} alt="" loading="lazy" className="visual-secondary" />
+              )}
+            </figure>
+          </TransformComponent>
+        </TransformWrapper>
       ) : (
         <p className="muted">Cargando imagen…</p>
       )}
@@ -203,16 +349,11 @@ function VisualStation(props: {
         type="button"
         className="chip chip-action"
         disabled={props.busy || !url || viewed}
-        onClick={() =>
-          props.onAction({
-            type: "complete_interaction",
-            puzzleId: props.puzzle.id,
-            step: "view",
-          })
-        }
+        onClick={markViewed}
       >
-        {viewed ? "Imagen revisada" : "He mirado la imagen"}
+        {viewed ? "Imagen revisada" : "He estudiado la imagen"}
       </button>
+      <p className="muted sm">Haz zoom con dos dedos. El paso se marca tras 2s en pantalla o con el botón.</p>
     </InteractionPanel>
   );
 }
@@ -222,49 +363,38 @@ function CameraStation(props: {
   busy: boolean;
   onAction: ActionSender;
 }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
+  const webcamRef = useRef<Webcam>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [cameraErr, setCameraErr] = useState<string | null>(null);
+  const [cameraLive, setCameraLive] = useState(false);
   const captured = props.puzzle.completedSteps.includes("capture");
+  const [facing, setFacing] = useState<"user" | "environment">("environment");
 
-  const startCamera = useCallback(async () => {
-    try {
-      const media = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
-        audio: false,
-      });
-      setStream(media);
-      if (videoRef.current) videoRef.current.srcObject = media;
-    } catch {
-      setCameraErr("No se pudo abrir la cámara. Revisa permisos.");
-    }
+  const videoConstraints = {
+    facingMode: facing,
+    width: { ideal: 1280 },
+    height: { ideal: 720 },
+  };
+
+  const startCamera = useCallback(() => {
+    setCameraErr(null);
+    setCameraLive(true);
   }, []);
 
-  useEffect(() => {
-    return () => {
-      stream?.getTracks().forEach((t) => t.stop());
-    };
-  }, [stream]);
-
-  function takePhoto() {
-    const video = videoRef.current;
-    if (!video) return;
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    setPreview(canvas.toDataURL("image/jpeg", 0.85));
+  const takePhoto = useCallback(() => {
+    const shot = webcamRef.current?.getScreenshot({ width: 1280, height: 720 });
+    if (!shot) {
+      setCameraErr("No se pudo capturar. Prueba otra vez.");
+      return;
+    }
+    setPreview(shot);
+    setCameraLive(false);
     props.onAction({
       type: "complete_interaction",
       puzzleId: props.puzzle.id,
       step: "capture",
     });
-    stream?.getTracks().forEach((t) => t.stop());
-    setStream(null);
-  }
+  }, [props]);
 
   return (
     <InteractionPanel title="Cámara · entorno real" done={captured}>
@@ -272,15 +402,30 @@ function CameraStation(props: {
       {cameraErr && <p className="error sm">{cameraErr}</p>}
       {!preview ? (
         <>
-          <video ref={videoRef} autoPlay playsInline muted className="camera-preview" />
-          {!stream ? (
-            <button type="button" className="primary" disabled={props.busy} onClick={() => void startCamera()}>
-              Abrir cámara
-            </button>
+          {cameraLive ? (
+            <Webcam
+              ref={webcamRef}
+              audio={false}
+              screenshotFormat="image/jpeg"
+              videoConstraints={videoConstraints}
+              className="camera-preview"
+              onUserMediaError={() => {
+                setCameraErr("No se pudo abrir la cámara.");
+                setCameraLive(false);
+              }}
+            />
           ) : (
-            <button type="button" className="primary" disabled={props.busy} onClick={takePhoto}>
-              Capturar foto
-            </button>
+            <PermissionGate kind="camera" onRequest={startCamera} denied={Boolean(cameraErr)} />
+          )}
+          {cameraLive && (
+            <div className="row camera-actions">
+              <button type="button" className="ghost sm" onClick={() => setFacing((f) => (f === "environment" ? "user" : "environment"))}>
+                Cambiar cámara
+              </button>
+              <button type="button" className="primary" disabled={props.busy} onClick={takePhoto}>
+                Capturar foto
+              </button>
+            </div>
           )}
         </>
       ) : (
@@ -298,7 +443,23 @@ function VoiceStation(props: {
   const [listening, setListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [voiceErr, setVoiceErr] = useState<string | null>(null);
+  const [textFallback, setTextFallback] = useState("");
+  const [micReady, setMicReady] = useState(false);
   const spoke = props.puzzle.completedSteps.includes("speak");
+  const allowText = props.puzzle.allowTextFallback !== false;
+
+  function submitVoice(value: string) {
+    props.onAction({
+      type: "complete_interaction",
+      puzzleId: props.puzzle.id,
+      step: "speak",
+    });
+    props.onAction({
+      type: "submit_answer",
+      puzzleId: props.puzzle.id,
+      value,
+    });
+  }
 
   function startListen() {
     type SpeechRecCtor = new () => {
@@ -316,7 +477,7 @@ function VoiceStation(props: {
     };
     const SR = w.webkitSpeechRecognition ?? w.SpeechRecognition;
     if (!SR) {
-      setVoiceErr("Este navegador no soporta reconocimiento de voz.");
+      setVoiceErr("Este navegador no soporta reconocimiento de voz. Usa el campo de texto.");
       return;
     }
     const rec = new SR();
@@ -328,20 +489,11 @@ function VoiceStation(props: {
     rec.onresult = (ev) => {
       const text = ev.results[0]?.[0]?.transcript ?? "";
       setTranscript(text);
-      props.onAction({
-        type: "complete_interaction",
-        puzzleId: props.puzzle.id,
-        step: "speak",
-      });
-      props.onAction({
-        type: "submit_answer",
-        puzzleId: props.puzzle.id,
-        value: text,
-      });
+      submitVoice(text);
       setListening(false);
     };
     rec.onerror = () => {
-      setVoiceErr("No se entendió. Inténtalo otra vez.");
+      setVoiceErr("No se entendió. Inténtalo otra vez o escribe la frase.");
       setListening(false);
     };
     rec.onend = () => setListening(false);
@@ -353,14 +505,39 @@ function VoiceStation(props: {
       <p className="puzzle-prompt">{props.puzzle.prompt}</p>
       {voiceErr && <p className="error sm">{voiceErr}</p>}
       {transcript && <p className="muted">Oído: «{transcript}»</p>}
-      <button
-        type="button"
-        className="primary"
-        disabled={props.busy || listening || spoke}
-        onClick={startListen}
-      >
-        {listening ? "Escuchando…" : spoke ? "Voz registrada" : "Hablar ahora"}
-      </button>
+      {!micReady ? (
+        <PermissionGate kind="microphone" onRequest={() => setMicReady(true)} />
+      ) : (
+        <button
+          type="button"
+          className="primary"
+          disabled={props.busy || listening || spoke}
+          onClick={startListen}
+        >
+          {listening ? "Escuchando…" : spoke ? "Voz registrada" : "Hablar ahora"}
+        </button>
+      )}
+      {allowText && !spoke && (
+        <form
+          className="row voice-fallback"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!textFallback.trim()) return;
+            submitVoice(textFallback);
+            setTextFallback("");
+          }}
+        >
+          <input
+            value={textFallback}
+            onChange={(e) => setTextFallback(e.target.value)}
+            placeholder="O escribe la frase aquí"
+            autoComplete="off"
+          />
+          <button type="button" className="ghost" disabled={props.busy} onClick={() => submitVoice(textFallback)}>
+            Enviar texto
+          </button>
+        </form>
+      )}
     </InteractionPanel>
   );
 }

@@ -65,8 +65,14 @@ function validateRoomContent(
     if (puzzle.type === "inventory" && !puzzle.requiresItem) {
       errors.push(`${prefix}: puzzle '${puzzle.id}' (inventory) sin requiresItem`);
     }
-    if (puzzle.type === "sound" && !puzzle.audioUrl) {
-      errors.push(`${prefix}: puzzle '${puzzle.id}' (sound) sin audioUrl`);
+    if (
+      puzzle.type === "sound" &&
+      !puzzle.audioUrl &&
+      !(puzzle.soundMode === "beeps" && puzzle.beepPattern && puzzle.beepPattern.length > 0)
+    ) {
+      errors.push(
+        `${prefix}: puzzle '${puzzle.id}' (sound) requiere audioUrl o soundMode beeps + beepPattern`,
+      );
     }
     if (puzzle.type === "visual" && !puzzle.visualUrl && !puzzle.pexelsQuery && !puzzle.falPrompt) {
       errors.push(`${prefix}: puzzle '${puzzle.id}' (visual) sin visualUrl, pexelsQuery o falPrompt`);

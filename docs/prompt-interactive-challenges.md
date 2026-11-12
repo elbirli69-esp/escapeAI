@@ -2,6 +2,8 @@
 
 Brief ejecutado para hacer las experiencias más divertidas en móvil.
 
+**Evolución v2 (OSS + UX):** [prompt-mobile-sensory-puzzles-v2.md](./prompt-mobile-sensory-puzzles-v2.md) · [OSS](./prompt-mobile-puzzles-oss-integrations.md) · QA [qa-mobile-puzzles.md](./qa-mobile-puzzles.md)
+
 ## Objetivo
 
 Ampliar el motor con puzzles que usan **hardware del móvil** y **medios enriquecidos**, validados en servidor con las mismas reglas deterministas que `code` / `inventory`.
@@ -17,10 +19,10 @@ Ampliar el motor con puzzles que usan **hardware del móvil** y **medios enrique
 
 Campos opcionales en `RoomPuzzle`:
 
-- **sound**: `audioUrl`, `answer`
-- **voice**: `answer` (frase), `voiceLocale` (default `es-ES`)
-- **camera**: `cameraPrompt`, `answer`
-- **visual**: `visualUrl` **o** `pexelsQuery` (cliente resuelve vía API), `answer`
+- **sound**: `audioUrl` **o** `soundMode: beeps` + `beepPattern`, `minListenSec`, `answer`
+- **voice**: `answer`, `voiceLocale`, `voiceMatchMode` (`fuzzy`), `allowTextFallback`
+- **camera**: `cameraPrompt`, `cameraSynonyms`, `cameraMode`, `answer`
+- **visual**: `visualUrl` / `pexelsQuery` / `falPrompt`, `visualLayout`, `pexelsQueryB`, `answer`
 
 Pasos obligatorios antes de `submit_answer` (acción `complete_interaction`):
 
