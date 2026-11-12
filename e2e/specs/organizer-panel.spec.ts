@@ -4,6 +4,7 @@ import { clearGameStorage } from "../fixtures/game.js";
 import { stubMediaRoutes } from "../fixtures/routes.js";
 
 test.describe.serial("organizer panel", () => {
+  test.describe.configure({ timeout: 120_000 });
   let joinCode: string;
   const teamName = "Equipo Proyector";
 

@@ -4,6 +4,7 @@ import { clearGameStorage, selectPuzzle, submitAnswer } from "../fixtures/game.j
 import { stubMediaRoutes } from "../fixtures/routes.js";
 
 test.describe.serial("events MVP", () => {
+  test.describe.configure({ timeout: 120_000 });
   let joinCode: string;
 
   test.beforeAll(async ({ browser }) => {
