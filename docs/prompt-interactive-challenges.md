@@ -2,7 +2,7 @@
 
 Brief ejecutado para hacer las experiencias más divertidas en móvil.
 
-**Evolución v2 (OSS + UX):** [brief v2](./prompt-mobile-sensory-puzzles-v2.md) · [OSS](./prompt-mobile-puzzles-oss-integrations.md) · [QA](./qa-mobile-puzzles.md)
+**Evolución v2 (OSS + UX):** [brief v2](./prompt-mobile-sensory-puzzles-v2.md) · [OSS](./prompt-mobile-puzzles-oss-integrations.md) · [QA](./qa-mobile-puzzles.md) · [Playwright E2E](./prompt-playwright-e2e.md)
 
 ## Objetivo
 
