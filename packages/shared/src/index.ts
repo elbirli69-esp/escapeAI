@@ -192,7 +192,17 @@ export type ApplyResult = {
   error?: string;
   state: PublicState;
   events: GameEvent[];
+  /** @deprecated Usar gmInterventions / intervention */
   orchestrator?: OrchestratorResponse;
+  /** Nuevas intervenciones generadas en esta petición */
+  interventions?: import("./gamemaster.js").NarrativeIntervention[];
+  /** Historial GM actualizado (para recarga / timeline) */
+  gmInterventions?: import("./gamemaster.js").NarrativeIntervention[];
+};
+
+export type SessionViewResponse = {
+  state: PublicState;
+  gmInterventions: import("./gamemaster.js").NarrativeIntervention[];
 };
 
 export type OrchestratorResponse = {
@@ -225,6 +235,17 @@ export type AiContext = {
 };
 
 export * from "./events.js";
+export type {
+  GmProcessTrigger,
+  GmTriggerType,
+  GmViewContext,
+  NarrativeChannel,
+  NarrativeClueRef,
+  NarrativeIntervention,
+  NarrativeInterventionMeta,
+  NarrativePresentation,
+  NarrativeSpoilerLevel,
+} from "./gamemaster.js";
 export {
   matchPlayerAnswer,
   normalizeAnswerText,

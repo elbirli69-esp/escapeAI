@@ -1,4 +1,4 @@
-import type { OrchestratorResponse, PublicItem, PublicState } from "@escapeai/shared";
+import type { NarrativeIntervention, PublicItem, PublicState } from "@escapeai/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { createSession, fetchRooms, fetchState, sendAction } from "./api";
@@ -114,8 +114,9 @@ export function App() {
   const [answer, setAnswer] = useState("");
   const [selectedPuzzle, setSelectedPuzzle] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [narrator, setNarrator] = useState<OrchestratorResponse | null>(null);
   const queryClient = useQueryClient();
+
+  type SessionCache = { state: PublicState; gmInterventions: NarrativeIntervention[] };
 
   const roomsQuery = useQuery({
     queryKey: ["rooms"],
@@ -129,9 +130,11 @@ export function App() {
       localStorage.setItem("escapeai.sessionId", data.sessionId);
       localStorage.setItem("escapeai.roomId", roomId);
       setSessionId(data.sessionId);
-      setNarrator(null);
       setActionError(null);
-      queryClient.setQueryData(["state", data.sessionId], data.state);
+      queryClient.setQueryData<SessionCache>(["state", data.sessionId], {
+        state: data.state,
+        gmInterventions: data.gmInterventions ?? [],
+      });
     },
   });
 
@@ -141,7 +144,8 @@ export function App() {
     enabled: Boolean(sessionId),
     retry: (failureCount, error) =>
       failureCount < 2 && !String(error?.message ?? "").includes("Sesión no encontrada"),
-    refetchInterval: (q) => (q.state.data?.status === "playing" ? 15_000 : false),
+    refetchInterval: (q) =>
+      (q.state.data as SessionCache | undefined)?.state?.status === "playing" ? 15_000 : false,
   });
 
   function clearSessionAndReturnHome() {
@@ -150,7 +154,6 @@ export function App() {
     localStorage.removeItem("escapeai.eventCode");
     localStorage.removeItem("escapeai.teamId");
     setSessionId(null);
-    setNarrator(null);
     setActionError(null);
     queryClient.removeQueries({ queryKey: ["state"] });
   }
@@ -159,10 +162,12 @@ export function App() {
     mutationFn: (action: Parameters<typeof sendAction>[1]) =>
       sendAction(sessionId!, action),
     onSuccess: (result) => {
-      queryClient.setQueryData(["state", sessionId], result.state);
+      queryClient.setQueryData<SessionCache>(["state", sessionId], {
+        state: result.state,
+        gmInterventions: result.gmInterventions ?? [],
+      });
       if (!result.ok && result.error) setActionError(result.error);
       else setActionError(null);
-      if (result.orchestrator) setNarrator(result.orchestrator);
     },
     onError: () => setActionError("No se pudo contactar con el servidor. Reintenta."),
   });
@@ -173,7 +178,9 @@ export function App() {
     return () => clearTimeout(t);
   }, [actionError]);
 
-  const state = stateQuery.data;
+  const sessionView = stateQuery.data as SessionCache | undefined;
+  const state = sessionView?.state;
+  const gmInterventions = sessionView?.gmInterventions ?? [];
 
   const activePuzzleId = useMemo(() => {
     if (!state) return null;
@@ -195,13 +202,12 @@ export function App() {
             : null
         }
         onClassicStart={() => startGame.mutate(selectedRoomId)}
-        onEventSession={(id, initialState) => {
+        onEventSession={(id, initial) => {
           localStorage.setItem("escapeai.sessionId", id);
           setSessionId(id);
-          setNarrator(null);
           setActionError(null);
-          if (initialState) {
-            queryClient.setQueryData(["state", id], initialState);
+          if (initial) {
+            queryClient.setQueryData<SessionCache>(["state", id], initial);
           }
         }}
       />
@@ -251,17 +257,33 @@ export function App() {
       busy={actionMutation.isPending}
       actionError={actionError}
       onDismissError={() => setActionError(null)}
-      narrator={narrator}
+      gmInterventions={gmInterventions}
       onNewGame={() => {
         localStorage.removeItem("escapeai.sessionId");
         localStorage.removeItem("escapeai.roomId");
         setSessionId(null);
         setSelectedPuzzle(null);
-        setNarrator(null);
         setActionError(null);
       }}
     />
   );
+}
+
+type DiaryLine = { key: string; text: string; kind: "engine" | "gamemaster" };
+
+function buildDiaryTimeline(
+  engine: string[],
+  gm: NarrativeIntervention[],
+): DiaryLine[] {
+  const engineLines: DiaryLine[] = engine.map((text, i) => ({
+    key: `engine-${i}-${text.slice(0, 12)}`,
+    text,
+    kind: "engine",
+  }));
+  const gmLines: DiaryLine[] = [...gm]
+    .sort((a, b) => a.sequence - b.sequence || a.createdAt - b.createdAt)
+    .map((g) => ({ key: g.id, text: g.text, kind: "gamemaster" }));
+  return [...engineLines, ...gmLines];
 }
 
 function GameView(props: {
@@ -274,10 +296,17 @@ function GameView(props: {
   busy: boolean;
   actionError: string | null;
   onDismissError: () => void;
-  narrator: OrchestratorResponse | null;
+  gmInterventions: NarrativeIntervention[];
   onNewGame: () => void;
 }) {
   const { state } = props;
+  const diaryLines = useMemo(() => buildDiaryTimeline(state.narrative, props.gmInterventions), [
+    state.narrative,
+    props.gmInterventions,
+  ]);
+  const latestAi = [...props.gmInterventions]
+    .reverse()
+    .find((i) => i.meta.provider !== "static" && !i.meta.fallback);
   const sceneOrder = state.sceneOrder?.length
     ? state.sceneOrder
     : [state.currentSceneId];
@@ -309,10 +338,10 @@ function GameView(props: {
           </p>
           <div className="title-row">
             <h1 className="display-sm">{state.sceneTitle}</h1>
-            {props.narrator && props.narrator.source !== "fallback" && (
-              <span className="narrator-badge" title={props.narrator.message}>
-                Narrador IA
-                {props.narrator.source === "deepseek" ? " · DeepSeek" : ""}
+            {latestAi && (
+              <span className="narrator-badge" title={latestAi.text}>
+                GameMaster
+                {latestAi.meta.provider === "deepseek" ? " · DeepSeek" : ""}
               </span>
             )}
           </div>
@@ -362,8 +391,15 @@ function GameView(props: {
       <section className="panel glass">
         <h2>Diario de campo</h2>
         <ul className="log" data-testid="escape-narrative-log">
-          {state.narrative.slice(-10).map((line, i) => (
-            <li key={`${i}-${line.slice(0, 12)}`}>{line}</li>
+          {diaryLines.slice(-14).map((line) => (
+            <li
+              key={line.key}
+              className={line.kind === "gamemaster" ? "log-gm" : "log-engine"}
+              data-testid={line.kind === "gamemaster" ? "escape-gm-line" : undefined}
+            >
+              {line.kind === "gamemaster" && <span className="log-tag">Director</span>}
+              {line.text}
+            </li>
           ))}
         </ul>
       </section>

@@ -1,6 +1,7 @@
 import type {
   AdventureTemplateInfo,
   ApplyResult,
+  NarrativeIntervention,
   CreateEventRequest,
   EventLeaderboard,
   EventPreview,
@@ -43,6 +44,7 @@ export async function fetchRooms(): Promise<RoomSummary[]> {
 export async function createSession(roomId = "pilot"): Promise<{
   sessionId: string;
   state: PublicState;
+  gmInterventions?: NarrativeIntervention[];
 }> {
   const res = await fetch(`${base}/sessions`, {
     method: "POST",
@@ -115,7 +117,7 @@ export async function fetchFalImage(prompt: string): Promise<{ url: string; sour
 export async function startEventSession(
   eventCode: string,
   teamId: string,
-): Promise<{ sessionId: string; state: PublicState }> {
+): Promise<{ sessionId: string; state: PublicState; gmInterventions?: NarrativeIntervention[] }> {
   const res = await fetch(`${base}/sessions`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -126,11 +128,17 @@ export async function startEventSession(
   return data as { sessionId: string; state: PublicState };
 }
 
-export async function fetchState(sessionId: string): Promise<PublicState> {
+export async function fetchState(sessionId: string): Promise<{
+  state: PublicState;
+  gmInterventions: NarrativeIntervention[];
+}> {
   const res = await fetch(`${base}/sessions/${sessionId}`);
   if (!res.ok) throw new Error("Sesión no encontrada");
   const data = await res.json();
-  return data.state as PublicState;
+  return {
+    state: data.state as PublicState,
+    gmInterventions: (data.gmInterventions ?? []) as NarrativeIntervention[],
+  };
 }
 
 export async function listScannedEnvironments(): Promise<ScannedEnvironmentSummary[]> {

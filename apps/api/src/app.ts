@@ -1,22 +1,24 @@
 import { listRoomIds, loadRoomById, ROOM_CATALOG } from "@escapeai/escape-content";
-import {
-  applyAction,
-  createSession,
-  toAiContext,
-  toPublicState,
-} from "@escapeai/escape-engine";
+import { createSession, toAiContext } from "@escapeai/escape-engine";
 import type { CreateSessionRequest, GameAction, GameEvent } from "@escapeai/shared";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { runGameplayAction } from "./app-gm.js";
 import { createEventStore } from "./event-store.js";
 import { createScannedEnvironmentStore } from "./scanned-environment-store.js";
 import { createScannedSiteStore } from "./scanned-site-store.js";
+import {
+  buildSessionView,
+  createGmInterventionStore,
+  GameMasterService,
+  snapshotExits,
+  toOrchestratorShim,
+} from "./gamemaster/index.js";
 import { mountScannerRoutes } from "./scanner-routes.js";
 import { mountSiteRoutes } from "./site-routes.js";
-import { mountEventRoutes, startEventSession, syncPlayerStatusFromSession } from "./events-routes.js";
+import { mountEventRoutes, startEventSession } from "./events-routes.js";
 import { mountMediaRoutes } from "./media-routes.js";
 import { resolveLlmConfig } from "./llm-config.js";
-import { runOrchestrator } from "./orchestrator.js";
 import {
   createSessionStore,
   getSessionStoreMeta,
@@ -40,6 +42,8 @@ export async function createApp(store?: SessionStore): Promise<Hono> {
   const eventStore = await createEventStore();
   const scannedStore = await createScannedEnvironmentStore();
   const siteStore = await createScannedSiteStore();
+  const gmStore = await createGmInterventionStore();
+  const gm = new GameMasterService(gmStore);
   const app = new Hono().basePath("/api");
 
   app.use("*", cors({ origin: getDefaultCorsOrigins() }));
@@ -55,10 +59,11 @@ export async function createApp(store?: SessionStore): Promise<Hono> {
       narrator: llm
         ? { configured: true, provider: llm.provider, model: llm.model }
         : { configured: false },
+      gameMaster: { enabled: true },
     });
   });
 
-  mountEventRoutes(app, eventStore);
+  mountEventRoutes(app, eventStore, gm);
   mountScannerRoutes(app, scannedStore, eventStore);
   mountSiteRoutes(app, siteStore, scannedStore, eventStore);
   mountMediaRoutes(app);
@@ -91,6 +96,7 @@ export async function createApp(store?: SessionStore): Promise<Hono> {
         teamId,
         eventStore,
         sessionStore,
+        gm,
       );
       return c.json(result.body, result.status as 200 | 201 | 404);
     }
@@ -98,16 +104,38 @@ export async function createApp(store?: SessionStore): Promise<Hono> {
     const roomId = "roomId" in body ? (body.roomId ?? "pilot") : "pilot";
     const room = loadRoomById(roomId);
     const session = createSession(room);
-    const intro = await runOrchestrator(session, []);
-    if (intro.message) session.narrative.push(intro.message);
     await sessionStore.set(session);
-    return c.json({ sessionId: session.sessionId, state: toPublicState(session) }, 201);
+    const interventions = await gm.processSessionStarted(session);
+    const view = await buildSessionView(session, gm);
+    return c.json(
+      {
+        sessionId: session.sessionId,
+        state: view.state,
+        gmInterventions: view.gmInterventions,
+        interventions,
+        orchestrator: toOrchestratorShim(interventions[interventions.length - 1]),
+      },
+      201,
+    );
   });
 
   app.get("/sessions/:sessionId", async (c) => {
     const session = await sessionStore.get(c.req.param("sessionId"));
     if (!session) return c.json({ error: "Sesión no encontrada" }, 404);
-    return c.json({ state: toPublicState(session) });
+    const onRead = await gm.processOnRead(session);
+    const view = await buildSessionView(session, gm);
+    return c.json({
+      state: view.state,
+      gmInterventions: view.gmInterventions,
+      interventions: onRead,
+    });
+  });
+
+  app.get("/sessions/:sessionId/gm-interventions", async (c) => {
+    const session = await sessionStore.get(c.req.param("sessionId"));
+    if (!session) return c.json({ error: "Sesión no encontrada" }, 404);
+    const gmInterventions = await gm.listInterventions(session.sessionId);
+    return c.json({ gmInterventions });
   });
 
   app.get("/sessions/:sessionId/ai-context", async (c) => {
@@ -124,12 +152,24 @@ export async function createApp(store?: SessionStore): Promise<Hono> {
       events?: GameEvent[];
     };
     const events = body.events ?? [];
-    const orchestrator = await runOrchestrator(session, events);
-    if (orchestrator.message) {
-      session.narrative.push(orchestrator.message);
-      await sessionStore.set(session);
+    if (events.some((e) => e.type === "hint_requested")) {
+      const view = await buildSessionView(session, gm);
+      return c.json({ orchestrator: undefined, state: view.state, gmInterventions: view.gmInterventions });
     }
-    return c.json({ orchestrator, state: toPublicState(session) });
+    const beforeExits = snapshotExits(session);
+    const interventions = await gm.processAfterAction({
+      session,
+      action: { type: "move", sceneId: session.currentSceneId },
+      events,
+      beforeExits,
+    });
+    const view = await buildSessionView(session, gm);
+    return c.json({
+      orchestrator: toOrchestratorShim(interventions[interventions.length - 1]),
+      state: view.state,
+      gmInterventions: view.gmInterventions,
+      interventions,
+    });
   });
 
   app.post("/sessions/:sessionId/actions", async (c) => {
@@ -137,27 +177,15 @@ export async function createApp(store?: SessionStore): Promise<Hono> {
     if (!session) return c.json({ error: "Sesión no encontrada" }, 404);
 
     const action = (await c.req.json()) as GameAction;
-    const result = applyAction(session, action);
-
-    let orchestrator;
-    if (shouldOrchestrate(result.events)) {
-      orchestrator = await runOrchestrator(session, result.events);
-      if (orchestrator.message) {
-        session.narrative.push(orchestrator.message);
-      }
-    }
-
-    await sessionStore.set(session);
-    await syncPlayerStatusFromSession(eventStore, session);
-    return c.json({ ...result, state: toPublicState(session), orchestrator });
+    const payload = await runGameplayAction({
+      session,
+      action,
+      sessionStore,
+      eventStore,
+      gm,
+    });
+    return c.json(payload);
   });
 
   return app;
-}
-
-function shouldOrchestrate(events: GameEvent[]): boolean {
-  if (events.length === 0) return false;
-  return events.some((e) =>
-    ["puzzle_failed", "scene_entered", "game_won", "game_lost", "hint_requested"].includes(e.type),
-  );
 }

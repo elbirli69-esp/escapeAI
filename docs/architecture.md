@@ -5,7 +5,7 @@
 1. **Motor determinista en servidor** — puzzles, inventario, escenas y victoria/derrota viven en `@escapeai/escape-engine`.
 2. **Contenido en datos** — salas en YAML (`@escapeai/escape-content`), no hardcodeadas en la UI.
 3. **Cliente ligero (PWA)** — Vite + React; muestra `PublicState` y envía acciones tipadas.
-4. **IA después** — el endpoint `GET /sessions/:id/ai-context` expone contexto sin soluciones; el orquestador consumirá eventos (`hint_requested`, `puzzle_failed`, etc.).
+4. **GameMasterAI** — `apps/api/src/gamemaster/` observa eventos del motor y emite `NarrativeIntervention` sin modificar el estado. Docs: [GM-1](./gamemaster-ai-gm1.md).
 
 ## Monorepo
 
@@ -14,7 +14,7 @@
 | `packages/shared`    | DTOs compartidos (`PublicState`, acciones) |
 | `packages/escape-engine` | Sesión, `applyAction`, validación   |
 | `packages/escape-content` | Salas YAML + loader                 |
-| `apps/api`           | Hono, sesiones en memoria (MVP)        |
+| `apps/api`           | Hono, sesiones/eventos KV, GameMasterAI |
 | `apps/web`           | PWA jugador                            |
 
 ## Persistencia (MVP)
@@ -23,11 +23,11 @@
 - Con `SESSION_DATA_DIR=./data/sessions`: persistencia en **JSON** por sesión (sobrevive reinicios de la API).
 - Próximo paso: Postgres (Neon) cuando haya despliegue compartido.
 
-## Orquestador IA
+## GameMasterAI (GM-1)
 
-- `apps/api/src/orchestrator.ts`: narración tras eventos (`puzzle_failed`, `hint_requested`, etc.).
-- Sin `DEEPSEEK_API_KEY` ni `OPENAI_API_KEY`: modo **fallback** (textos curados + eco de pistas YAML).
-- Con **DeepSeek** (`DEEPSEEK_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL`) u OpenAI directo: narración breve sin revelar soluciones.
+- Intervenciones en `gmInterventions` (KV); el motor sigue escribiendo `session.narrative[]`.
+- Triggers: bienvenida, escena, puzzle resuelto, objeto, pasaje, fin de partida; pistas manuales solo en motor.
+- Sin API keys: fallback estático. Con LLM: DeepSeek u OpenAI, contexto `GmViewContext` filtrado.
 
 ## Roadmap técnico
 

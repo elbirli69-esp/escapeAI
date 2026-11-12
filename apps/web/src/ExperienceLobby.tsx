@@ -81,7 +81,10 @@ export function ExperienceLobby(props: {
   onClassicStart: () => void;
   classicBusy: boolean;
   classicError: string | null;
-  onEventSession: (sessionId: string, initialState?: PublicState) => void;
+  onEventSession: (
+    sessionId: string,
+    initial?: { state: PublicState; gmInterventions: import("@escapeai/shared").NarrativeIntervention[] },
+  ) => void;
 }) {
   const [mode, setMode] = useState<LobbyMode>("home");
   const [adventureType, setAdventureType] = useState<AdventureType>("celebration");
@@ -138,7 +141,10 @@ export function ExperienceLobby(props: {
         "escapeai.teamId",
         joinMutation.data?.teamId ?? joinMutation.data?.playerId ?? "",
       );
-      props.onEventSession(data.sessionId, data.state);
+      props.onEventSession(data.sessionId, {
+        state: data.state,
+        gmInterventions: data.gmInterventions ?? [],
+      });
     },
     onError: (e: Error) => setFormError(e.message),
   });

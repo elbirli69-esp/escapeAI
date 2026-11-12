@@ -485,6 +485,11 @@ function requireInteractionSteps(session: SessionRecord, puzzle: RoomPuzzle): st
   return undefined;
 }
 
+/** Etiquetas de salidas y disponibilidad (solo lectura, para capas API). */
+export function getExitAvailability(session: SessionRecord) {
+  return getAvailableExits(session);
+}
+
 function getAvailableExits(session: SessionRecord) {
   const scene = session.room.scenes[session.currentSceneId];
   return (scene.exits ?? []).map((exit) => ({
