@@ -248,6 +248,19 @@ export {
 } from "./scanner-taxonomy.js";
 export { categoryDisplayName, fuseDetectionsIntoObjects, mergeObjectLists } from "./scanner-fusion.js";
 export { mapCameraError, mapDetectorLoadError, type ScannerCapability } from "./scanner-errors.js";
+export type {
+  ClueOutputType,
+  CreateSpatialEventRequest,
+  PuzzleClueSpec,
+  SpatialAdventureProposal,
+  SpatialArchetype,
+  SpatialDifficulty,
+  SpatialMechanicId,
+  SpatialPrepItem,
+  SpatialPrepKind,
+  SpatialProposalsResponse,
+  SpatialPuzzlePlan,
+} from "./spatial-adventure.js";
 export {
   haversineDistanceMeters,
   isValidGeoCoordinates,

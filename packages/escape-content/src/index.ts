@@ -23,3 +23,5 @@ export function loadRoomById(roomId: string): RoomDefinition {
 }
 
 export { generateAdventureRoom, listAdventureTemplates };
+export { buildSpatialRoom } from "./spatial/build-room.js";
+export { pickProposal, proposeSpatialAdventures, proposeSpatialAdventuresResponse } from "./spatial/generate-proposals.js";
