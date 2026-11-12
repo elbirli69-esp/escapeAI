@@ -17,6 +17,8 @@ function metaBase(overrides: Partial<GmSessionMeta> = {}): GmSessionMeta {
     visitedSceneIds: [],
     lastProgressMs: 0,
     stuckNotifiedPuzzleIds: [],
+    characterTurnCount: 0,
+    lastCharacterTurnMs: 0,
     ...overrides,
   };
 }

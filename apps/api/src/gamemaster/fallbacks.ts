@@ -1,5 +1,6 @@
 import type { SessionRecord } from "@escapeai/escape-engine";
 import type { GmProcessTrigger, NarrativeInterventionMeta } from "@escapeai/shared";
+import { getRoomCharacter, pickCharacterFallback } from "./characters.js";
 
 const STATIC_META: NarrativeInterventionMeta = { provider: "static", fallback: true };
 
@@ -8,7 +9,7 @@ export function staticInterventionText(
   trigger: GmProcessTrigger,
 ): {
   text: string;
-  kind: "narration" | "notification" | "hint";
+  kind: "narration" | "notification" | "hint" | "character";
   meta: NarrativeInterventionMeta;
 } {
   const team = session.playerContext?.displayName;
@@ -91,6 +92,23 @@ export function staticInterventionText(
       return {
         text: `Lleváis un rato en «${label}». Si necesitáis ayuda, usad «Pedir pista» — el conserje no revelará más de lo autorizado.`,
         kind: "notification",
+        meta: STATIC_META,
+      };
+    }
+    case "CHARACTER_TURN": {
+      const characterId = String(trigger.payload?.characterId ?? "");
+      const profile = getRoomCharacter(session, characterId);
+      if (!profile) {
+        return {
+          text: "Nadie responde.",
+          kind: "character",
+          meta: STATIC_META,
+        };
+      }
+      const line = pickCharacterFallback(profile);
+      return {
+        text: `${profile.displayName}: ${line}`,
+        kind: "character",
         meta: STATIC_META,
       };
     }

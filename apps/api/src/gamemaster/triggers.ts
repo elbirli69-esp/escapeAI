@@ -19,6 +19,7 @@ export const TRIGGER_POLICY: Record<string, TriggerMode> = {
   HINT_REQUESTED: "silent",
   TEAM_STUCK: "static",
   HINT_GRANTED: "llm_optional",
+  CHARACTER_TURN: "llm_optional",
 };
 
 export function collectTriggersFromGameplay(input: {
@@ -29,6 +30,19 @@ export function collectTriggersFromGameplay(input: {
 }): GmProcessTrigger[] {
   const { action, gameEvents, beforeExits, afterSession } = input;
   const triggers: GmProcessTrigger[] = [];
+
+  if (action.type === "talk_to_character") {
+    return [
+      {
+        type: "CHARACTER_TURN",
+        sourceEventId: randomUUID(),
+        payload: {
+          characterId: action.characterId,
+          message: action.message,
+        },
+      },
+    ];
+  }
 
   const hintEv = gameEvents.find((e) => e.type === "hint_requested");
   if (hintEv && hintEv.type === "hint_requested") {
@@ -114,7 +128,7 @@ function dedupeTriggers(triggers: GmProcessTrigger[]): GmProcessTrigger[] {
   const seen = new Set<string>();
   const out: GmProcessTrigger[] = [];
   for (const t of triggers) {
-    const key = `${t.type}:${t.payload?.puzzleId ?? t.payload?.sceneId ?? t.payload?.itemId ?? ""}`;
+    const key = `${t.type}:${t.payload?.puzzleId ?? t.payload?.sceneId ?? t.payload?.itemId ?? t.payload?.characterId ?? ""}`;
     if (seen.has(key)) continue;
     seen.add(key);
     out.push(t);

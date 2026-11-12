@@ -60,6 +60,13 @@ export type GmViewContext = {
   /** Solo en flujo HINT_GRANTED: texto YAML autorizado a parafrasear. */
   authorizedHintLine?: string;
   authorizedHintLevel?: number;
+  /** Flujo CHARACTER_TURN */
+  activeCharacterId?: string;
+  activeCharacterDisplayName?: string;
+  activeCharacterTone?: string;
+  activeCharacterKnowledge?: string[];
+  activeCharacterForbiddenTopics?: string[];
+  playerUtterance?: string;
 };
 
 export type GmTriggerType =
@@ -73,7 +80,8 @@ export type GmTriggerType =
   | "GAME_LOST"
   | "TIME_WARNING"
   | "TEAM_STUCK"
-  | "HINT_GRANTED";
+  | "HINT_GRANTED"
+  | "CHARACTER_TURN";
 
 export type GmProcessTrigger = {
   type: GmTriggerType;

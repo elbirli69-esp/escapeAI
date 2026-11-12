@@ -5,7 +5,7 @@
 1. **Motor determinista en servidor** — puzzles, inventario, escenas y victoria/derrota viven en `@escapeai/escape-engine`.
 2. **Contenido en datos** — salas en YAML (`@escapeai/escape-content`), no hardcodeadas en la UI.
 3. **Cliente ligero (PWA)** — Vite + React; muestra `PublicState` y envía acciones tipadas.
-4. **GameMasterAI** — `apps/api/src/gamemaster/` observa eventos del motor y emite `NarrativeIntervention` sin modificar el estado. Docs: [GM-1](./gamemaster-ai-gm1.md), [GM-2](./gamemaster-ai-gm2.md).
+4. **GameMasterAI** — `apps/api/src/gamemaster/` observa eventos del motor y emite `NarrativeIntervention` sin modificar el estado. Docs: [GM-1](./gamemaster-ai-gm1.md), [GM-2](./gamemaster-ai-gm2.md), [GM-3](./gamemaster-ai-gm3.md).
 
 ## Monorepo
 
@@ -23,7 +23,7 @@
 - Con `SESSION_DATA_DIR=./data/sessions`: persistencia en **JSON** por sesión (sobrevive reinicios de la API).
 - Próximo paso: Postgres (Neon) cuando haya despliegue compartido.
 
-## GameMasterAI (GM-1 / GM-2)
+## GameMasterAI (GM-1 / GM-2 / GM-3)
 
 - Intervenciones en `gmInterventions` (KV); el motor sigue escribiendo `session.narrative[]`.
 - Triggers: bienvenida, escena, puzzle resuelto, objeto, pasaje, fin de partida; pistas manuales solo en motor.

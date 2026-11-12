@@ -8,7 +8,7 @@ import type {
   PublicState,
   VoiceMatchMode,
 } from "@escapeai/shared";
-import { matchPlayerAnswer, validatePlayerAtTarget } from "@escapeai/shared";
+import { matchPlayerAnswer, sanitizePlayerUtterance, validatePlayerAtTarget } from "@escapeai/shared";
 import type { PlayerContext } from "./player-context.js";
 import type { Condition, RoomDefinition, RoomPuzzle } from "./room-definition.js";
 
@@ -170,6 +170,14 @@ export function applyAction(
       if (err) {
         return { ok: false, error: err, state: toPublicState(session, nowMs), events };
       }
+      break;
+    }
+    case "talk_to_character": {
+      const talk = talkToCharacter(session, action.characterId, action.message);
+      if (talk.error) {
+        return { ok: false, error: talk.error, state: toPublicState(session, nowMs), events };
+      }
+      events.push(talk.event!);
       break;
     }
   }
@@ -485,6 +493,30 @@ function requireInteractionSteps(session: SessionRecord, puzzle: RoomPuzzle): st
   return undefined;
 }
 
+function talkToCharacter(
+  session: SessionRecord,
+  characterId: string,
+  message: string,
+): { event?: GameEvent; error?: string } {
+  const profile = session.room.characters?.[characterId];
+  if (!profile) {
+    return { error: "No conoces a esa persona." };
+  }
+  const scene = session.room.scenes[session.currentSceneId];
+  const present = scene.characters ?? [];
+  if (!present.includes(characterId)) {
+    return { error: `${profile.displayName} no está aquí ahora mismo.` };
+  }
+  const clean = sanitizePlayerUtterance(message);
+  if (!clean) {
+    return { error: "Escribe una pregunta o saludo." };
+  }
+  session.narrative.push(`Preguntas a ${profile.displayName}: «${clean}»`);
+  return {
+    event: { type: "character_talk", characterId, message: clean },
+  };
+}
+
 /** Etiquetas de salidas y disponibilidad (solo lectura, para capas API). */
 export function getExitAvailability(session: SessionRecord) {
   return getAvailableExits(session);
@@ -614,7 +646,23 @@ export function toPublicState(session: SessionRecord, nowMs = Date.now()): Publi
     timeRemainingSec,
     spatialSiteMap,
     spatialRoomLabel: spatialRoom?.label,
+    sceneCharacters: buildSceneCharacters(session),
   };
+}
+
+function buildSceneCharacters(session: SessionRecord) {
+  const scene = session.room.scenes[session.currentSceneId];
+  const ids = scene.characters ?? [];
+  const defs = session.room.characters ?? {};
+  return ids
+    .map((id) => defs[id])
+    .filter((c): c is NonNullable<typeof c> => Boolean(c))
+    .map((c) => ({
+      id: c.id,
+      displayName: c.displayName,
+      voiceTone: c.voiceTone,
+      greeting: c.greeting,
+    }));
 }
 
 export function toAiContext(session: SessionRecord, nowMs = Date.now()): AiContext {

@@ -1,4 +1,10 @@
-export type { Condition, RoomDefinition, RoomPuzzle, RoomScene } from "./room-definition.js";
+export type {
+  Condition,
+  RoomCharacter,
+  RoomDefinition,
+  RoomPuzzle,
+  RoomScene,
+} from "./room-definition.js";
 export { loadRoomFromFile, parseRoomDefinition } from "./load-room.js";
 export {
   applyAction,

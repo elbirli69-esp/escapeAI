@@ -17,6 +17,8 @@ export type GmSessionMeta = {
   lastProgressMs: number;
   /** Puzzles que ya recibieron aviso TEAM_STUCK esta partida. */
   stuckNotifiedPuzzleIds: string[];
+  characterTurnCount: number;
+  lastCharacterTurnMs: number;
 };
 
 const defaultMeta = (): GmSessionMeta => ({
@@ -27,6 +29,8 @@ const defaultMeta = (): GmSessionMeta => ({
   visitedSceneIds: [],
   lastProgressMs: Date.now(),
   stuckNotifiedPuzzleIds: [],
+  characterTurnCount: 0,
+  lastCharacterTurnMs: 0,
 });
 
 export interface GmInterventionStore {

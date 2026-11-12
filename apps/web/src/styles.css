@@ -629,6 +629,23 @@ button {
   padding-left: 0.65rem;
 }
 
+.character-chat-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+}
+
+.character-input {
+  flex: 1;
+  min-width: 12rem;
+}
+
+.character-greeting {
+  margin: 0.35rem 0 0;
+  opacity: 0.85;
+}
+
 .log-tag {
   display: inline-block;
   font-size: 0.65rem;
