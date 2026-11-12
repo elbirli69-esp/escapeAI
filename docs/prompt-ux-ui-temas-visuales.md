@@ -61,6 +61,7 @@ Hacer la aplicación **mucho más visual y autoexplicativa**:
 
 - [x] **Plantillas de aventura** (`/api/adventures`): tarjetas visuales al elegir tipo (cumpleaños, despedida, etc.).
 - [x] **Panel organizador**: fondo temático del evento + código estilo “cartel de fiesta”.
+- [x] **QR de acceso**: enlace `?join=CODE` + QR en cartel (organizador y tras crear evento).
 - [x] **Ítems**: miniatura opcional `item.image` en YAML → `imageUrl` en partida.
 - [x] **Victoria/derrota**: portada `roomCoverImage` + copy según tema urban/coastal.
 

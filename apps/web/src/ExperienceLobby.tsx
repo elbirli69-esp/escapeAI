@@ -6,7 +6,7 @@ import type {
   PublicState,
 } from "@escapeai/shared";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { EventDurationMin } from "@escapeai/shared";
 import {
   createCustomEvent,
@@ -15,8 +15,10 @@ import {
   startEventSession,
   type RoomSummary,
 } from "./api";
+import { EventJoinQr } from "./EventJoinQr";
 import { EventOrganizerBoard } from "./EventOrganizerBoard";
 import { formatRoomDuration, VisualCard } from "./VisualCard";
+import { readJoinCodeFromLocation, stripJoinParamFromUrl } from "./lib/event-join-url";
 
 type LobbyMode = "home" | "create" | "join" | "organizer" | "catalog";
 
@@ -84,6 +86,14 @@ export function ExperienceLobby(props: {
   const [joinCode, setJoinCode] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const code = readJoinCodeFromLocation();
+    if (!code) return;
+    setJoinCode(code);
+    setMode("join");
+    stripJoinParamFromUrl();
+  }, []);
 
   const templatesQuery = useQuery({
     queryKey: ["adventures"],
@@ -276,14 +286,19 @@ export function ExperienceLobby(props: {
             <div className="event-poster-scrim" aria-hidden />
             <div className="event-poster-body">
               <p className="eyebrow">Código para compartir</p>
-              <p className="join-code poster-code">{created.joinCode}</p>
-              <p>
-                <strong>{created.title}</strong> · {created.sceneCount} escenas ·{" "}
-                {Math.round(created.timeLimitSec / 60)} min · {created.teamCount} equipos
-              </p>
-              <p className="muted">
-                Cada equipo entra con el código y su nombre de grupo. Recomendado: un móvil por equipo.
-              </p>
+              <div className="event-poster-invite">
+                <div className="event-poster-invite-copy">
+                  <p className="join-code poster-code">{created.joinCode}</p>
+                  <p>
+                    <strong>{created.title}</strong> · {created.sceneCount} escenas ·{" "}
+                    {Math.round(created.timeLimitSec / 60)} min · {created.teamCount} equipos
+                  </p>
+                  <p className="muted">
+                    Escanea el QR o escribe el código. Un móvil por equipo.
+                  </p>
+                </div>
+                <EventJoinQr joinCode={created.joinCode} size="md" />
+              </div>
             </div>
           </div>
         )}

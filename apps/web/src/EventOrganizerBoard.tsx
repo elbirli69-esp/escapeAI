@@ -1,6 +1,7 @@
 import type { EventLeaderboard, EventTeamPublic } from "@escapeai/shared";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
+import { EventJoinQr } from "./EventJoinQr";
 import { fetchEventLeaderboard } from "./api";
 import { teamAvatarStyle } from "./team-avatar";
 
@@ -47,7 +48,7 @@ export function EventOrganizerBoard(props: { joinCode: string; onBack?: () => vo
   });
 
   const board = q.data as EventLeaderboard | undefined;
-  const shareLine = `Código ${props.joinCode} — equipos entran en escapeAI con su nombre de grupo.`;
+  const shareLine = `QR o código ${props.joinCode} — cada equipo elige su nombre al entrar.`;
 
   return (
     <main
@@ -85,10 +86,15 @@ export function EventOrganizerBoard(props: { joinCode: string; onBack?: () => vo
         <div className="event-poster-body">
           <p className="eyebrow">Invitación al escape</p>
           <h1 className="display-sm">{board?.title ?? "Cargando evento…"}</h1>
-          <p className="join-code poster-code" aria-label={`Código del evento: ${props.joinCode}`}>
-            {props.joinCode}
-          </p>
-          <p className="poster-hint">{shareLine}</p>
+          <div className="event-poster-invite">
+            <div className="event-poster-invite-copy">
+              <p className="join-code poster-code" aria-label={`Código del evento: ${props.joinCode}`}>
+                {props.joinCode}
+              </p>
+              <p className="poster-hint">{shareLine}</p>
+            </div>
+            <EventJoinQr joinCode={props.joinCode} size={projectorTv ? "lg" : "md"} />
+          </div>
         </div>
       </div>
       {q.isError && <p className="error">No se pudo cargar el evento.</p>}

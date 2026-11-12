@@ -488,6 +488,56 @@ button {
   max-width: 36rem;
 }
 
+.event-poster-invite {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.25rem;
+  align-items: center;
+}
+
+.event-poster-invite-copy {
+  flex: 1;
+  min-width: 12rem;
+}
+
+.event-join-qr {
+  margin: 0;
+  padding: 0.45rem;
+  border-radius: 0.65rem;
+  background: #fff;
+  box-shadow: 0 8px 30px #00000055;
+  flex-shrink: 0;
+}
+
+.event-join-qr img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.event-join-qr.size-sm img {
+  max-width: 7.5rem;
+}
+
+.event-join-qr.size-md img {
+  max-width: 9.5rem;
+}
+
+.event-join-qr.size-lg img {
+  max-width: 12.5rem;
+}
+
+.event-join-qr figcaption {
+  margin: 0.35rem 0 0;
+  text-align: center;
+  color: #475569;
+  font-size: 0.72rem;
+}
+
+.organizer-tv .event-join-qr.size-lg img {
+  max-width: 16rem;
+}
+
 .join-card-actions {
   max-width: 28rem;
 }
