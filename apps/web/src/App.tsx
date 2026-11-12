@@ -12,9 +12,17 @@ function themeClass(theme?: string): string {
   return theme === "coastal" ? "theme-coastal" : "theme-urban";
 }
 
-function FlashBanner(props: { message: string; onDismiss?: () => void }) {
+function FlashBanner(props: {
+  message: string;
+  onDismiss?: () => void;
+  testId?: string;
+}) {
   return (
-    <div className="flash-banner" role="alert" data-testid="escape-flash-error">
+    <div
+      className="flash-banner"
+      role="alert"
+      data-testid={props.testId ?? "escape-flash-error"}
+    >
       <span>{props.message}</span>
       {props.onDismiss && (
         <button
@@ -307,6 +315,12 @@ function GameView(props: {
   const latestAi = [...props.gmInterventions]
     .reverse()
     .find((i) => i.meta.provider !== "static" && !i.meta.fallback);
+  const [dismissedBannerId, setDismissedBannerId] = useState<string | null>(null);
+  const gmBanner = useMemo(() => {
+    return [...props.gmInterventions]
+      .filter((i) => i.presentation === "banner")
+      .sort((a, b) => b.sequence - a.sequence || b.createdAt - a.createdAt)[0];
+  }, [props.gmInterventions]);
   const sceneOrder = state.sceneOrder?.length
     ? state.sceneOrder
     : [state.currentSceneId];
@@ -370,6 +384,14 @@ function GameView(props: {
 
       {props.actionError && (
         <FlashBanner message={props.actionError} onDismiss={props.onDismissError} />
+      )}
+
+      {gmBanner && gmBanner.id !== dismissedBannerId && (
+        <FlashBanner
+          message={gmBanner.text}
+          testId="escape-gm-banner"
+          onDismiss={() => setDismissedBannerId(gmBanner.id)}
+        />
       )}
 
       {state.spatialSiteMap && <SpatialSitePlayMap map={state.spatialSiteMap} />}

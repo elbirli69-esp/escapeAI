@@ -11,6 +11,12 @@ export type GmSessionMeta = {
   llmCallCount: number;
   lastLlmCallMs: number;
   visitedSceneIds: string[];
+  /** Puzzle en foco (último intento fallido o activo). */
+  focusedPuzzleId?: string;
+  /** Última acción con progreso real (resolver, mover, objeto…). */
+  lastProgressMs: number;
+  /** Puzzles que ya recibieron aviso TEAM_STUCK esta partida. */
+  stuckNotifiedPuzzleIds: string[];
 };
 
 const defaultMeta = (): GmSessionMeta => ({
@@ -19,6 +25,8 @@ const defaultMeta = (): GmSessionMeta => ({
   llmCallCount: 0,
   lastLlmCallMs: 0,
   visitedSceneIds: [],
+  lastProgressMs: Date.now(),
+  stuckNotifiedPuzzleIds: [],
 });
 
 export interface GmInterventionStore {

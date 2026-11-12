@@ -1,6 +1,7 @@
 import type { SessionRecord } from "@escapeai/escape-engine";
 import { toPublicState } from "@escapeai/escape-engine";
 import type { GmViewContext, NarrativeIntervention } from "@escapeai/shared";
+import { getAuthorizedHintText } from "./hints.js";
 
 function humanizeId(id: string): string {
   return id.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
@@ -25,7 +26,7 @@ export function buildGmViewContext(
 ): GmViewContext {
   const publicState = toPublicState(session, nowMs);
   const scene = session.room.scenes[session.currentSceneId];
-  const ctx = session.playerContext;
+  const playerCtx = session.playerContext;
 
   const visitedRoomLabels: string[] = [];
   for (const sceneId of visitedSceneIds) {
@@ -45,15 +46,15 @@ export function buildGmViewContext(
   const authorizedInventoryLabels = [...session.inventory].map((id) => itemLabel(session, id));
 
   const authorizedNarrativeFacts: string[] = [];
-  if (ctx?.eventTitle) authorizedNarrativeFacts.push(`Evento: ${ctx.eventTitle}`);
+  if (playerCtx?.eventTitle) authorizedNarrativeFacts.push(`Evento: ${playerCtx.eventTitle}`);
   if (session.room.tagline) authorizedNarrativeFacts.push(session.room.tagline);
 
-  return {
+  const view: GmViewContext = {
     sessionId: session.sessionId,
-    teamId: ctx?.playerId,
-    teamName: ctx?.displayName,
-    adventureTitle: ctx?.eventTitle ?? session.room.name,
-    adventureType: ctx?.adventureType,
+    teamId: playerCtx?.playerId,
+    teamName: playerCtx?.displayName,
+    adventureTitle: playerCtx?.eventTitle ?? session.room.name,
+    adventureType: playerCtx?.adventureType,
     authorizedSynopsis: session.room.tagline,
     authorizedTone: session.room.theme,
     currentSceneId: session.currentSceneId,
@@ -68,6 +69,35 @@ export function buildGmViewContext(
     recentAuthorizedEvents,
     recentInterventions: recentInterventions.slice(-5).map((i) => i.text),
     authorizedNarrativeFacts,
+  };
+  return view;
+}
+
+export function buildGmViewContextForHint(
+  session: SessionRecord,
+  puzzleId: string,
+  hintLevel: number,
+  recentInterventions: NarrativeIntervention[],
+  visitedSceneIds: string[],
+  recentAuthorizedEvents: string[],
+  nowMs = Date.now(),
+): GmViewContext | undefined {
+  const authorizedHintLine = getAuthorizedHintText(session, puzzleId, hintLevel);
+  if (!authorizedHintLine) return undefined;
+  const base = buildGmViewContext(
+    session,
+    recentInterventions,
+    visitedSceneIds,
+    recentAuthorizedEvents,
+    nowMs,
+  );
+  return {
+    ...base,
+    authorizedHintLine,
+    authorizedHintLevel: hintLevel,
+    activePuzzleLabels: base.activePuzzleLabels.filter(
+      (l) => l === (session.room.puzzles[puzzleId]?.label ?? l),
+    ),
   };
 }
 

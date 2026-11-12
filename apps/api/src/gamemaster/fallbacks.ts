@@ -6,7 +6,11 @@ const STATIC_META: NarrativeInterventionMeta = { provider: "static", fallback: t
 export function staticInterventionText(
   session: SessionRecord,
   trigger: GmProcessTrigger,
-): { text: string; kind: "narration" | "notification"; meta: NarrativeInterventionMeta } {
+): {
+  text: string;
+  kind: "narration" | "notification" | "hint";
+  meta: NarrativeInterventionMeta;
+} {
   const team = session.playerContext?.displayName;
   const name = session.room.name;
   const type = trigger.type;
@@ -78,6 +82,33 @@ export function staticInterventionText(
       return {
         text: `Recordad: queda ${label}. Priorizad lo que aún no resolvisteis.`,
         kind: "notification",
+        meta: STATIC_META,
+      };
+    }
+    case "TEAM_STUCK": {
+      const label =
+        session.room.puzzles[String(trigger.payload?.puzzleId ?? "")]?.label ?? "este reto";
+      return {
+        text: `Lleváis un rato en «${label}». Si necesitáis ayuda, usad «Pedir pista» — el conserje no revelará más de lo autorizado.`,
+        kind: "notification",
+        meta: STATIC_META,
+      };
+    }
+    case "HINT_GRANTED": {
+      const puzzleId = String(trigger.payload?.puzzleId ?? "");
+      const level = Number(trigger.payload?.level ?? 1);
+      const puzzle = session.room.puzzles[puzzleId];
+      const curated = puzzle?.hints?.[level - 1]?.text;
+      if (curated) {
+        return {
+          text: `El director acentúa: ${curated}`,
+          kind: "hint",
+          meta: STATIC_META,
+        };
+      }
+      return {
+        text: "Recibid esta pista con calma; el puzzle sigue en vuestras manos.",
+        kind: "hint",
         meta: STATIC_META,
       };
     }
