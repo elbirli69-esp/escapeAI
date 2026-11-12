@@ -71,7 +71,8 @@ const TTS_VARIANTS: TtsBuilder[] = [
 
 export type ProceduralSoundIntro = {
   soundMode: "beeps" | "tts";
-  beepPattern?: number[];
+  /** Siempre presente como respaldo si la voz del sistema falla. */
+  beepPattern: number[];
   ttsText?: string;
   prompt: string;
   interactionHints: string[];
@@ -89,7 +90,8 @@ export function buildProceduralSoundIntro(opts: {
   const w0 = digitWord(d0);
   const w1 = digitWord(d1);
   const h = hash32(opts.eventId);
-  const useTts = h % 3 !== 0;
+  const beepPattern = beepPatternForTwoDigits(pair);
+  const useTts = h % 4 === 0;
   const variant = TTS_VARIANTS[h % TTS_VARIANTS.length]!;
 
   const sharedHints = [
@@ -100,16 +102,20 @@ export function buildProceduralSoundIntro(opts: {
   if (useTts) {
     return {
       soundMode: "tts",
+      beepPattern,
       ttsText: variant({ d0, d1, w0, w1, pair, nickname: opts.nickname, factSnippet: opts.factSnippet }),
       prompt:
-        "Pulsa reproducir y escucha el mensaje. Anota las dos primeras cifras del candado numérico.",
-      interactionHints: sharedHints,
+        "Pulsa «Escuchar mensaje». Si no oyes nada, usa «Pitidos de respaldo». Anota las dos primeras cifras del candado.",
+      interactionHints: [
+        ...sharedHints,
+        "Si la voz no suena, activa volumen de multimedia y prueba pitidos.",
+      ],
     };
   }
 
   return {
     soundMode: "beeps",
-    beepPattern: beepPatternForTwoDigits(pair),
+    beepPattern,
     prompt:
       "Pulsa reproducir. Cada cifra se anuncia con pitidos (uno = un pip, nueve = nueve pips). Anota las dos primeras cifras del candado.",
     interactionHints: [
