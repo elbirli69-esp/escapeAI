@@ -57,6 +57,9 @@ export type GmViewContext = {
   recentAuthorizedEvents: string[];
   recentInterventions: string[];
   authorizedNarrativeFacts: string[];
+  /** Solo en flujo HINT_GRANTED: texto YAML autorizado a parafrasear. */
+  authorizedHintLine?: string;
+  authorizedHintLevel?: number;
 };
 
 export type GmTriggerType =
@@ -68,7 +71,9 @@ export type GmTriggerType =
   | "PASSAGE_UNLOCKED"
   | "GAME_WON"
   | "GAME_LOST"
-  | "TIME_WARNING";
+  | "TIME_WARNING"
+  | "TEAM_STUCK"
+  | "HINT_GRANTED";
 
 export type GmProcessTrigger = {
   type: GmTriggerType;

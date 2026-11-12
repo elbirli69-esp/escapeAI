@@ -36,20 +36,27 @@ describe("GameMasterService", () => {
     expect(blob).not.toContain("1995");
   });
 
-  it("hint_requested no genera intervención GM", async () => {
+  it("hint_requested genera intervención HINT_GRANTED con clueRefs", async () => {
     const room = loadRoomHelper();
     const session = createSession(room);
     const store = new MemoryGmInterventionStore();
     const gm = new GameMasterService(store);
     const before = getExitAvailability(session);
     const result = applyAction(session, { type: "request_hint", puzzleId: "entry_lock" });
+    expect(result.ok).toBe(true);
     const created = await gm.processAfterAction({
       session,
       action: { type: "request_hint", puzzleId: "entry_lock" },
       events: result.events,
       beforeExits: before,
     });
-    expect(created).toEqual([]);
+    expect(created.length).toBe(1);
+    expect(created[0].kind).toBe("hint");
+    expect(created[0].clueRefs?.[0]?.puzzleId).toBe("entry_lock");
+    const answer = room.puzzles.entry_lock?.answer;
+    if (answer) {
+      expect(created[0].text.toLowerCase()).not.toContain(answer.toLowerCase());
+    }
   });
 
   it("puzzle resuelto persiste intervención estática", async () => {

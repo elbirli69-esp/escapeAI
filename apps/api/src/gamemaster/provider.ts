@@ -26,7 +26,17 @@ export async function generateNarrationLlm(
       baseURL: llm.baseURL,
     });
 
-    const userPayload = JSON.stringify({ trigger: triggerType, context });
+    const hintLine = context.authorizedHintLine;
+    const userPayload = JSON.stringify({
+      trigger: triggerType,
+      context: hintLine
+        ? { ...context, authorizedHintLine: hintLine }
+        : context,
+    });
+
+    const hintRule = hintLine
+      ? " Para pistas, parafrasea solo authorizedHintLine sin añadir datos nuevos ni la solución."
+      : "";
 
     const { text } = await generateText({
       model: client(llm.model),
@@ -36,7 +46,10 @@ export async function generateNarrationLlm(
         "No reveles códigos, soluciones ni dígitos concretos.",
         "Usa solo la información del contexto JSON.",
         "Máximo 2 frases, tono inmersivo, sin markdown.",
-      ].join(" "),
+        hintRule,
+      ]
+        .join(" ")
+        .trim(),
       prompt: userPayload,
     });
 

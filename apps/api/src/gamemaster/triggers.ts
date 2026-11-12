@@ -17,11 +17,9 @@ export const TRIGGER_POLICY: Record<string, TriggerMode> = {
   GAME_LOST: "llm_optional",
   TIME_WARNING: "static",
   HINT_REQUESTED: "silent",
+  TEAM_STUCK: "static",
+  HINT_GRANTED: "llm_optional",
 };
-
-export function shouldSkipHintGm(gameEvents: GameEvent[]): boolean {
-  return gameEvents.some((e) => e.type === "hint_requested");
-}
 
 export function collectTriggersFromGameplay(input: {
   action: GameAction;
@@ -32,8 +30,15 @@ export function collectTriggersFromGameplay(input: {
   const { action, gameEvents, beforeExits, afterSession } = input;
   const triggers: GmProcessTrigger[] = [];
 
-  if (shouldSkipHintGm(gameEvents) && gameEvents.length > 0) {
-    return [];
+  const hintEv = gameEvents.find((e) => e.type === "hint_requested");
+  if (hintEv && hintEv.type === "hint_requested") {
+    return [
+      {
+        type: "HINT_GRANTED",
+        sourceEventId: randomUUID(),
+        payload: { puzzleId: hintEv.puzzleId, level: hintEv.level },
+      },
+    ];
   }
 
   for (const ev of gameEvents) {

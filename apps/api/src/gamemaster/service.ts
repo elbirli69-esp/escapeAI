@@ -6,8 +6,14 @@ import type {
   NarrativeIntervention,
 } from "@escapeai/shared";
 import { randomUUID } from "node:crypto";
-import { buildGmViewContext, collectForbiddenAnswerTokens } from "./context.js";
+import { buildGmViewContext, buildGmViewContextForHint, collectForbiddenAnswerTokens } from "./context.js";
 import { staticInterventionText } from "./fallbacks.js";
+import { hintSpoilerLevel } from "./hints.js";
+import {
+  detectTeamStuckTrigger,
+  markStuckNotified,
+  updateProgressMeta,
+} from "./stuck-detection.js";
 import type { GmInterventionStore } from "./persistence.js";
 import { generateNarrationLlmWithRetry } from "./provider.js";
 import { checkTimeWarningTriggers } from "./time-warnings.js";
@@ -42,6 +48,10 @@ export class GameMasterService {
     events: GameEvent[];
     beforeExits: ExitSnapshot;
   }): Promise<NarrativeIntervention[]> {
+    let meta = await this.store.loadMeta(input.session.sessionId);
+    meta = updateProgressMeta(input.session, input.action, input.events, meta);
+    await this.store.saveMeta(input.session.sessionId, meta);
+
     const timeTriggers = await checkTimeWarningTriggers(input.session, this.store);
     const gameplayTriggers = collectTriggersFromGameplay({
       action: input.action,
@@ -49,14 +59,23 @@ export class GameMasterService {
       beforeExits: input.beforeExits,
       afterSession: input.session,
     });
+    const stuck = detectTeamStuckTrigger(input.session, meta);
+    const stuckTriggers = stuck ? [stuck] : [];
     const recentEvents = input.events.map((e) => e.type);
-    return this.processTriggers(input.session, [...gameplayTriggers, ...timeTriggers], recentEvents);
+    return this.processTriggers(
+      input.session,
+      [...gameplayTriggers, ...timeTriggers, ...stuckTriggers],
+      recentEvents,
+    );
   }
 
   async processOnRead(session: SessionRecord): Promise<NarrativeIntervention[]> {
+    const meta = await this.store.loadMeta(session.sessionId);
     const timeTriggers = await checkTimeWarningTriggers(session, this.store);
-    if (timeTriggers.length === 0) return [];
-    return this.processTriggers(session, timeTriggers, []);
+    const stuck = detectTeamStuckTrigger(session, meta);
+    const stuckTriggers = stuck ? [stuck] : [];
+    if (timeTriggers.length === 0 && stuckTriggers.length === 0) return [];
+    return this.processTriggers(session, [...timeTriggers, ...stuckTriggers], []);
   }
 
   private async processTriggers(
@@ -68,7 +87,7 @@ export class GameMasterService {
 
     const created: NarrativeIntervention[] = [];
     const existing = await this.store.list(session.sessionId);
-    const meta = await this.store.loadMeta(session.sessionId);
+    let meta = await this.store.loadMeta(session.sessionId);
     const forbidden = collectForbiddenAnswerTokens(session);
 
     for (const trigger of triggers) {
@@ -101,6 +120,11 @@ export class GameMasterService {
         meta.visitedSceneIds = [...new Set([...meta.visitedSceneIds, sceneId])];
         await this.store.saveMeta(session.sessionId, meta);
       }
+      if (trigger.type === "TEAM_STUCK" && trigger.payload?.puzzleId) {
+        const puzzleId = String(trigger.payload.puzzleId);
+        meta = markStuckNotified(meta, puzzleId);
+        await this.store.saveMeta(session.sessionId, meta);
+      }
     }
 
     return created;
@@ -123,6 +147,16 @@ export class GameMasterService {
     const staticPack = staticInterventionText(session, trigger);
     let text = staticPack.text;
     let metaOut = { ...staticPack.meta, trigger: dedupe };
+    let spoilerLevel =
+      staticPack.kind === "hint"
+        ? hintSpoilerLevel(Number(trigger.payload?.level ?? 1))
+        : 0;
+    let clueRefs: NarrativeIntervention["clueRefs"];
+    if (trigger.type === "HINT_GRANTED" && trigger.payload?.puzzleId) {
+      const puzzleId = String(trigger.payload.puzzleId);
+      const level = Number(trigger.payload.level ?? 1);
+      clueRefs = [{ puzzleId, hintLevel: level }];
+    }
 
     const now = Date.now();
     const canLlm =
@@ -131,15 +165,28 @@ export class GameMasterService {
       now - meta.lastLlmCallMs >= LLM_COOLDOWN_MS;
 
     if (canLlm) {
-      const ctx = buildGmViewContext(
-        session,
-        recentInterventions,
-        meta.visitedSceneIds,
-        recentAuthorizedEvents,
-      );
-      const llm = await generateNarrationLlmWithRetry(ctx, trigger.type);
+      const ctx =
+        trigger.type === "HINT_GRANTED" && trigger.payload?.puzzleId
+          ? buildGmViewContextForHint(
+              session,
+              String(trigger.payload.puzzleId),
+              Number(trigger.payload.level ?? 1),
+              recentInterventions,
+              meta.visitedSceneIds,
+              recentAuthorizedEvents,
+            )
+          : buildGmViewContext(
+              session,
+              recentInterventions,
+              meta.visitedSceneIds,
+              recentAuthorizedEvents,
+            );
+      if (!ctx && trigger.type === "HINT_GRANTED") {
+        return null;
+      }
+      const llm = await generateNarrationLlmWithRetry(ctx!, trigger.type);
       if (llm.ok) {
-        const v = validateIntervention({ text: llm.text, spoilerLevel: 0 }, forbidden);
+        const v = validateIntervention({ text: llm.text, spoilerLevel, clueRefs }, forbidden);
         if (v.ok) {
           text = llm.text;
           metaOut = {
@@ -175,7 +222,7 @@ export class GameMasterService {
       }
     }
 
-    const finalCheck = validateIntervention({ text, spoilerLevel: 0 }, forbidden);
+    const finalCheck = validateIntervention({ text, spoilerLevel, clueRefs }, forbidden);
     if (!finalCheck.ok) {
       const fallback = staticInterventionText(session, trigger);
       text = fallback.text;
@@ -184,6 +231,9 @@ export class GameMasterService {
 
     const teamId = session.playerContext?.playerId;
 
+    const presentation: NarrativeIntervention["presentation"] =
+      trigger.type === "TIME_WARNING" || trigger.type === "TEAM_STUCK" ? "banner" : "inline";
+
     return {
       id: randomUUID(),
       sessionId: session.sessionId,
@@ -191,8 +241,9 @@ export class GameMasterService {
       sourceEventId: trigger.sourceEventId,
       kind: staticPack.kind,
       text,
-      spoilerLevel: 0,
-      presentation: trigger.type === "TIME_WARNING" ? "banner" : "inline",
+      spoilerLevel,
+      clueRefs,
+      presentation,
       createdAt: Date.now(),
       sequence: 0,
       meta: metaOut,
