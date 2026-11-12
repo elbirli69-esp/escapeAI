@@ -25,7 +25,7 @@ export function EventOrganizerBoard(props: { joinCode: string; onBack?: () => vo
   const board = q.data as EventLeaderboard | undefined;
 
   return (
-    <main className="shell lobby organizer-board">
+    <main className="shell lobby organizer-board" data-testid="escape-organizer-board">
       {props.onBack && (
         <button type="button" className="ghost sm back-link" onClick={props.onBack}>
           ← Volver
@@ -41,7 +41,7 @@ export function EventOrganizerBoard(props: { joinCode: string; onBack?: () => vo
       </header>
       {q.isError && <p className="error">No se pudo cargar el evento.</p>}
       {q.isLoading && <p className="muted">Actualizando equipos…</p>}
-      <ol className="leaderboard-list">
+      <ol className="leaderboard-list" data-testid="escape-leaderboard-list">
         {(board?.teams ?? []).map((t, i) => (
           <li key={t.teamId} className={`leaderboard-row status-${t.status}`}>
             <span className="rank">{i + 1}</span>
