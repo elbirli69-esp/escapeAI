@@ -72,8 +72,8 @@ Hacer la aplicación **mucho más visual y autoexplicativa**:
 
 ### P3 — Motion y audio (opcional)
 
-- [ ] Transición cross-fade entre escenas al cambiar `sceneImageUrl`.
-- [ ] Ambiente: loop muy bajo por tema (Howler, ya previsto en prompt mobile v2).
+- [x] Transición cross-fade entre escenas al cambiar `sceneImageUrl` (`SceneHero`).
+- [x] Ambiente procedural muy bajo por tema (Tone.js; urbano vs costa) + toggle en partida.
 
 ## Contenido YAML (autoría)
 
