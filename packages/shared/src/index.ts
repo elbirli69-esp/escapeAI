@@ -5,13 +5,16 @@ export type GameStatus = "playing" | "won" | "lost";
 
 export type GameActionType =
   | "submit_answer"
+  | "submit_location"
   | "move"
   | "request_hint"
   | "take_item"
   | "use_item"
   | "complete_interaction";
 
-export type InteractionStep = "listen" | "speak" | "capture" | "view";
+export type InteractionStep = "listen" | "speak" | "capture" | "view" | "arrive";
+
+export type LocationMode = "reach" | "quiz";
 
 export type CompleteInteractionAction = {
   type: "complete_interaction";
@@ -23,6 +26,14 @@ export type SubmitAnswerAction = {
   type: "submit_answer";
   puzzleId: string;
   value: string;
+};
+
+export type SubmitLocationAction = {
+  type: "submit_location";
+  puzzleId: string;
+  lat: number;
+  lon: number;
+  accuracyMeters?: number;
 };
 
 export type MoveAction = {
@@ -48,6 +59,7 @@ export type UseItemAction = {
 
 export type GameAction =
   | SubmitAnswerAction
+  | SubmitLocationAction
   | MoveAction
   | RequestHintAction
   | TakeItemAction
@@ -60,7 +72,8 @@ export type PublicPuzzleType =
   | "sound"
   | "voice"
   | "camera"
-  | "visual";
+  | "visual"
+  | "location";
 
 export type PublicItem = {
   id: string;
@@ -104,6 +117,13 @@ export type PublicPuzzle = {
   /** Idiomas Tesseract (p. ej. spa+eng). */
   ocrLang?: string;
   interactionHints?: string[];
+  locationMode?: LocationMode;
+  targetLat?: number;
+  targetLon?: number;
+  radiusMeters?: number;
+  maxAccuracyMeters?: number;
+  waypointLabel?: string;
+  quizPrompt?: string;
 };
 
 export type PublicExit = {
@@ -195,3 +215,11 @@ export {
   type NormalizeMode,
   type VoiceMatchMode,
 } from "./answer-match.js";
+export {
+  haversineDistanceMeters,
+  isValidGeoCoordinates,
+  validatePlayerAtTarget,
+  type LocationCoords,
+  type ValidateLocationOptions,
+  type ValidateLocationResult,
+} from "./geo.js";

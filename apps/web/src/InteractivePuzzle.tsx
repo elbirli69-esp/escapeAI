@@ -3,12 +3,20 @@ import { Howl } from "howler";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import Webcam from "react-webcam";
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
+import { LocationStation } from "./LocationStation";
 import { PermissionGate } from "./PermissionGate";
 import { fetchFalImage, fetchPexelsImage } from "./api";
 
 type ActionSender = (
   action:
     | { type: "submit_answer"; puzzleId: string; value: string }
+    | {
+        type: "submit_location";
+        puzzleId: string;
+        lat: number;
+        lon: number;
+        accuracyMeters?: number;
+      }
     | { type: "complete_interaction"; puzzleId: string; step: InteractionStep }
     | { type: "request_hint"; puzzleId: string },
 ) => void;
@@ -52,8 +60,11 @@ export function InteractivePuzzle(props: {
           onAction={props.onAction}
         />
       )}
+      {puzzle.puzzleType === "location" && (
+        <LocationStation puzzle={puzzle} busy={props.busy} onAction={props.onAction} />
+      )}
 
-      {isAnswerable(puzzle.puzzleType) && puzzle.puzzleType !== "voice" && (
+      {isAnswerable(puzzle) && puzzle.puzzleType !== "voice" && (
         <ClassicPuzzleForm
           puzzle={puzzle}
           answer={props.answer}
@@ -61,14 +72,20 @@ export function InteractivePuzzle(props: {
           onAnswerChange={props.onAnswerChange}
           onAction={props.onAction}
           submitDisabled={!canSubmitAnswer(puzzle)}
+          answerPlaceholder={
+            puzzle.puzzleType === "location" ? "Respuesta del quiz" : undefined
+          }
         />
       )}
     </div>
   );
 }
 
-function isAnswerable(type: PublicPuzzle["puzzleType"]): boolean {
-  return ["code", "sound", "voice", "camera", "visual"].includes(type);
+function isAnswerable(puzzle: PublicPuzzle): boolean {
+  if (puzzle.puzzleType === "location") {
+    return (puzzle.locationMode ?? "reach") === "quiz";
+  }
+  return ["code", "sound", "voice", "camera", "visual"].includes(puzzle.puzzleType);
 }
 
 function canSubmitAnswer(puzzle: PublicPuzzle): boolean {
@@ -81,6 +98,8 @@ function canSubmitAnswer(puzzle: PublicPuzzle): boolean {
       return puzzle.completedSteps.includes("capture");
     case "visual":
       return puzzle.completedSteps.includes("view");
+    case "location":
+      return puzzle.completedSteps.includes("arrive");
     default:
       return true;
   }
@@ -93,11 +112,19 @@ function ClassicPuzzleForm(props: {
   onAnswerChange: (v: string) => void;
   onAction: ActionSender;
   submitDisabled?: boolean;
+  answerPlaceholder?: string;
 }) {
   const { puzzle } = props;
+  const showPrompt =
+    puzzle.puzzleType !== "location" || (puzzle.locationMode ?? "reach") === "quiz";
   return (
     <>
-      <p className="puzzle-prompt">{puzzle.prompt}</p>
+      {showPrompt && puzzle.puzzleType !== "location" && (
+        <p className="puzzle-prompt">{puzzle.prompt}</p>
+      )}
+      {showPrompt && puzzle.puzzleType === "location" && puzzle.quizPrompt && (
+        <p className="puzzle-prompt">{puzzle.quizPrompt}</p>
+      )}
       <form
         className="row"
         onSubmit={(e) => {
@@ -114,7 +141,7 @@ function ClassicPuzzleForm(props: {
         <input
           value={props.answer}
           onChange={(e) => props.onAnswerChange(e.target.value)}
-          placeholder="Tu respuesta"
+          placeholder={props.answerPlaceholder ?? "Tu respuesta"}
           autoComplete="off"
           disabled={props.submitDisabled}
         />

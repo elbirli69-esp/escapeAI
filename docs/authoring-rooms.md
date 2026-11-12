@@ -62,12 +62,50 @@ puzzles:
 | ---- | --- | ------ |
 | `code` | Respuesta escrita | `answer`, `normalize` opcional |
 | `inventory` | Usar objeto del inventario | `requiresItem` (id de `items`) |
+| `location` | GPS: llegar o quiz en el sitio | `locationMode`, `targetLat`, `targetLon`, `radiusMeters`, `waypointLabel`; en `quiz` añade `answer`, `quizPrompt` |
+
+### Puzzle `location`
+
+| `locationMode` | Comportamiento |
+| -------------- | -------------- |
+| `reach` | El jugador pulsa «Estoy aquí»; el motor valida distancia Haversine ≤ `radiusMeters`. |
+| `quiz` | Igual que `reach` para el paso `arrive`, luego `submit_answer` con la pregunta del entorno. |
+
+Ejemplo mínimo:
+
+```yaml
+llegar_plaza:
+  id: llegar_plaza
+  type: location
+  locationMode: reach
+  waypointLabel: Plaza Mayor
+  prompt: Acércate y confirma posición.
+  targetLat: 40.4155
+  targetLon: -3.7074
+  radiusMeters: 60
+  maxAccuracyMeters: 120
+
+quiz_barrio:
+  id: quiz_barrio
+  type: location
+  locationMode: quiz
+  waypointLabel: Misma plaza
+  prompt: Confirma que estás en el sitio.
+  quizPrompt: ¿Cuántas letras tiene la respuesta «sol»? (número)
+  answer: "3"
+  targetLat: 40.4155
+  targetLon: -3.7074
+  radiusMeters: 80
+```
+
+Sala de referencia: `packages/escape-content/rooms/geo-lab.yaml`.
 
 ## Acciones del jugador (motor)
 
 | Acción API | Cuándo |
 | ---------- | ------ |
-| `submit_answer` | Puzzles `code` |
+| `submit_answer` | Puzzles `code`, sensoriales y `location` en modo `quiz` |
+| `submit_location` | Puzzles `location` (`reach` o paso `arrive` del `quiz`) |
 | `take_item` | Objeto listado en `sceneItems` |
 | `use_item` + `puzzleId` | Puzzles `inventory` |
 | `move` | Cuando la salida está `available` |

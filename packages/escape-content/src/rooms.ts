@@ -2,6 +2,7 @@ export const ROOM_FILES = {
   pilot: "pilot.yaml",
   lighthouse: "lighthouse.yaml",
   "interactive-lab": "interactive-lab.yaml",
+  "geo-lab": "geo-lab.yaml",
 } as const;
 
 export type RoomId = keyof typeof ROOM_FILES;
@@ -35,6 +36,14 @@ export const ROOM_CATALOG: Array<{
     title: "Laboratorio sensorial",
     summary: "Sonido, voz, cámara e imágenes en un solo hub de pruebas.",
     tagline: "Demuestra todas las pistas interactivas en el móvil.",
+    coverImage: "/media/pilot-cover.jpg",
+    theme: "urban",
+  },
+  {
+    id: "geo-lab",
+    title: "Rally GPS (demo)",
+    summary: "Llega a un waypoint y responde un quiz según tu ubicación.",
+    tagline: "Geolocalización validada en el motor, sin guardar tu trayecto.",
     coverImage: "/media/pilot-cover.jpg",
     theme: "urban",
   },

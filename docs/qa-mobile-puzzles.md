@@ -31,6 +31,15 @@ Probar en **HTTPS** (producción o túnel). Un móvil por equipo.
 - Patrón corto + `minListenSec`: no debe quedar bloqueado (espera hasta cumplir mínimo).
 - URL: `listen` tras fin del clip y `minListenSec`.
 
+## Rally `geo-lab`
+
+| Paso | OK si |
+| ---- | ----- |
+| Llegar al punto | Permiso GPS; «Estoy aquí» resuelve dentro del radio (~Puerta del Sol demo) |
+| Quiz entorno | Tras `arrive`, respuesta `madrid` |
+
+Probar **al aire libre con datos móviles**; en escritorio suele fallar por falta de GPS.
+
 ## P1 (lazy)
 
 - Cámara `ocr_hint`: tras foto aparece pista local; nada al API.

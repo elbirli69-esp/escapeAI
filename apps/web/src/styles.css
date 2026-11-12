@@ -587,6 +587,14 @@ button {
   margin-bottom: 0.5rem;
 }
 
+.location-station .privacy {
+  margin: 0.5rem 0;
+}
+
+.location-station .success {
+  color: var(--ok, #2d8a4e);
+}
+
 .interactive-puzzle .muted.sm,
 .interactive-puzzle .error.sm {
   font-size: 0.82rem;

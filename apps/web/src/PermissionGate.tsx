@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 export function PermissionGate(props: {
-  kind: "camera" | "microphone";
+  kind: "camera" | "microphone" | "geolocation";
   onRequest: () => void;
   denied?: boolean;
   children?: ReactNode;
@@ -9,7 +9,9 @@ export function PermissionGate(props: {
   const label =
     props.kind === "camera"
       ? "Necesitamos la cámara para esta prueba. La foto no se sube al servidor."
-      : "Al pulsar «Hablar ahora» el navegador pedirá permiso de micrófono. El reconocimiento usa la Web Speech API (en muchos navegadores el audio se procesa en la nube del proveedor, no es offline). No guardamos audio en nuestro servidor.";
+      : props.kind === "geolocation"
+        ? "Para esta prueba el navegador pedirá acceso a tu ubicación. Solo mandamos una coordenada al validar «Estoy aquí»; no rastreamos tu ruta."
+        : "Al pulsar «Hablar ahora» el navegador pedirá permiso de micrófono. El reconocimiento usa la Web Speech API (en muchos navegadores el audio se procesa en la nube del proveedor, no es offline). No guardamos audio en nuestro servidor.";
 
   if (props.denied) {
     return (
