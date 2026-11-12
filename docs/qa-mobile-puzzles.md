@@ -31,6 +31,12 @@ Probar en **HTTPS** (producción o túnel). Un móvil por equipo.
 - Patrón corto + `minListenSec`: no debe quedar bloqueado (espera hasta cumplir mínimo).
 - URL: `listen` tras fin del clip y `minListenSec`.
 
+## P1 (lazy)
+
+- Cámara `ocr_hint`: tras foto aparece pista local; nada al API.
+- Voz **Modo offline**: descarga modelo ~40 MB; no se precachea en SW.
+- Visual `dual`: slider compare dos imágenes Pexels.
+
 ## Regresión
 
 - `pnpm build`, `pnpm test`, `pnpm validate-rooms`

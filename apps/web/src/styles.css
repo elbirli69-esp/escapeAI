@@ -622,6 +622,13 @@ button {
   margin-top: 0.65rem;
 }
 
+.visual-compare {
+  margin-bottom: 0.5rem;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid var(--panel-border);
+}
+
 .organizer-board .join-code.inline {
   font-size: 1.25rem;
   letter-spacing: 0.15em;

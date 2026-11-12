@@ -285,8 +285,12 @@ function VisualStation(props: {
   const [urlB, setUrlB] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [dwellSec, setDwellSec] = useState(0);
+  const [Compare, setCompare] = useState<
+    typeof import("react-compare-image").default | null
+  >(null);
   const viewed = props.puzzle.completedSteps.includes("view");
-  const dual = props.puzzle.visualLayout === "dual" && props.puzzle.pexelsQueryB;
+  const useCompare =
+    props.puzzle.visualLayout === "dual" && Boolean(props.puzzle.pexelsQueryB || urlB);
 
   useEffect(() => {
     let cancelled = false;
@@ -323,6 +327,17 @@ function VisualStation(props: {
   ]);
 
   useEffect(() => {
+    if (!useCompare) return;
+    let cancelled = false;
+    void import("react-compare-image").then((mod) => {
+      if (!cancelled) setCompare(() => mod.default);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [useCompare]);
+
+  useEffect(() => {
     if (!url || viewed) return;
     const t = setInterval(() => setDwellSec((s) => s + 1), 1000);
     return () => clearInterval(t);
@@ -351,16 +366,19 @@ function VisualStation(props: {
     <InteractionPanel title="Prueba visual" done={viewed}>
       {err && <p className="error sm">{err}</p>}
       {url ? (
-        <TransformWrapper minScale={1} maxScale={4} centerOnInit>
-          <TransformComponent wrapperClass="visual-zoom-wrap" contentClass="visual-zoom-content">
-            <figure className="visual-puzzle">
-              <img src={url} alt="" loading="lazy" />
-              {dual && urlB && (
-                <img src={urlB} alt="" loading="lazy" className="visual-secondary" />
-              )}
-            </figure>
-          </TransformComponent>
-        </TransformWrapper>
+        useCompare && Compare && urlB ? (
+          <div className="visual-compare">
+            <Compare leftImage={url} rightImage={urlB} sliderLineWidth={2} />
+          </div>
+        ) : (
+          <TransformWrapper minScale={1} maxScale={4} centerOnInit>
+            <TransformComponent wrapperClass="visual-zoom-wrap" contentClass="visual-zoom-content">
+              <figure className="visual-puzzle">
+                <img src={url} alt="" loading="lazy" />
+              </figure>
+            </TransformComponent>
+          </TransformWrapper>
+        )
       ) : (
         <p className="muted">Cargando imagen…</p>
       )}
@@ -388,6 +406,9 @@ function CameraStation(props: {
   const [cameraLive, setCameraLive] = useState(false);
   const captured = props.puzzle.completedSteps.includes("capture");
   const [facing, setFacing] = useState<"user" | "environment">("environment");
+  const [ocrHint, setOcrHint] = useState<string | null>(null);
+  const [ocrBusy, setOcrBusy] = useState(false);
+  const isOcr = props.puzzle.cameraMode === "ocr_hint";
 
   const videoConstraints = {
     facingMode: facing,
@@ -413,7 +434,26 @@ function CameraStation(props: {
       puzzleId: props.puzzle.id,
       step: "capture",
     });
-  }, [props]);
+    if (isOcr) {
+      setOcrBusy(true);
+      setOcrHint(null);
+      void (async () => {
+        try {
+          const { recognizeTextFromDataUrl, extractDigitHint } = await import("./lib/ocr-from-image");
+          const text = await recognizeTextFromDataUrl(
+            shot,
+            props.puzzle.ocrLang ?? "spa+eng",
+          );
+          const hint = extractDigitHint(text) ?? text.slice(0, 40);
+          setOcrHint(hint || "(sin texto legible)");
+        } catch {
+          setOcrHint("No se pudo leer texto. Escribe la respuesta manualmente.");
+        } finally {
+          setOcrBusy(false);
+        }
+      })();
+    }
+  }, [isOcr, props]);
 
   useEffect(() => {
     return () => {
@@ -457,7 +497,18 @@ function CameraStation(props: {
           )}
         </>
       ) : (
-        <img src={preview} alt="" className="camera-shot" />
+        <>
+          <img src={preview} alt="" className="camera-shot" />
+          {isOcr && (
+            <p className="muted sm">
+              {ocrBusy
+                ? "Leyendo texto en el dispositivo…"
+                : ocrHint
+                  ? `Pista OCR (solo en tu móvil): «${ocrHint}»`
+                  : null}
+            </p>
+          )}
+        </>
       )}
     </InteractionPanel>
   );
@@ -475,6 +526,8 @@ function VoiceStation(props: {
   const [micReady, setMicReady] = useState(false);
   const spoke = props.puzzle.completedSteps.includes("speak");
   const allowText = props.puzzle.allowTextFallback !== false;
+  const allowOffline = props.puzzle.voiceOffline === true;
+  const [offlineBusy, setOfflineBusy] = useState(false);
   const submittingRef = useRef(false);
   const recRef = useRef<{ stop: () => void; abort?: () => void } | null>(null);
 
@@ -554,6 +607,31 @@ function VoiceStation(props: {
     rec.start();
   }
 
+  async function startOfflineListen() {
+    if (props.busy || spoke || offlineBusy) return;
+    setOfflineBusy(true);
+    setVoiceErr(null);
+    try {
+      const { listenWithVosk, DEFAULT_VOSK_MODEL_URL } = await import("./lib/vosk-listen");
+      const modelUrl = props.puzzle.voskModelUrl ?? DEFAULT_VOSK_MODEL_URL;
+      const text = await listenWithVosk(modelUrl, 5500);
+      if (!text.trim()) {
+        setVoiceErr("No se captó voz offline. Prueba texto manual.");
+        return;
+      }
+      setTranscript(text);
+      submitVoice(text);
+    } catch (e) {
+      setVoiceErr(
+        e instanceof Error
+          ? e.message
+          : "No se pudo usar reconocimiento offline. Descarga cancelada o sin red para el modelo.",
+      );
+    } finally {
+      setOfflineBusy(false);
+    }
+  }
+
   return (
     <InteractionPanel title="Micrófono" done={spoke}>
       <p className="puzzle-prompt">{props.puzzle.prompt}</p>
@@ -562,14 +640,26 @@ function VoiceStation(props: {
       {!micReady ? (
         <PermissionGate kind="microphone" onRequest={() => setMicReady(true)} />
       ) : (
-        <button
-          type="button"
-          className="primary"
-          disabled={props.busy || listening || spoke}
-          onClick={startListen}
-        >
-          {listening ? "Escuchando…" : spoke ? "Voz registrada" : "Hablar ahora"}
-        </button>
+        <>
+          <button
+            type="button"
+            className="primary"
+            disabled={props.busy || listening || spoke || offlineBusy}
+            onClick={startListen}
+          >
+            {listening ? "Escuchando…" : spoke ? "Voz registrada" : "Hablar ahora"}
+          </button>
+          {allowOffline && (
+            <button
+              type="button"
+              className="ghost sm"
+              disabled={props.busy || listening || spoke || offlineBusy}
+              onClick={() => void startOfflineListen()}
+            >
+              {offlineBusy ? "Cargando modelo / escuchando…" : "Modo offline (descarga ~40 MB)"}
+            </button>
+          )}
+        </>
       )}
       {allowText && !spoke && (
         <form
