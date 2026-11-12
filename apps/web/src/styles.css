@@ -1036,6 +1036,27 @@ button {
   font-weight: 700;
 }
 
+.site-suggested-route {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+}
+
+.site-route-step {
+  padding: 0.25rem 0;
+}
+
+.site-route-step--active {
+  font-weight: 700;
+  color: #15803d;
+}
+
+.site-route-num {
+  opacity: 0.65;
+  margin-right: 0.15rem;
+}
+
 .site-map-node-index {
   display: block;
   font-size: 0.7rem;

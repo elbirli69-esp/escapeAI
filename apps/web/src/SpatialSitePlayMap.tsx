@@ -14,6 +14,20 @@ export function SpatialSitePlayMap(props: { map: SpatialSiteMapPublic }) {
         )}
         Recinto: {props.map.siteName}
       </p>
+      {props.map.suggestedVisit.length > 0 && (
+        <ol className="site-suggested-route" data-testid="escape-site-suggested-route">
+          {props.map.suggestedVisit.map((step) => {
+            const active = props.map.currentVisitOrder === step.order;
+            return (
+              <li key={step.sceneId} className={active ? "site-route-step site-route-step--active" : "site-route-step"}>
+                <span className="site-route-num">{step.order}.</span> {step.label}
+                {active ? " · estás aquí" : ""}
+              </li>
+            );
+          })}
+        </ol>
+      )}
+      <p className="muted sm privacy">La ruta es orientativa: el motor avanza por escenas y pasajes confirmados (QR/código), no por GPS interior.</p>
       <SiteMapSchematic
         readOnly
         rooms={rooms}
