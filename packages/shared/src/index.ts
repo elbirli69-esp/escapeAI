@@ -71,6 +71,9 @@ export type PublicCharacter = {
   displayName: string;
   voiceTone?: string;
   greeting?: string;
+  /** Si el cliente puede leer en voz alta las respuestas GM (GM-4). */
+  spokenReplies?: boolean;
+  voiceLocale?: string;
 };
 
 export type GameAction =

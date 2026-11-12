@@ -662,6 +662,8 @@ function buildSceneCharacters(session: SessionRecord) {
       displayName: c.displayName,
       voiceTone: c.voiceTone,
       greeting: c.greeting,
+      spokenReplies: c.spokenReplies,
+      voiceLocale: c.voiceLocale,
     }));
 }
 

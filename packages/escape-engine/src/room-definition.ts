@@ -76,6 +76,9 @@ export type RoomCharacter = {
   forbiddenTopics?: string[];
   fallbackLines?: string[];
   greeting?: string;
+  /** Lectura en voz alta de respuestas GM (Web Speech en cliente). */
+  spokenReplies?: boolean;
+  voiceLocale?: string;
 };
 
 export type RoomScene = {

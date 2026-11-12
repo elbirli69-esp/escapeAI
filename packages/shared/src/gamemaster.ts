@@ -2,7 +2,7 @@ import type { AdventureType } from "./events.js";
 
 export type NarrativeChannel = "narration" | "character" | "hint" | "organizer" | "notification";
 
-export type NarrativePresentation = "inline" | "banner" | "modal" | "tts_future";
+export type NarrativePresentation = "inline" | "banner" | "modal" | "tts";
 
 export type NarrativeSpoilerLevel = 0 | 1 | 2 | 3;
 

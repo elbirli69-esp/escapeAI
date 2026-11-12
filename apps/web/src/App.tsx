@@ -6,6 +6,7 @@ import { ExperienceLobby } from "./ExperienceLobby";
 import { InteractivePuzzle } from "./InteractivePuzzle";
 import { SceneHero } from "./SceneHero";
 import { SpatialSitePlayMap } from "./SpatialSitePlayMap";
+import { useGmSpeech } from "./hooks/useGmSpeech";
 import { useRoomAmbience } from "./hooks/useRoomAmbience";
 
 function themeClass(theme?: string): string {
@@ -411,10 +412,17 @@ function GameView(props: {
     state.roomTheme,
     state.status === "playing",
   );
+  const { gmTtsOn, toggleGmTts, armGmSpeech } = useGmSpeech(
+    props.gmInterventions,
+    state.sceneCharacters,
+  );
 
   useEffect(() => {
-    if (props.busy) armFromGesture();
-  }, [props.busy, armFromGesture]);
+    if (props.busy) {
+      armFromGesture();
+      armGmSpeech();
+    }
+  }, [props.busy, armFromGesture, armGmSpeech]);
 
   return (
     <main className={`shell game ${themeClass(state.roomTheme)}`}>
@@ -442,17 +450,31 @@ function GameView(props: {
           </div>
           <span className="progress-label">{progress}% recorrido</span>
           {!reducedMotion && (
-            <button
-              type="button"
-              className="ghost sm ambience-toggle"
-              aria-pressed={ambienceOn}
-              onClick={() => {
-                armFromGesture();
-                toggleAmbience();
-              }}
-            >
-              {ambienceOn ? "Ambiente · on" : "Ambiente · off"}
-            </button>
+            <>
+              <button
+                type="button"
+                className="ghost sm ambience-toggle"
+                aria-pressed={ambienceOn}
+                onClick={() => {
+                  armFromGesture();
+                  toggleAmbience();
+                }}
+              >
+                {ambienceOn ? "Ambiente · on" : "Ambiente · off"}
+              </button>
+              <button
+                type="button"
+                className="ghost sm gm-tts-toggle"
+                data-testid="escape-gm-tts-toggle"
+                aria-pressed={gmTtsOn}
+                onClick={() => {
+                  armGmSpeech();
+                  toggleGmTts();
+                }}
+              >
+                {gmTtsOn ? "Voz personajes · on" : "Voz personajes · off"}
+              </button>
+            </>
           )}
         </div>
       </header>

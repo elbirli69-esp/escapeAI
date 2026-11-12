@@ -6,7 +6,7 @@ import type {
   NarrativeIntervention,
 } from "@escapeai/shared";
 import { randomUUID } from "node:crypto";
-import { buildGmViewContextForCharacter } from "./characters.js";
+import { buildGmViewContextForCharacter, characterUsesSpokenPresentation, getRoomCharacter } from "./characters.js";
 import { buildGmViewContext, buildGmViewContextForHint, collectForbiddenAnswerTokens } from "./context.js";
 import { staticInterventionText } from "./fallbacks.js";
 import { hintSpoilerLevel } from "./hints.js";
@@ -265,8 +265,14 @@ export class GameMasterService {
         ? String(trigger.payload.characterId)
         : undefined;
 
-    const presentation: NarrativeIntervention["presentation"] =
+    let presentation: NarrativeIntervention["presentation"] =
       trigger.type === "TIME_WARNING" || trigger.type === "TEAM_STUCK" ? "banner" : "inline";
+    if (trigger.type === "CHARACTER_TURN" && characterId) {
+      const profile = getRoomCharacter(session, characterId);
+      if (characterUsesSpokenPresentation(profile)) {
+        presentation = "tts";
+      }
+    }
 
     return {
       id: randomUUID(),
