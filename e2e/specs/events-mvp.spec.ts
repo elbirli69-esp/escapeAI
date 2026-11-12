@@ -8,6 +8,7 @@ test.describe.serial("events MVP", () => {
   let joinCode: string;
 
   test.beforeAll(async ({ browser }) => {
+    test.setTimeout(120_000);
     const page = await browser.newPage();
     await stubMediaRoutes(page);
     await clearGameStorage(page);

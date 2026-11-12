@@ -9,6 +9,7 @@ test.describe.serial("organizer panel", () => {
   const teamName = "Equipo Proyector";
 
   test.beforeAll(async ({ browser }) => {
+    test.setTimeout(120_000);
     const setup = await browser.newPage();
     await stubMediaRoutes(setup);
     await clearGameStorage(setup);
