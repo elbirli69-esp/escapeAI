@@ -18,6 +18,12 @@ pnpm test:e2e:ui                      # modo interactivo
 
 Variables: API en memoria (sin Redis). Los `webServer` de Playwright levantan API + Vite automáticamente si `CI=1` o no hay servidores en 8787/5173.
 
+## Reglas (obligatorias)
+
+1. **Tests funcionales:** interacción real en la PWA (clic, formulario, permisos). No saltar pasos con `POST` directo al API salvo documentar excepción.
+2. **Fallo = arreglar producto:** si un test obliga a un hack, corregir la app (ej. panel organizador que abría ranking al escribir sin enviar).
+3. **Hardware en CI:** mock de `getUserMedia` / geolocation en fixtures, no omitir la UI.
+
 ## Specs
 
 | Archivo | Cobertura |

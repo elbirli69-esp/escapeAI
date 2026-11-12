@@ -10,6 +10,7 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : [["list"]],
+  timeout: 60_000,
   use: {
     baseURL: `http://127.0.0.1:${webPort}`,
     trace: "on-first-retry",

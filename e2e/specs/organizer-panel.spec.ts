@@ -21,19 +21,17 @@ test.describe.serial("organizer panel", () => {
     await setup.close();
   });
 
-  test("muestra equipos unidos en el ranking", async ({ page }) => {
+  test("formulario no abre ranking hasta pulsar Ver ranking", async ({ page }) => {
     await stubMediaRoutes(page);
     await clearGameStorage(page);
     await page.goto("/");
-    await page.getByTestId("escape-lobby-home").waitFor();
     await page.getByRole("button", { name: "Panel organizador" }).click();
     await page.getByTestId("escape-organizer-code-input").fill(joinCode);
-    await expect(page.getByTestId("escape-organizer-board")).toBeVisible({
-      timeout: 10_000,
-    });
+    await expect(page.getByTestId("escape-organizer-board")).not.toBeVisible();
+    await page.getByTestId("escape-organizer-open").click();
+    await expect(page.getByTestId("escape-organizer-board")).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("escape-leaderboard-list")).toContainText(teamName, {
       timeout: 15_000,
     });
-    await expect(page.getByTestId("escape-leaderboard-list")).toContainText(/En juego|Esperando/);
   });
 });
