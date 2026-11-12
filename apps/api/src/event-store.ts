@@ -186,9 +186,10 @@ class RedisEventStore implements EventStore {
   }
 
   async getByCode(joinCode: string): Promise<StoredEvent | undefined> {
-    const raw = await this.redis.get<string>(this.key(joinCode));
+    const raw = await this.redis.get<string | StoredEvent>(this.key(joinCode));
     if (!raw) return undefined;
-    return migrateLegacyEvent(JSON.parse(raw) as StoredEvent);
+    const data: StoredEvent = typeof raw === "string" ? JSON.parse(raw) : raw;
+    return migrateLegacyEvent(data);
   }
 
   async save(event: StoredEvent): Promise<void> {
