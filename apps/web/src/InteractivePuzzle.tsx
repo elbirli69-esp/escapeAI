@@ -5,7 +5,6 @@ import Webcam from "react-webcam";
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 import { PermissionGate } from "./PermissionGate";
 import { fetchFalImage, fetchPexelsImage } from "./api";
-import { playBeepPattern } from "./lib/beep-player";
 
 type ActionSender = (
   action:
@@ -151,6 +150,7 @@ function SoundStation(props: {
   const [err, setErr] = useState<string | null>(null);
   const howlRef = useRef<Howl | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const playStartRef = useRef(0);
 
   const markListened = useCallback(() => {
     if (listened) return;
@@ -184,8 +184,15 @@ function SoundStation(props: {
     }, 400);
     try {
       const pattern = props.puzzle.beepPattern ?? [200, 100, 200];
+      const { playBeepPattern, patternDurationSec } = await import("./lib/beep-player");
+      const patternSec = patternDurationSec(pattern);
       await playBeepPattern(pattern);
-      if ((Date.now() - start) / 1000 >= minSec) markListened();
+      const elapsed = (Date.now() - start) / 1000;
+      const waitMore = Math.max(0, minSec - Math.max(elapsed, patternSec));
+      if (waitMore > 0) {
+        await new Promise((r) => setTimeout(r, waitMore * 1000));
+      }
+      markListened();
     } catch {
       setErr("No se pudo reproducir el patrón de tonos.");
     } finally {
@@ -204,18 +211,30 @@ function SoundStation(props: {
       onend: () => {
         setPlaying(false);
         if (timerRef.current) clearInterval(timerRef.current);
-        markListened();
+        const elapsed = (Date.now() - playStartRef.current) / 1000;
+        const waitMs = Math.max(0, minSec - elapsed) * 1000;
+        if (waitMs > 0) {
+          window.setTimeout(() => markListened(), waitMs);
+        } else {
+          markListened();
+        }
       },
-      onplayerror: () => setErr("Pulsa reproducir de nuevo (el navegador bloqueó el audio)."),
+      onplayerror: () => {
+        setPlaying(false);
+        if (timerRef.current) clearInterval(timerRef.current);
+        setErr("Pulsa reproducir de nuevo (el navegador bloqueó el audio).");
+      },
+      onstop: () => {
+        setPlaying(false);
+        if (timerRef.current) clearInterval(timerRef.current);
+      },
     });
     howlRef.current = howl;
     setPlaying(true);
     setListenSec(0);
-    const start = Date.now();
+    playStartRef.current = Date.now();
     timerRef.current = setInterval(() => {
-      const sec = Math.floor((Date.now() - start) / 1000);
-      setListenSec(sec);
-      if (sec >= minSec && !listened) markListened();
+      setListenSec(Math.floor((Date.now() - playStartRef.current) / 1000));
     }, 500);
     howl.play();
   }
@@ -317,7 +336,7 @@ function VisualStation(props: {
         step: "view",
       });
     }
-  }, [dwellSec, viewed, url, props]);
+  }, [dwellSec, viewed, url, props.puzzle.id, props.onAction]);
 
   function markViewed() {
     if (viewed || !url) return;
@@ -396,6 +415,15 @@ function CameraStation(props: {
     });
   }, [props]);
 
+  useEffect(() => {
+    return () => {
+      const stream = webcamRef.current?.video?.srcObject;
+      if (stream instanceof MediaStream) {
+        stream.getTracks().forEach((t) => t.stop());
+      }
+    };
+  }, []);
+
   return (
     <InteractionPanel title="Cámara · entorno real" done={captured}>
       <p className="muted">{props.puzzle.cameraPrompt}</p>
@@ -447,8 +475,25 @@ function VoiceStation(props: {
   const [micReady, setMicReady] = useState(false);
   const spoke = props.puzzle.completedSteps.includes("speak");
   const allowText = props.puzzle.allowTextFallback !== false;
+  const submittingRef = useRef(false);
+  const recRef = useRef<{ stop: () => void; abort?: () => void } | null>(null);
+
+  useEffect(() => {
+    return () => {
+      try {
+        recRef.current?.stop();
+        recRef.current?.abort?.();
+      } catch {
+        /* ignore */
+      }
+      recRef.current = null;
+    };
+  }, []);
 
   function submitVoice(value: string) {
+    const trimmed = value.trim();
+    if (!trimmed || props.busy || spoke || submittingRef.current) return;
+    submittingRef.current = true;
     props.onAction({
       type: "complete_interaction",
       puzzleId: props.puzzle.id,
@@ -457,8 +502,9 @@ function VoiceStation(props: {
     props.onAction({
       type: "submit_answer",
       puzzleId: props.puzzle.id,
-      value,
+      value: trimmed,
     });
+    submittingRef.current = false;
   }
 
   function startListen() {
@@ -470,6 +516,8 @@ function VoiceStation(props: {
       onerror: (() => void) | null;
       onend: (() => void) | null;
       start: () => void;
+      stop: () => void;
+      abort: () => void;
     };
     const w = window as unknown as {
       SpeechRecognition?: SpeechRecCtor;
@@ -481,13 +529,19 @@ function VoiceStation(props: {
       return;
     }
     const rec = new SR();
+    recRef.current = rec;
     rec.lang = props.puzzle.voiceLocale ?? "es-ES";
     rec.interimResults = false;
     rec.maxAlternatives = 1;
     setListening(true);
     setVoiceErr(null);
     rec.onresult = (ev) => {
-      const text = ev.results[0]?.[0]?.transcript ?? "";
+      const text = (ev.results[0]?.[0]?.transcript ?? "").trim();
+      if (!text) {
+        setVoiceErr("No se captó texto. Inténtalo otra vez.");
+        setListening(false);
+        return;
+      }
       setTranscript(text);
       submitVoice(text);
       setListening(false);
@@ -533,7 +587,11 @@ function VoiceStation(props: {
             placeholder="O escribe la frase aquí"
             autoComplete="off"
           />
-          <button type="button" className="ghost" disabled={props.busy} onClick={() => submitVoice(textFallback)}>
+          <button
+            type="submit"
+            className="ghost"
+            disabled={props.busy || !textFallback.trim() || spoke}
+          >
             Enviar texto
           </button>
         </form>

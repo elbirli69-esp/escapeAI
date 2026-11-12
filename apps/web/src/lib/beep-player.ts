@@ -18,7 +18,12 @@ export async function playBeepPattern(pattern: number[]): Promise<number> {
     }
     cursor += ms / 1000;
   }
-  await new Promise((r) => setTimeout(r, totalMs + 50));
+  await new Promise((r) => setTimeout(r, totalMs + 120));
   synth.dispose();
+  return totalMs / 1000;
+}
+
+export function patternDurationSec(pattern: number[]): number {
+  const totalMs = pattern.reduce((a, b) => a + b, 0);
   return totalMs / 1000;
 }

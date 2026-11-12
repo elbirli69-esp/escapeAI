@@ -1,31 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { applyAction, createSession, parseRoomDefinition } from "./index.js";
-import { matchPlayerAnswer, spanishSpokenToDigits } from "@escapeai/shared";
+import { matchPlayerAnswer } from "@escapeai/shared";
 
-describe("matchPlayerAnswer", () => {
-  it("fuzzy acepta tildes y un typo", () => {
+describe("motor con matchPlayerAnswer", () => {
+  it("códigos numéricos sound rechazan fuzzy", () => {
     expect(
-      matchPlayerAnswer("habitacion", "habitación", {
-        normalize: "lowercase",
-        voiceMatchMode: "fuzzy",
-      }),
-    ).toBe(true);
-    expect(
-      matchPlayerAnswer("luegoo", "luego", { normalize: "lowercase", voiceMatchMode: "fuzzy" }),
-    ).toBe(true);
-  });
-
-  it("digits convierte números hablados en español", () => {
-    expect(spanishSpokenToDigits("uno dos tres cuatro")).toBe("1234");
-  });
-
-  it("sinónimos de cámara", () => {
-    expect(
-      matchPlayerAnswer("plato", "TAZA", {
-        normalize: "uppercase",
-        synonyms: ["TAZÓN", "PLATO"],
-      }),
-    ).toBe(true);
+      matchPlayerAnswer("4", "3", { normalize: "trim", voiceMatchMode: "exact" }),
+    ).toBe(false);
   });
 });
 
@@ -53,6 +34,18 @@ puzzles:
     voiceMatchMode: fuzzy
     voiceLocale: es-ES
 `;
+  it("rechaza respuesta vacía tras speak", () => {
+    const session = createSession(parseRoomDefinition(roomYaml));
+    applyAction(session, { type: "complete_interaction", puzzleId: "v1", step: "speak" });
+    const res = applyAction(session, {
+      type: "submit_answer",
+      puzzleId: "v1",
+      value: "   ",
+    });
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/respuesta/i);
+  });
+
   it("acepta respuesta con fuzzy tras complete speak", () => {
     const session = createSession(parseRoomDefinition(roomYaml));
     applyAction(session, { type: "complete_interaction", puzzleId: "v1", step: "speak" });

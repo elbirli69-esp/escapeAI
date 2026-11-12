@@ -9,7 +9,7 @@ export function PermissionGate(props: {
   const label =
     props.kind === "camera"
       ? "Necesitamos la cámara para esta prueba. La foto no se sube al servidor."
-      : "Necesitamos el micrófono para reconocer tu voz. El audio no se guarda en el servidor.";
+      : "Al pulsar «Hablar ahora» el navegador pedirá permiso de micrófono. El reconocimiento usa la Web Speech API (en muchos navegadores el audio se procesa en la nube del proveedor, no es offline). No guardamos audio en nuestro servidor.";
 
   if (props.denied) {
     return (

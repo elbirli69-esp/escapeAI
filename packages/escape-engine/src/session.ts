@@ -182,6 +182,10 @@ function submitAnswer(
   const stepErr = requireInteractionSteps(session, puzzle);
   if (stepErr) return { error: stepErr };
 
+  if (!rawValue.trim()) {
+    return { error: "Escribe una respuesta antes de enviar." };
+  }
+
   const attempts = (session.puzzleAttempts.get(puzzleId) ?? 0) + 1;
   session.puzzleAttempts.set(puzzleId, attempts);
 
@@ -341,12 +345,16 @@ function completeInteraction(
   puzzleId: string,
   step: InteractionStep,
 ): string | undefined {
+  if (session.status !== "playing") return "La partida ya ha terminado.";
   const puzzle = session.room.puzzles[puzzleId];
   if (!puzzle) return "Puzzle desconocido.";
   if (!isPuzzleActive(session, puzzleId)) return "Ese puzzle no está disponible aquí.";
+  if (session.solvedPuzzles.has(puzzleId)) return "Puzzle ya resuelto.";
   const needed = requiredSteps(puzzle);
   if (!needed.includes(step)) return "Paso no aplicable a este puzzle.";
-  getInteractionSet(session, puzzleId).add(step);
+  const done = getInteractionSet(session, puzzleId);
+  if (done.has(step)) return undefined;
+  done.add(step);
   const labels: Record<InteractionStep, string> = {
     listen: "Has escuchado la pista sonora.",
     speak: "El sistema ha captado tu voz.",

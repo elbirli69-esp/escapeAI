@@ -28,7 +28,10 @@ export function normalizeAnswerText(value: string, mode?: NormalizeMode): string
 }
 
 export function spanishSpokenToDigits(text: string): string {
-  const parts = stripDiacritics(text.toLowerCase()).split(/[\s,.-]+/);
+  const parts = stripDiacritics(text.toLowerCase())
+    .replace(/[.,!?¿¡]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean);
   return parts.map((p) => ES_DIGITS[p] ?? p).join("");
 }
 
@@ -51,10 +54,23 @@ export function levenshteinDistance(a: string, b: string): number {
   return row[b.length]!;
 }
 
+function isAllDigits(value: string): boolean {
+  return value.length > 0 && /^\d+$/.test(value);
+}
+
+/** Fuzzy solo para frases de voz; nunca para códigos numéricos ni respuestas muy cortas. */
 function fuzzyMaxDistance(expected: string): number {
   if (expected.length <= 4) return 1;
-  if (expected.length <= 8) return 2;
+  if (expected.length <= 10) return 2;
   return 3;
+}
+
+function canUseFuzzy(expected: string, voiceMode: VoiceMatchMode): boolean {
+  if (voiceMode !== "fuzzy") return false;
+  if (!expected) return false;
+  if (expected.length < 3) return false;
+  if (isAllDigits(expected)) return false;
+  return true;
 }
 
 export type MatchAnswerOptions = {
@@ -69,6 +85,8 @@ export function matchPlayerAnswer(
   expected: string,
   options: MatchAnswerOptions = {},
 ): boolean {
+  if (!raw.trim() || !expected.trim()) return false;
+
   const mode = options.normalize;
   const voiceMode = options.voiceMatchMode ?? "exact";
 
@@ -83,7 +101,8 @@ export function matchPlayerAnswer(
   const candidates = [target, ...(options.synonyms ?? []).map((s) => normalizeAnswerText(s, mode))];
 
   for (const exp of candidates) {
-    if (voiceMode === "fuzzy") {
+    if (!exp) continue;
+    if (canUseFuzzy(exp, voiceMode)) {
       const maxD = fuzzyMaxDistance(exp);
       if (levenshteinDistance(value, exp) <= maxD) return true;
     } else if (value === exp) {
