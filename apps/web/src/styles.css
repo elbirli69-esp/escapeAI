@@ -624,6 +624,20 @@ button {
   gap: 0.5rem;
 }
 
+.log-gm {
+  border-left: 3px solid color-mix(in srgb, var(--accent) 65%, transparent);
+  padding-left: 0.65rem;
+}
+
+.log-tag {
+  display: inline-block;
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.75;
+  margin-right: 0.45rem;
+}
+
 .narrator-badge {
   font-size: 0.68rem;
   text-transform: uppercase;

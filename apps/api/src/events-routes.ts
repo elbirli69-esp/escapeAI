@@ -2,7 +2,7 @@ import { generateAdventureRoom, listAdventureTemplates } from "@escapeai/escape-
 import { createSession, toPublicState, type PlayerContext, type SessionRecord } from "@escapeai/escape-engine";
 import type { CreateEventRequest, JoinEventRequest } from "@escapeai/shared";
 import { Hono } from "hono";
-import { runOrchestrator } from "./orchestrator.js";
+import { buildSessionView, type GameMasterService } from "./gamemaster/index.js";
 import {
   createJoinCode,
   leaderboardFromEvent,
@@ -16,7 +16,8 @@ import {
 import type { SessionStore } from "./session-store.js";
 import { randomUUID } from "node:crypto";
 
-export function mountEventRoutes(app: Hono, eventStore: EventStore): void {
+export function mountEventRoutes(app: Hono, eventStore: EventStore, _gm?: GameMasterService): void {
+  void _gm;
   app.get("/adventures", (c) => c.json({ templates: listAdventureTemplates() }));
 
   app.post("/events", async (c) => {
@@ -135,6 +136,7 @@ export async function startEventSession(
   teamId: string,
   eventStore: EventStore,
   sessionStore: SessionStore,
+  gm?: GameMasterService,
 ): Promise<{ status: number; body: unknown }> {
   const event = await eventStore.getByCode(eventCode);
   if (!event) return { status: 404, body: { error: "Evento no encontrado" } };
@@ -146,7 +148,15 @@ export async function startEventSession(
   if (team.sessionId) {
     const existing = await sessionStore.get(team.sessionId);
     if (existing) {
-      return { status: 200, body: { sessionId: existing.sessionId, state: toPublicState(existing) } };
+      const view = gm ? await buildSessionView(existing, gm) : { state: toPublicState(existing), gmInterventions: [] };
+      return {
+        status: 200,
+        body: {
+          sessionId: existing.sessionId,
+          state: view.state,
+          gmInterventions: view.gmInterventions,
+        },
+      };
     }
   }
 
@@ -161,15 +171,25 @@ export async function startEventSession(
   };
 
   const session = createSession(e.room, playerContext);
-  const intro = await runOrchestrator(session, []);
-  if (intro.message) session.narrative.push(intro.message);
+  await sessionStore.set(session);
+  const interventions = gm ? await gm.processSessionStarted(session) : [];
+  const view = gm
+    ? await buildSessionView(session, gm)
+    : { state: toPublicState(session), gmInterventions: [] };
 
   team.sessionId = session.sessionId;
   team.status = "playing";
-  await sessionStore.set(session);
   await eventStore.save(e);
 
-  return { status: 201, body: { sessionId: session.sessionId, state: toPublicState(session) } };
+  return {
+    status: 201,
+    body: {
+      sessionId: session.sessionId,
+      state: view.state,
+      gmInterventions: view.gmInterventions,
+      interventions,
+    },
+  };
 }
 
 export async function syncPlayerStatusFromSession(

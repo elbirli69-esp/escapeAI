@@ -3,6 +3,7 @@ export { loadRoomFromFile, parseRoomDefinition } from "./load-room.js";
 export {
   applyAction,
   createSession,
+  getExitAvailability,
   toAiContext,
   toPublicState,
   type SessionRecord,

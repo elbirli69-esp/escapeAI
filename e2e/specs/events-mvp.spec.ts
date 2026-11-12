@@ -25,6 +25,7 @@ test.describe.serial("events MVP", () => {
     await stubMediaRoutes(pageB);
 
     await joinEventAsTeam(pageA, joinCode, "Equipo Rojo");
+    await expect(pageA.getByTestId("escape-gm-line").first()).toBeVisible({ timeout: 10_000 });
     await joinEventAsTeam(pageB, joinCode, "Equipo Azul");
 
     const idA = await pageA.evaluate(() => localStorage.getItem("escapeai.sessionId"));
