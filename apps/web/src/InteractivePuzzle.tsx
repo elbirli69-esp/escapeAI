@@ -179,7 +179,7 @@ function SoundStation(props: {
   const [err, setErr] = useState<string | null>(null);
   const howlRef = useRef<Howl | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const minListenTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const minListenTimerRef = useRef<number | null>(null);
   const playStartRef = useRef(0);
   const listenedRef = useRef(listened);
   listenedRef.current = listened;
