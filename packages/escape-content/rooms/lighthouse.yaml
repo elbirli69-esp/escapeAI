@@ -9,6 +9,7 @@ items:
   oil_can:
     name: Bidón de aceite
     description: Ligeramente oxidado; el tapón gotea un hilo dorado.
+    image: /media/lighthouse-supply.jpg
 winCondition:
   type: puzzle_solved
   puzzleId: beacon_sequence

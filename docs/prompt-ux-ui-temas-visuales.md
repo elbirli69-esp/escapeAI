@@ -59,10 +59,10 @@ Hacer la aplicación **mucho más visual y autoexplicativa**:
 
 ### P1 — Siguiente sprint
 
-- [ ] **Plantillas de aventura** (`/api/adventures`): tarjetas visuales al elegir tipo (cumpleaños, despedida, etc.).
-- [ ] **Panel organizador**: fondo sutil temático del evento + QR/código más “cartel de fiesta”.
-- [ ] **Ítems y puzzles**: miniatura opcional `item.image` en YAML (icono o foto 64px).
-- [ ] **Victoria/derrota**: ilustración `coverImage` de la sala + copy temático (no genérico “tormenta o edificio” si tema es urban).
+- [x] **Plantillas de aventura** (`/api/adventures`): tarjetas visuales al elegir tipo (cumpleaños, despedida, etc.).
+- [x] **Panel organizador**: fondo temático del evento + código estilo “cartel de fiesta”.
+- [x] **Ítems**: miniatura opcional `item.image` en YAML → `imageUrl` en partida.
+- [x] **Victoria/derrota**: portada `roomCoverImage` + copy según tema urban/coastal.
 
 ### P2 — Contenido y marca
 

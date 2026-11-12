@@ -9,6 +9,7 @@ items:
   fuse:
     name: Fusible
     description: Pequeño, metálico, aún caliente al tacto.
+    image: /media/pilot-control.jpg
 winCondition:
   type: puzzle_solved
   puzzleId: panel_final

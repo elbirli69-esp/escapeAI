@@ -34,6 +34,9 @@ export type AdventureTemplateInfo = {
   title: string;
   description: string;
   suggestedFacts: string[];
+  coverImage?: string;
+  theme?: "urban" | "coastal" | string;
+  tagline?: string;
 };
 
 export type EventPreview = {
@@ -46,6 +49,8 @@ export type EventPreview = {
   timeLimitSec: number;
   sceneCount: number;
   joinedTeams: number;
+  coverImage?: string;
+  theme?: string;
 };
 
 export type JoinEventRequest = {
@@ -82,6 +87,9 @@ export type EventLeaderboard = {
   joinCode: string;
   title: string;
   teams: EventTeamPublic[];
+  adventureType?: AdventureType;
+  coverImage?: string;
+  theme?: string;
   /** @deprecated */
   players?: EventTeamPublic[];
 };

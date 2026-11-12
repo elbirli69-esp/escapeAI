@@ -76,6 +76,7 @@ export type RoomScene = {
 export type RoomItem = {
   name: string;
   description: string;
+  image?: string;
 };
 
 export type RoomDefinition = {

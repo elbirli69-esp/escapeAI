@@ -506,6 +506,7 @@ export function toPublicState(session: SessionRecord, nowMs = Date.now()): Publi
       id,
       name: meta?.name ?? id,
       description: meta?.description,
+      imageUrl: meta?.image,
     };
   }
 
@@ -525,6 +526,7 @@ export function toPublicState(session: SessionRecord, nowMs = Date.now()): Publi
     sceneMood: scene.mood,
     sceneOrder,
     roomTheme: session.room.theme,
+    roomCoverImage: session.room.coverImage,
     narrative: [...session.narrative],
     puzzles: (scene.puzzles ?? []).map((id) => {
       const puzzle = session.room.puzzles[id];

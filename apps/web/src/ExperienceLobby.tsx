@@ -157,18 +157,24 @@ export function ExperienceLobby(props: {
     );
   }
 
+  const selectedTemplate = templates.find((t) => t.id === adventureType);
+
   if (mode === "create") {
     return (
-      <main className="shell lobby">
+      <main className={`shell lobby ${themeClass(selectedTemplate?.theme)}`}>
         <button type="button" className="ghost sm back-link" onClick={() => setMode("home")}>
           ← Volver
         </button>
-        <h1 className="display">Configurar aventura</h1>
+        <header className="lobby-hero">
+          <p className="eyebrow">Evento a medida</p>
+          <h1 className="display">Configurar aventura</h1>
+          <p className="lede muted">Elige el tono visual; los datos del grupo se convierten en pistas.</p>
+        </header>
         {formError && <p className="error">{formError}</p>}
 
         {!created ? (
           <form
-            className="wizard"
+            className="wizard wizard-wide"
             onSubmit={(e) => {
               e.preventDefault();
               const factLines = facts
@@ -189,29 +195,33 @@ export function ExperienceLobby(props: {
               });
             }}
           >
-            <label>
-              Tipo de aventura
-              <select
-                value={adventureType}
-                onChange={(e) => setAdventureType(e.target.value as AdventureType)}
-              >
+            <fieldset className="template-picker">
+              <legend className="picker-legend">Tipo de aventura</legend>
+              {templatesQuery.isLoading && <p className="muted">Cargando plantillas…</p>}
+              <ul className="room-grid room-grid-visual template-grid">
                 {templates.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.title}
-                  </option>
+                  <li key={t.id}>
+                    <VisualCard
+                      title={t.title}
+                      description={t.tagline ?? t.description}
+                      imageSrc={t.coverImage}
+                      imageAlt={`Plantilla: ${t.title}`}
+                      active={adventureType === t.id}
+                      layout="stack"
+                      onClick={() => setAdventureType(t.id)}
+                    />
+                  </li>
                 ))}
-              </select>
-            </label>
-            {templates
-              .filter((t) => t.id === adventureType)
-              .map((t) => (
-                <p key={t.id} className="muted">
-                  {t.description}{" "}
-                  <button type="button" className="ghost sm" onClick={() => applyTemplate(t)}>
-                    Usar datos sugeridos
-                  </button>
-                </p>
-              ))}
+              </ul>
+            </fieldset>
+            {selectedTemplate && (
+              <p className="template-detail muted">
+                {selectedTemplate.description}{" "}
+                <button type="button" className="ghost sm" onClick={() => applyTemplate(selectedTemplate)}>
+                  Usar datos sugeridos
+                </button>
+              </p>
+            )}
 
             <label>
               Equipos en competición (2–5)
@@ -259,16 +269,26 @@ export function ExperienceLobby(props: {
             </button>
           </form>
         ) : (
-          <div className="join-card">
-            <p className="eyebrow">Código para compartir</p>
-            <p className="join-code">{created.joinCode}</p>
-            <p>
-              <strong>{created.title}</strong> · {created.sceneCount} escenas ·{" "}
-              {Math.round(created.timeLimitSec / 60)} min · {created.teamCount} equipos
-            </p>
-            <p className="muted">
-              Cada equipo entra con el código y su nombre de grupo. Recomendado: un móvil por equipo.
-            </p>
+          <div className={`event-poster join-card-poster ${themeClass(created.theme)}`}>
+            {created.coverImage && (
+              <img src={created.coverImage} alt="" className="event-poster-bg" loading="eager" />
+            )}
+            <div className="event-poster-scrim" aria-hidden />
+            <div className="event-poster-body">
+              <p className="eyebrow">Código para compartir</p>
+              <p className="join-code poster-code">{created.joinCode}</p>
+              <p>
+                <strong>{created.title}</strong> · {created.sceneCount} escenas ·{" "}
+                {Math.round(created.timeLimitSec / 60)} min · {created.teamCount} equipos
+              </p>
+              <p className="muted">
+                Cada equipo entra con el código y su nombre de grupo. Recomendado: un móvil por equipo.
+              </p>
+            </div>
+          </div>
+        )}
+        {created && (
+          <div className="join-card-actions">
             <button
               type="button"
               className="primary wide"

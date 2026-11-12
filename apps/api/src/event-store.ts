@@ -78,6 +78,8 @@ export function toEventPreview(event: StoredEvent): EventPreview {
     timeLimitSec: e.room.timeLimitSec,
     sceneCount: Object.keys(e.room.scenes).length,
     joinedTeams: Object.keys(e.teams).length,
+    coverImage: e.room.coverImage,
+    theme: e.room.theme,
   };
 }
 

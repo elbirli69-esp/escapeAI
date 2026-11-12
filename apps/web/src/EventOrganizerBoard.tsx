@@ -15,6 +15,10 @@ function statusLabel(t: EventTeamPublic): string {
   }
 }
 
+function themeClass(theme?: string): string {
+  return theme === "coastal" ? "theme-coastal" : "theme-urban";
+}
+
 export function EventOrganizerBoard(props: { joinCode: string; onBack?: () => void }) {
   const q = useQuery({
     queryKey: ["leaderboard", props.joinCode],
@@ -23,25 +27,38 @@ export function EventOrganizerBoard(props: { joinCode: string; onBack?: () => vo
   });
 
   const board = q.data as EventLeaderboard | undefined;
+  const shareLine = `Código ${props.joinCode} — equipos entran en escapeAI con su nombre de grupo.`;
 
   return (
-    <main className="shell lobby organizer-board">
+    <main className={`shell lobby organizer-board ${themeClass(board?.theme)}`}>
       {props.onBack && (
         <button type="button" className="ghost sm back-link" onClick={props.onBack}>
           ← Volver
         </button>
       )}
-      <header className="lobby-hero">
-        <p className="eyebrow">Panel del organizador</p>
-        <h1 className="display-sm">{board?.title ?? "Cargando…"}</h1>
-        <p className="lede">
-          Código <strong className="join-code inline">{props.joinCode}</strong> — proyecta esta pantalla
-          para el ranking en vivo.
-        </p>
-      </header>
+      <div className="event-poster organizer-poster">
+        {board?.coverImage && (
+          <img
+            src={board.coverImage}
+            alt=""
+            className="event-poster-bg"
+            loading="eager"
+            decoding="async"
+          />
+        )}
+        <div className="event-poster-scrim" aria-hidden />
+        <div className="event-poster-body">
+          <p className="eyebrow">Invitación al escape</p>
+          <h1 className="display-sm">{board?.title ?? "Cargando evento…"}</h1>
+          <p className="join-code poster-code" aria-label={`Código del evento: ${props.joinCode}`}>
+            {props.joinCode}
+          </p>
+          <p className="poster-hint">{shareLine}</p>
+        </div>
+      </div>
       {q.isError && <p className="error">No se pudo cargar el evento.</p>}
       {q.isLoading && <p className="muted">Actualizando equipos…</p>}
-      <ol className="leaderboard-list">
+      <ol className="leaderboard-list leaderboard-projector">
         {(board?.teams ?? []).map((t, i) => (
           <li key={t.teamId} className={`leaderboard-row status-${t.status}`}>
             <span className="rank">{i + 1}</span>
@@ -61,7 +78,7 @@ export function EventOrganizerBoard(props: { joinCode: string; onBack?: () => vo
         ))}
       </ol>
       {!q.isLoading && (board?.teams.length ?? 0) === 0 && (
-        <p className="muted">Aún no hay equipos registrados. Comparte el código.</p>
+        <p className="muted">Aún no hay equipos registrados. Proyecta el código de arriba.</p>
       )}
     </main>
   );

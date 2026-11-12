@@ -66,6 +66,24 @@ function ProgressRail(props: { order: string[]; current: string; theme?: string 
   );
 }
 
+function endGameMessage(state: PublicState): { title: string; body: string } {
+  const coastal = state.roomTheme === "coastal";
+  if (state.status === "won") {
+    return {
+      title: "¡Escapaste!",
+      body: coastal
+        ? "El faro vuelve a encender su mensaje. La tormenta cede el paso."
+        : "Las luces del edificio obedecen otra vez. El candado guarda tu victoria.",
+    };
+  }
+  return {
+    title: "Tiempo agotado",
+    body: coastal
+      ? "La marea se lleva la última chispa del faro. Mañana habrá otra señal."
+      : "El conserje sigue dormido y el panel maestro en silencio. Reinténtalo.",
+  };
+}
+
 function ItemCard(props: {
   item: PublicItem;
   variant: "inventory" | "scene";
@@ -73,11 +91,16 @@ function ItemCard(props: {
   onTake?: () => void;
   onUse?: () => void;
 }) {
+  const thumb = props.item.imageUrl;
   return (
     <article className="item-card">
-      <div className="item-icon" aria-hidden>
-        {props.variant === "inventory" ? "🎒" : "✦"}
-      </div>
+      {thumb ? (
+        <img className="item-thumb" src={thumb} alt="" loading="lazy" decoding="async" />
+      ) : (
+        <div className="item-icon" aria-hidden>
+          {props.variant === "inventory" ? "🎒" : "✦"}
+        </div>
+      )}
       <div className="item-body">
         <strong>{props.item.name}</strong>
         {props.item.description && <p>{props.item.description}</p>}
@@ -405,14 +428,13 @@ function GameView(props: {
 
       {state.status !== "playing" && (
         <section className={`panel end ${state.status === "won" ? "end-won" : "end-lost"}`}>
-          <h2 className="display-sm">
-            {state.status === "won" ? "¡Escapaste!" : "Tiempo agotado"}
-          </h2>
-          <p>
-            {state.status === "won"
-              ? "La sala cede sus secretos. ¿Te atreves con otra?"
-              : "La tormenta —o el edificio— ganó esta vez."}
-          </p>
+          {state.roomCoverImage && (
+            <figure className="end-hero">
+              <img src={state.roomCoverImage} alt="" className="end-hero-img" />
+            </figure>
+          )}
+          <h2 className="display-sm">{endGameMessage(state).title}</h2>
+          <p>{endGameMessage(state).body}</p>
           <button type="button" className="primary wide" onClick={props.onNewGame}>
             Nueva partida
           </button>
