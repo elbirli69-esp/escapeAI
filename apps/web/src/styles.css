@@ -1013,6 +1013,11 @@ button {
   background: rgba(217, 119, 6, 0.1);
 }
 
+.site-map-node--outdoor {
+  border-color: #059669;
+  background: rgba(5, 150, 105, 0.12);
+}
+
 .site-map-node--active {
   outline: 3px solid #22c55e;
   outline-offset: 2px;

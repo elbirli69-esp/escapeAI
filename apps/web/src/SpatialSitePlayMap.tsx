@@ -21,6 +21,7 @@ export function SpatialSitePlayMap(props: { map: SpatialSiteMapPublic }) {
             return (
               <li key={step.sceneId} className={active ? "site-route-step site-route-step--active" : "site-route-step"}>
                 <span className="site-route-num">{step.order}.</span> {step.label}
+                {step.kind === "outdoor" ? " (exterior)" : ""}
                 {active ? " · estás aquí" : ""}
               </li>
             );

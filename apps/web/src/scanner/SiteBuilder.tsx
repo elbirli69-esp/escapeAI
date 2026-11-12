@@ -70,6 +70,7 @@ export function SiteBuilder(props: {
   const [error, setError] = useState<string | null>(null);
   const [geoStatus, setGeoStatus] = useState<string | null>(null);
   const [existingId, setExistingId] = useState<string | undefined>(props.existingSiteId);
+  const [outdoorRoomId, setOutdoorRoomId] = useState<string | undefined>();
 
   const loadInventories = useCallback(async () => {
     const items = await listScannedEnvironments();
@@ -93,6 +94,7 @@ export function SiteBuilder(props: {
         setNeighborhood(site.geoContext?.neighborhood ?? "");
         setAnchorLat(site.geoContext?.anchorLat);
         setAnchorLon(site.geoContext?.anchorLon);
+        setOutdoorRoomId(site.outdoorRoomId);
         setExistingId(site.id);
       } catch (e) {
         setError(e instanceof Error ? e.message : "No se pudo cargar el recinto");
@@ -102,12 +104,26 @@ export function SiteBuilder(props: {
 
   const mapRooms = useMemo(
     () =>
-      selectedIds.map((id) => ({
-        id,
-        label: inventories.find((i) => i.id === id)?.name ?? id.slice(0, 8),
-      })),
+      selectedIds.map((id) => {
+        const item = inventories.find((i) => i.id === id);
+        return {
+          id,
+          label: item?.name ?? id.slice(0, 8),
+          isOutdoor: id === outdoorRoomId || item?.environmentType === "exterior",
+        };
+      }),
+    [selectedIds, inventories, outdoorRoomId],
+  );
+
+  const exteriorCandidates = useMemo(
+    () => selectedIds.filter((id) => inventories.find((i) => i.id === id)?.environmentType === "exterior"),
     [selectedIds, inventories],
   );
+
+  useEffect(() => {
+    if (outdoorRoomId && !selectedIds.includes(outdoorRoomId)) setOutdoorRoomId(undefined);
+    else if (!outdoorRoomId && exteriorCandidates.length === 1) setOutdoorRoomId(exteriorCandidates[0]);
+  }, [selectedIds, exteriorCandidates, outdoorRoomId]);
 
   const syncLinks = (roomIds: string[], layout: SiteMapLayout) => {
     setLinks((prev) => buildLinksForLayout(roomIds, layout, prev));
@@ -170,6 +186,10 @@ export function SiteBuilder(props: {
       setError("Selecciona al menos dos habitaciones.");
       return;
     }
+    if (outdoorRoomId && city.trim().length < 2) {
+      setError("Indica ciudad en contexto urbano cuando hay zona exterior.");
+      return;
+    }
     const geoContext: SiteGeoContext | undefined =
       city.trim().length >= 2
         ? {
@@ -188,6 +208,7 @@ export function SiteBuilder(props: {
       links: links.map((l) => ({ ...l, confirmed: true })),
       mapLayout,
       geoContext,
+      outdoorRoomId,
     };
 
     setBusy(true);
@@ -224,7 +245,8 @@ export function SiteBuilder(props: {
                 checked={selectedIds.includes(item.id)}
                 onChange={() => toggleRoom(item.id)}
               />
-              {item.name} — {item.confirmedCount} objetos
+              {item.name}
+              {item.environmentType === "exterior" ? " · exterior" : ""} — {item.confirmedCount} objetos
             </label>
           </li>
         ))}
@@ -244,6 +266,28 @@ export function SiteBuilder(props: {
             </li>
           ))}
         </ol>
+      )}
+
+      {selectedIds.length >= 2 && (
+        <label>
+          Zona exterior (opcional)
+          <select
+            value={outdoorRoomId ?? ""}
+            onChange={(e) => setOutdoorRoomId(e.target.value || undefined)}
+            data-testid="escape-site-outdoor-pick"
+          >
+            <option value="">Ninguna / solo interior</option>
+            {selectedIds.map((id) => {
+              const item = inventories.find((i) => i.id === id);
+              return (
+                <option key={id} value={id}>
+                  {item?.name ?? id.slice(0, 8)}
+                  {item?.environmentType === "exterior" ? " (inventario exterior)" : ""}
+                </option>
+              );
+            })}
+          </select>
+        </label>
       )}
 
       <SiteMapSchematic

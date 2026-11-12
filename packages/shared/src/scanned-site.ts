@@ -49,6 +49,7 @@ export type ScannedSiteSummary = {
   roomCount: number;
   linkCount: number;
   city?: string;
+  hasOutdoor?: boolean;
   updatedAt: string;
 };
 

@@ -198,6 +198,73 @@ function buildSiteUrbanProposal(site: ScannedSite, rooms: ScannedEnvironment[]):
   };
 }
 
+function outdoorRoom(site: ScannedSite, rooms: ScannedEnvironment[]): ScannedEnvironment | undefined {
+  if (site.outdoorRoomId) return rooms.find((r) => r.id === site.outdoorRoomId);
+  return rooms.find((r) => r.environmentType === "exterior");
+}
+
+function buildSiteExteriorProposal(
+  site: ScannedSite,
+  rooms: ScannedEnvironment[],
+): SpatialAdventureProposal {
+  const outdoor = outdoorRoom(site, rooms);
+  const indoor = rooms.filter((r) => r.id !== outdoor?.id);
+  const geo = site.geoContext;
+  const plantWord = outdoor ? derivePlantKeyword(outdoor) : derivePlantKeyword(rooms[0]!);
+  return {
+    id: "spatial-site-exterior",
+    archetype: "visual_trace",
+    title: `Interior y calle — ${site.name}`,
+    premise: outdoor
+      ? `Empieza dentro (${indoor.map((r) => r.name).join(", ")}) y termina en «${outdoor.name}». El GPS solo contextualiza ciudad/barrio.`
+      : "Recorrido con tramo exterior.",
+    mystery: "¿Qué une el interior con la calle?",
+    durationMin: 60,
+    puzzleCount: 3,
+    difficulty: "medium",
+    objectsUsed: rooms.flatMap((r) => r.objects.filter((o) => o.confirmed).map((o) => o.label ?? o.category)),
+    sensoryMechanics: ["LOCATION_DISCOVERY", "QR_CHECKIN", "OBJECT_COUNT"],
+    prepChecklist: [
+      ...(geo
+        ? [{ kind: "organizer_setup" as const, text: `Ciudad/barrio: ${geo.city}${geo.neighborhood ? `, ${geo.neighborhood}` : ""}. GPS al aire libre para el quiz, no waypoints.` }]
+        : []),
+      { kind: "organizer_setup", text: `Exterior: carta con palabra «${plantWord}» cerca de un elemento visible.` },
+      ...(outdoor
+        ? [{ kind: "organizer_setup" as const, text: `Zona exterior escaneada: ${outdoor.name}` }]
+        : []),
+    ],
+    endingDescription: `Check-in en exterior con «${plantWord}» y contexto urbano.`,
+    puzzles: [
+      {
+        puzzleId: "site_indoor_bridge",
+        mechanicId: "OBJECT_COUNT",
+        label: "Último interior",
+        objectCategories: ["chair"],
+        usesExistingObject: indoor.some((r) => r.objects.some((o) => o.confirmed && o.category === "chair")),
+      },
+      {
+        puzzleId: "site_outdoor_cam",
+        mechanicId: "LOCATION_DISCOVERY",
+        label: outdoor ? `Exterior: ${outdoor.name}` : "Tramo exterior",
+        objectCategories: ["plant", "decoration"],
+        usesExistingObject: Boolean(outdoor?.objects.some((o) => o.confirmed)),
+        requiredClues: ["site_indoor_bridge"],
+      },
+      ...(geo
+        ? [
+            {
+              puzzleId: "site_outdoor_geo",
+              mechanicId: "LOCATION_DISCOVERY" as const,
+              label: "Quiz en la calle",
+              objectCategories: [] as import("@escapeai/shared").EscapeObjectCategory[],
+              usesExistingObject: false,
+            },
+          ]
+        : []),
+    ],
+  };
+}
+
 export function proposeSiteAdventures(
   site: ScannedSite,
   rooms: ScannedEnvironment[],
@@ -208,11 +275,9 @@ export function proposeSiteAdventures(
   const ordered = site.roomIds
     .map((id) => rooms.find((r) => r.id === id))
     .filter((r): r is ScannedEnvironment => !!r);
-  return [
-    buildSiteRecorridoProposal(site, ordered),
-    buildSiteHuntProposal(site, ordered),
-    buildSiteUrbanProposal(site, ordered),
-  ];
+  const hasExterior = Boolean(outdoorRoom(site, ordered));
+  const third = hasExterior ? buildSiteExteriorProposal(site, ordered) : buildSiteUrbanProposal(site, ordered);
+  return [buildSiteRecorridoProposal(site, ordered), buildSiteHuntProposal(site, ordered), third];
 }
 
 export function proposeSiteAdventuresResponse(

@@ -129,6 +129,17 @@ export function buildSpatialSiteRoom(
       if (i === 0) puzzleIds.push("site_count");
       if (i === 1 || (i === 0 && ordered.length === 1)) puzzleIds.push("site_plant");
       gatePuzzleId = i === 0 ? "site_count" : "site_plant";
+    } else if (proposal.id === "spatial-site-exterior") {
+      const isOutdoor = env.id === site.outdoorRoomId || env.environmentType === "exterior";
+      const indoorRooms = ordered.filter((r) => r.id !== site.outdoorRoomId && r.environmentType !== "exterior");
+      const lastIndoor = indoorRooms[indoorRooms.length - 1];
+      if (isOutdoor) {
+        puzzleIds.push("site_outdoor_cam");
+        gatePuzzleId = "site_outdoor_cam";
+      } else if (lastIndoor && env.id === lastIndoor.id) {
+        puzzleIds.push("site_indoor_bridge");
+        gatePuzzleId = "site_indoor_bridge";
+      }
     } else if (proposal.id === "spatial-site-urban") {
       if (i === ordered.length - 1) puzzleIds.push("site_urban_qr");
       gatePuzzleId = "site_urban_qr";
@@ -171,11 +182,14 @@ export function buildSpatialSiteRoom(
           })()
         : buildInteriorExits(site, ordered, i, gatePuzzleId);
 
+    const isOutdoorSpace = env.id === site.outdoorRoomId || env.environmentType === "exterior";
     scenes[sid] = {
       id: sid,
       title: env.name,
-      description: `Muévete en el espacio real: estás jugando en «${env.name}».`,
-      image: "/media/pilot-entrance.jpg",
+      description: isOutdoorSpace
+        ? `Tramo exterior: sal al espacio real «${env.name}». El GPS aquí solo sirve para ciudad/barrio, no para waypoints.`
+        : `Muévete en el espacio real: estás jugando en «${env.name}».`,
+      image: isOutdoorSpace ? "/media/lighthouse-dock.jpg" : "/media/pilot-entrance.jpg",
       mood: env.environmentType,
       puzzles: [...new Set(puzzleIds)],
       exits,
@@ -205,7 +219,16 @@ export function buildSpatialSiteRoom(
   const clockHour = deriveClockDigits(ordered[0]!, proposal.id);
   const bookWord = deriveBookKeyword(ordered[1] ?? ordered[0]!);
   const chairCount = deriveCountAnswer(ordered[0]!, "chair");
-  const plantWord = derivePlantKeyword(ordered.find((r) => r.objects.some((o) => o.confirmed && o.category === "plant")) ?? ordered[0]!);
+  const outdoorEnv =
+    ordered.find((r) => r.id === site.outdoorRoomId) ??
+    ordered.find((r) => r.environmentType === "exterior");
+  const plantWord = derivePlantKeyword(
+    outdoorEnv ?? ordered.find((r) => r.objects.some((o) => o.confirmed && o.category === "plant")) ?? ordered[0]!,
+  );
+  const indoorBridgeCount = deriveCountAnswer(
+    ordered.filter((r) => r.id !== outdoorEnv?.id && r.environmentType !== "exterior")[0] ?? ordered[0]!,
+    "chair",
+  );
   const finalCode = deriveFinalCode([clockHour, bookWord], "digits");
 
   puzzles.site_clock = {
@@ -239,6 +262,26 @@ export function buildSpatialSiteRoom(
     prompt: "Sillas confirmadas en el inventario de esta habitación.",
     answer: chairCount,
     normalize: "trim",
+  };
+  puzzles.site_indoor_bridge = {
+    id: "site_indoor_bridge",
+    type: "code",
+    label: "Último tramo interior",
+    prompt: "Antes de salir, confirma el conteo de sillas en la última estancia interior.",
+    answer: indoorBridgeCount,
+    normalize: "trim",
+  };
+  puzzles.site_outdoor_cam = {
+    id: "site_outdoor_cam",
+    type: "camera",
+    label: "Exterior",
+    cameraPrompt: "Fotografía un elemento del espacio exterior (planta, fachada, señal).",
+    cameraMode: "keyword",
+    cameraExpectedCategory: "plant",
+    allowCameraManualConfirm: true,
+    prompt: `Escribe «${plantWord}» antes del quiz urbano opcional.`,
+    answer: plantWord,
+    normalize: "uppercase",
   };
   puzzles.site_plant = {
     id: "site_plant",
@@ -307,6 +350,7 @@ export function buildSpatialSiteRoom(
       order: index + 1,
       label: env.name,
       sceneId: sceneIdForInventoryRoom(env.id),
+      kind: env.id === site.outdoorRoomId || env.environmentType === "exterior" ? ("outdoor" as const) : ("indoor" as const),
     })),
   };
 
