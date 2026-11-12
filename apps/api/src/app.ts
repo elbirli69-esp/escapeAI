@@ -56,7 +56,7 @@ export async function createApp(store?: SessionStore): Promise<Hono> {
   });
 
   mountEventRoutes(app, eventStore);
-  mountScannerRoutes(app, scannedStore);
+  mountScannerRoutes(app, scannedStore, eventStore);
   mountMediaRoutes(app);
 
   app.get("/rooms", (c) => {

@@ -7,9 +7,12 @@ import type {
   GameAction,
   JoinEventResponse,
   PublicState,
+  CreateSpatialEventRequest,
   SaveScannedEnvironmentRequest,
   ScannedEnvironment,
   ScannedEnvironmentSummary,
+  SpatialAdventureProposal,
+  SpatialProposalsResponse,
 } from "@escapeai/shared";
 
 const base = "/api";
@@ -137,6 +140,33 @@ export async function fetchScannedEnvironment(id: string): Promise<ScannedEnviro
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((data as { error?: string }).error ?? "Inventario no encontrado");
   return (data as { environment: ScannedEnvironment }).environment;
+}
+
+export async function fetchSpatialProposals(scannedEnvironmentId: string): Promise<SpatialProposalsResponse> {
+  const res = await fetch(`${base}/scanned-environments/${encodeURIComponent(scannedEnvironmentId)}/proposals`, {
+    method: "POST",
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { error?: string }).error ?? "No se pudieron generar propuestas");
+  return data as SpatialProposalsResponse;
+}
+
+export async function createSpatialEvent(
+  scannedEnvironmentId: string,
+  body: CreateSpatialEventRequest,
+): Promise<{ preview: EventPreview; proposal: SpatialAdventureProposal; prepChecklist: SpatialAdventureProposal["prepChecklist"] }> {
+  const res = await fetch(`${base}/scanned-environments/${encodeURIComponent(scannedEnvironmentId)}/events`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { error?: string }).error ?? "No se pudo crear el evento");
+  return data as {
+    preview: EventPreview;
+    proposal: SpatialAdventureProposal;
+    prepChecklist: SpatialAdventureProposal["prepChecklist"];
+  };
 }
 
 export async function saveScannedEnvironment(body: SaveScannedEnvironmentRequest): Promise<ScannedEnvironment> {

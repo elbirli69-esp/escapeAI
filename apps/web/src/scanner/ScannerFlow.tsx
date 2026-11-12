@@ -19,16 +19,18 @@ import {
 import { useCallback, useMemo, useRef, useState } from "react";
 import Webcam from "react-webcam";
 import { PermissionGate } from "../PermissionGate";
+import type { EventPreview } from "@escapeai/shared";
 import {
   fetchScannedEnvironment,
   listScannedEnvironments,
   saveScannedEnvironment,
 } from "../api";
+import { SpatialAdventurePicker } from "./SpatialAdventurePicker";
 import { SCAN_ZONE_GUIDES } from "./scan-zones";
 import { detectOnCanvas, getScannerCapability, loadObjectDetector, scannerDetectorId } from "./detector";
 import { newObjectIdFromClient } from "./scanner-helpers";
 
-type Step = "choose" | "scan" | "review" | "constraints" | "done" | "load";
+type Step = "choose" | "scan" | "review" | "constraints" | "done" | "adventures" | "event_created" | "load";
 
 type CaptureBatch = {
   captureId: string;
@@ -66,6 +68,7 @@ export function ScannerFlow(props: { onBack: () => void }) {
 
   const [savedList, setSavedList] = useState<ScannedEnvironmentSummary[]>([]);
   const [loadId, setLoadId] = useState("");
+  const [eventPreview, setEventPreview] = useState<EventPreview | null>(null);
 
   const webcamRef = useRef<Webcam>(null);
   const capability = useMemo(() => getScannerCapability(), []);
@@ -460,9 +463,38 @@ export function ScannerFlow(props: { onBack: () => void }) {
             ID: <code>{saved.id}</code> (versión {saved.version})
           </p>
           <p className="muted">
-            Puedes recuperarlo más tarde desde «Recuperar inventario». Los eventos ya creados no cambian si editas este
-            inventario.
+            Los eventos ya creados no cambian si editas este inventario después.
           </p>
+          <div className="row">
+            <button type="button" className="primary" onClick={() => setStep("adventures")}>
+              Generar aventuras
+            </button>
+            <button type="button" className="ghost" onClick={props.onBack}>
+              Volver al inicio
+            </button>
+          </div>
+        </section>
+      )}
+
+      {step === "adventures" && saved && (
+        <SpatialAdventurePicker
+          scannedEnvironmentId={saved.id}
+          spaceName={saved.name}
+          onBack={() => setStep("done")}
+          onEventCreated={(preview) => {
+            setEventPreview(preview);
+            setStep("event_created");
+          }}
+        />
+      )}
+
+      {step === "event_created" && eventPreview && (
+        <section data-testid="escape-spatial-event-created">
+          <h2>Evento listo</h2>
+          <p>
+            Código de acceso: <strong className="join-code">{eventPreview.joinCode}</strong>
+          </p>
+          <p className="muted">{eventPreview.title}</p>
           <button type="button" className="primary" onClick={props.onBack}>
             Volver al inicio
           </button>

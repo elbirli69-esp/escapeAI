@@ -18,6 +18,10 @@ export type EventSubject = {
 
 export type CreateEventRequest = {
   adventureType: AdventureType;
+  /** Inventario escaneado usado al crear el evento (snapshot de sala, no se actualiza con el inventario). */
+  scannedEnvironmentId?: string;
+  inventoryVersion?: number;
+  spatialProposalId?: string;
   /** Equipos que compiten (2–5). Un móvil por equipo. */
   teamCount: number;
   /** @deprecated Enviar teamCount. Si solo llega playerCount, se interpreta como teamCount acotado. */
