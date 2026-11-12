@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { generateAdventureRoom } from "@escapeai/escape-content";
 import { createSession } from "@escapeai/escape-engine";
-import { assertGmViewContextSafe, buildGmViewContext, collectForbiddenAnswerTokens } from "./context.js";
+import { assertGmViewContextSafe, buildGmViewContext } from "./context.js";
 
 describe("buildGmViewContext security", () => {
   it("no incluye respuestas ni prompts de puzzles", () => {
