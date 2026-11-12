@@ -925,6 +925,39 @@ button {
   letter-spacing: 0.15em;
 }
 
+.scanner-flow .scanner-progress {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.scanner-object-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+}
+
+.scanner-object-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.scanner-check {
+  display: block;
+  margin: 0.35rem 0;
+}
+
+.scanner-saved-list {
+  list-style: none;
+  padding: 0;
+}
+
 .leaderboard-list {
   list-style: none;
   padding: 0;

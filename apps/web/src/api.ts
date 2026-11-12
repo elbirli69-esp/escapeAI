@@ -7,6 +7,9 @@ import type {
   GameAction,
   JoinEventResponse,
   PublicState,
+  SaveScannedEnvironmentRequest,
+  ScannedEnvironment,
+  ScannedEnvironmentSummary,
 } from "@escapeai/shared";
 
 const base = "/api";
@@ -120,6 +123,35 @@ export async function fetchState(sessionId: string): Promise<PublicState> {
   if (!res.ok) throw new Error("Sesión no encontrada");
   const data = await res.json();
   return data.state as PublicState;
+}
+
+export async function listScannedEnvironments(): Promise<ScannedEnvironmentSummary[]> {
+  const res = await fetch(`${base}/scanned-environments`);
+  if (!res.ok) throw new Error("No se pudieron cargar inventarios");
+  const data = await res.json();
+  return (data as { items: ScannedEnvironmentSummary[] }).items;
+}
+
+export async function fetchScannedEnvironment(id: string): Promise<ScannedEnvironment> {
+  const res = await fetch(`${base}/scanned-environments/${encodeURIComponent(id)}`);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { error?: string }).error ?? "Inventario no encontrado");
+  return (data as { environment: ScannedEnvironment }).environment;
+}
+
+export async function saveScannedEnvironment(body: SaveScannedEnvironmentRequest): Promise<ScannedEnvironment> {
+  const isUpdate = Boolean(body.id);
+  const url = isUpdate
+    ? `${base}/scanned-environments/${encodeURIComponent(body.id!)}`
+    : `${base}/scanned-environments`;
+  const res = await fetch(url, {
+    method: isUpdate ? "PUT" : "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { error?: string }).error ?? "No se pudo guardar el inventario");
+  return (data as { environment: ScannedEnvironment }).environment;
 }
 
 export async function sendAction(
