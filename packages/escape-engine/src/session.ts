@@ -8,7 +8,7 @@ import type {
   PublicState,
   VoiceMatchMode,
 } from "@escapeai/shared";
-import { matchPlayerAnswer } from "@escapeai/shared";
+import { matchPlayerAnswer, validatePlayerAtTarget } from "@escapeai/shared";
 import type { PlayerContext } from "./player-context.js";
 import type { Condition, RoomDefinition, RoomPuzzle } from "./room-definition.js";
 
@@ -102,6 +102,25 @@ export function applyAction(
       }
       break;
     }
+    case "submit_location": {
+      const result = submitLocation(
+        session,
+        action.puzzleId,
+        action.lat,
+        action.lon,
+        action.accuracyMeters,
+      );
+      if (result.solvedEvent) events.push(result.solvedEvent);
+      if (result.error) {
+        return {
+          ok: false,
+          error: result.error,
+          state: toPublicState(session, nowMs),
+          events,
+        };
+      }
+      break;
+    }
     case "use_item": {
       const result = useItem(session, action.itemId, action.puzzleId);
       if (result.event) events.push(result.event);
@@ -173,7 +192,7 @@ function submitAnswer(
 } {
   const puzzle = session.room.puzzles[puzzleId];
   if (!puzzle) return { error: "Puzzle desconocido." };
-  if (!isAnswerablePuzzle(puzzle.type)) {
+  if (!isAnswerablePuzzle(puzzle)) {
     return { error: "Este puzzle no admite respuesta escrita." };
   }
   if (!isPuzzleActive(session, puzzleId)) return { error: "Ese puzzle no está disponible aquí." };
@@ -206,6 +225,63 @@ function submitAnswer(
   session.solvedPuzzles.add(puzzleId);
   session.narrative.push(`¡Puzzle resuelto! (${puzzle.prompt})`);
   return { solvedEvent: { type: "puzzle_solved", puzzleId } };
+}
+
+function submitLocation(
+  session: SessionRecord,
+  puzzleId: string,
+  lat: number,
+  lon: number,
+  accuracyMeters?: number,
+): { error?: string; solvedEvent?: GameEvent } {
+  const puzzle = session.room.puzzles[puzzleId];
+  if (!puzzle) return { error: "Puzzle desconocido." };
+  if (puzzle.type !== "location") {
+    return { error: "Este puzzle no usa geolocalización." };
+  }
+  if (!isPuzzleActive(session, puzzleId)) return { error: "Ese puzzle no está disponible aquí." };
+  if (session.solvedPuzzles.has(puzzleId)) return { error: "Puzzle ya resuelto." };
+
+  if (puzzle.targetLat === undefined || puzzle.targetLon === undefined) {
+    return { error: "Puzzle mal configurado (sin coordenadas)." };
+  }
+
+  const mode = puzzle.locationMode ?? "reach";
+  const radius = puzzle.radiusMeters ?? 40;
+  const check = validatePlayerAtTarget(
+    { lat, lon },
+    { lat: puzzle.targetLat, lon: puzzle.targetLon },
+    { radiusMeters: radius, maxAccuracyMeters: puzzle.maxAccuracyMeters },
+    accuracyMeters,
+  );
+
+  if (!check.ok) {
+    if (check.reason === "too_far") {
+      const dist = Math.round(check.distanceMeters ?? 0);
+      return { error: `Aún estás a unos ${dist} m. Acércate al punto marcado.` };
+    }
+    if (check.reason === "accuracy_too_low") {
+      return {
+        error: "La señal GPS es muy imprecisa. Sal al exterior o espera a que el móvil fije posición.",
+      };
+    }
+    return { error: "No se pudo validar tu ubicación." };
+  }
+
+  if (mode === "reach") {
+    session.solvedPuzzles.add(puzzleId);
+    const label = puzzle.waypointLabel ?? "el objetivo";
+    session.narrative.push(`¡Has llegado a ${label}!`);
+    return { solvedEvent: { type: "puzzle_solved", puzzleId } };
+  }
+
+  const done = getInteractionSet(session, puzzleId);
+  if (!done.has("arrive")) {
+    done.add("arrive");
+    const label = puzzle.waypointLabel ?? "el punto";
+    session.narrative.push(`Posición confirmada en ${label}. Responde al quiz del entorno.`);
+  }
+  return {};
 }
 
 function useItem(
@@ -312,8 +388,11 @@ function isPuzzleActive(session: SessionRecord, puzzleId: string): boolean {
   return (scene.puzzles ?? []).includes(puzzleId);
 }
 
-function isAnswerablePuzzle(type: RoomPuzzle["type"]): boolean {
-  return ["code", "sound", "voice", "camera", "visual"].includes(type);
+function isAnswerablePuzzle(puzzle: RoomPuzzle): boolean {
+  if (puzzle.type === "location" && (puzzle.locationMode ?? "reach") === "quiz") {
+    return true;
+  }
+  return ["code", "sound", "voice", "camera", "visual"].includes(puzzle.type);
 }
 
 function requiredSteps(puzzle: RoomPuzzle): InteractionStep[] {
@@ -326,6 +405,8 @@ function requiredSteps(puzzle: RoomPuzzle): InteractionStep[] {
       return ["capture"];
     case "visual":
       return ["view"];
+    case "location":
+      return (puzzle.locationMode ?? "reach") === "quiz" ? ["arrive"] : [];
     default:
       return [];
   }
@@ -350,6 +431,9 @@ function completeInteraction(
   if (!puzzle) return "Puzzle desconocido.";
   if (!isPuzzleActive(session, puzzleId)) return "Ese puzzle no está disponible aquí.";
   if (session.solvedPuzzles.has(puzzleId)) return "Puzzle ya resuelto.";
+  if (puzzle.type === "location" && step === "arrive") {
+    return "Confirma tu posición con el botón «Estoy aquí».";
+  }
   const needed = requiredSteps(puzzle);
   if (!needed.includes(step)) return "Paso no aplicable a este puzzle.";
   const done = getInteractionSet(session, puzzleId);
@@ -360,6 +444,7 @@ function completeInteraction(
     speak: "El sistema ha captado tu voz.",
     capture: "Foto registrada. Ahora introduce la palabra clave.",
     view: "Has estudiado la imagen.",
+    arrive: "Has llegado al punto del mapa.",
   };
   session.narrative.push(labels[step]);
   return undefined;
@@ -380,6 +465,8 @@ function requireInteractionSteps(session: SessionRecord, puzzle: RoomPuzzle): st
           return "Haz una foto del objeto antes de enviar la respuesta.";
         case "view":
           return "Abre y mira la imagen antes de responder.";
+        case "arrive":
+          return "Ve al lugar indicado y confirma tu posición antes del quiz.";
       }
     }
   }
@@ -471,6 +558,13 @@ export function toPublicState(session: SessionRecord, nowMs = Date.now()): Publi
         voskModelUrl: puzzle.voskModelUrl,
         ocrLang: puzzle.ocrLang,
         interactionHints: puzzle.interactionHints,
+        locationMode: puzzle.locationMode,
+        targetLat: puzzle.targetLat,
+        targetLon: puzzle.targetLon,
+        radiusMeters: puzzle.radiusMeters,
+        maxAccuracyMeters: puzzle.maxAccuracyMeters,
+        waypointLabel: puzzle.waypointLabel,
+        quizPrompt: puzzle.quizPrompt,
       };
     }),
     exits: getAvailableExits(session),

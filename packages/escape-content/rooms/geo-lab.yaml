@@ -1,0 +1,70 @@
+id: geo-lab
+name: Rally GPS (demo)
+tagline: Llega al punto y responde preguntas del entorno.
+theme: urban
+coverImage: /media/pilot-cover.jpg
+timeLimitSec: 2400
+startSceneId: waypoint
+winCondition:
+  type: puzzle_solved
+  puzzleId: ciudad_quiz
+items: {}
+scenes:
+  waypoint:
+    id: waypoint
+    title: Hito urbano
+    image: /media/pilot-entrance.jpg
+    mood: El móvil es tu brújula; el motor valida el GPS en servidor.
+    description: >
+      Demo en Madrid (Km 0, Puerta del Sol). En producción defines lat/lon y radio
+      en el YAML de cada evento o sala generada.
+    puzzles: [llegar_sol]
+    exits:
+      - toSceneId: quiz_zone
+        label: Continuar al quiz del entorno
+        when:
+          type: puzzle_solved
+          puzzleId: llegar_sol
+  quiz_zone:
+    id: quiz_zone
+    title: Quiz en el sitio
+    description: Vuelve al mismo punto (o mantente allí) y confirma posición antes de responder.
+    image: /media/pilot-basement.jpg
+    puzzles: [ciudad_quiz]
+    exits: []
+puzzles:
+  llegar_sol:
+    id: llegar_sol
+    type: location
+    locationMode: reach
+    label: Llegar al punto
+    waypointLabel: Puerta del Sol (demo)
+    prompt: >
+      Abre el mapa, acércate a la Puerta del Sol y pulsa «Estoy aquí» cuando el GPS
+      indique que estás dentro del radio (unos 80 m en esta demo).
+    targetLat: 40.4169
+    targetLon: -3.7035
+    radiusMeters: 80
+    maxAccuracyMeters: 150
+    maxHints: 1
+    hints:
+      - level: 1
+        text: Si estás en escritorio sin GPS, prueba en un móvil real al aire libre.
+  ciudad_quiz:
+    id: ciudad_quiz
+    type: location
+    locationMode: quiz
+    label: Quiz del entorno
+    waypointLabel: Zona Puerta del Sol
+    prompt: Confirma que sigues en el lugar y responde.
+    quizPrompt: ¿En qué ciudad está este rally de demo? (una palabra, minúsculas)
+    answer: madrid
+    normalize: lowercase
+    targetLat: 40.4169
+    targetLon: -3.7035
+    radiusMeters: 120
+    maxAccuracyMeters: 150
+    maxHints: 1
+    hints:
+      - level: 1
+        text: Es la capital donde está el kilómetro cero de esta demo.

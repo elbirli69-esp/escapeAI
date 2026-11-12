@@ -28,4 +28,17 @@ function validateRoom(room: RoomDefinition): void {
       }
     }
   }
+  for (const puzzle of Object.values(room.puzzles)) {
+    if (puzzle.type !== "location") continue;
+    const mode = puzzle.locationMode ?? "reach";
+    if (mode !== "reach" && mode !== "quiz") {
+      throw new Error(`Puzzle ${puzzle.id}: locationMode inválido`);
+    }
+    if (puzzle.targetLat === undefined || puzzle.targetLon === undefined) {
+      throw new Error(`Puzzle ${puzzle.id}: targetLat y targetLon son obligatorios`);
+    }
+    if (mode === "quiz" && !puzzle.answer?.trim()) {
+      throw new Error(`Puzzle ${puzzle.id}: modo quiz requiere answer`);
+    }
+  }
 }

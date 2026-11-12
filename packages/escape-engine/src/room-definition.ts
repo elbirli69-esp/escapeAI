@@ -2,7 +2,14 @@ export type Condition =
   | { type: "puzzle_solved"; puzzleId: string }
   | { type: "has_item"; itemId: string };
 
-export type PuzzleType = "code" | "inventory" | "sound" | "voice" | "camera" | "visual";
+export type PuzzleType =
+  | "code"
+  | "inventory"
+  | "sound"
+  | "voice"
+  | "camera"
+  | "visual"
+  | "location";
 
 export type RoomPuzzle = {
   id: string;
@@ -39,6 +46,15 @@ export type RoomPuzzle = {
   visualLayout?: "single" | "dual";
   pexelsQueryB?: string;
   interactionHints?: string[];
+  /** Llegar al punto (`reach`) o quiz en el sitio (`quiz`). */
+  locationMode?: "reach" | "quiz";
+  targetLat?: number;
+  targetLon?: number;
+  radiusMeters?: number;
+  maxAccuracyMeters?: number;
+  waypointLabel?: string;
+  /** Pregunta mostrada tras confirmar GPS en modo quiz. */
+  quizPrompt?: string;
 };
 
 export type RoomScene = {
