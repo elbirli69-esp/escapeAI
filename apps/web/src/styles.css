@@ -596,6 +596,32 @@ button {
   border-color: var(--accent);
 }
 
+.permission-gate {
+  margin: 0.5rem 0 0.75rem;
+}
+
+.visual-zoom-wrap {
+  width: 100% !important;
+  margin-bottom: 0.5rem;
+}
+
+.visual-zoom-content .visual-puzzle {
+  margin: 0;
+}
+
+.visual-secondary {
+  margin-top: 0.5rem;
+}
+
+.camera-actions {
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.voice-fallback {
+  margin-top: 0.65rem;
+}
+
 .organizer-board .join-code.inline {
   font-size: 1.25rem;
   letter-spacing: 0.15em;

@@ -17,6 +17,10 @@ export type RoomPuzzle = {
   hints?: Array<{ level: number; text: string }>;
   /** URL de audio (sound). */
   audioUrl?: string;
+  soundMode?: "url" | "beeps" | "tts";
+  /** Duración on/off en ms para `soundMode: beeps`. */
+  beepPattern?: number[];
+  minListenSec?: number;
   /** Búsqueda Pexels si no hay visualUrl (visual). */
   pexelsQuery?: string;
   visualUrl?: string;
@@ -24,7 +28,14 @@ export type RoomPuzzle = {
   falPrompt?: string;
   /** Instrucción de búsqueda en el entorno real (camera). */
   cameraPrompt?: string;
+  cameraMode?: "keyword" | "count" | "ocr_hint";
+  cameraSynonyms?: string[];
   voiceLocale?: string;
+  voiceMatchMode?: "exact" | "fuzzy" | "digits";
+  allowTextFallback?: boolean;
+  visualLayout?: "single" | "dual";
+  pexelsQueryB?: string;
+  interactionHints?: string[];
 };
 
 export type RoomScene = {

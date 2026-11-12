@@ -25,9 +25,11 @@ puzzles:
     id: sound_station
     type: sound
     label: Estación sonora
-    prompt: Escucha el clip. Al final se dictan cuatro cifras — introdúcelas aquí.
-    audioUrl: https://cdn.pixabay.com/audio/2022/10/25/audio_63460baf12.mp3
-    answer: "4268"
+    prompt: Pulsa reproducir y escucha el patrón de tonos (2 pips = 2, pausa larga = separador). Respuesta de una cifra.
+    soundMode: beeps
+    beepPattern: [120, 80, 120, 80, 120, 300, 360, 80, 360, 80, 360]
+    minListenSec: 2
+    answer: "3"
     normalize: trim
     maxHints: 2
     hints:
@@ -51,9 +53,11 @@ puzzles:
     id: camera_station
     type: camera
     label: Búsqueda real
+    cameraMode: keyword
     cameraPrompt: Fotografía algo redondo de tu entorno (una taza, un reloj…).
-    prompt: Tras la foto, escribe en español un objeto redondo que hayas capturado (ej. TAZA).
+    prompt: Tras la foto, escribe en MAYÚSCULAS un objeto redondo que hayas capturado.
     answer: TAZA
+    cameraSynonyms: [TAZÓN, PLATO, BOL]
     normalize: uppercase
     maxHints: 1
     hints:
@@ -66,6 +70,8 @@ puzzles:
     prompt: Di en voz alta la frase mágica para cerrar el laboratorio.
     answer: "luego"
     normalize: lowercase
+    voiceMatchMode: fuzzy
+    allowTextFallback: true
     voiceLocale: es-ES
     maxHints: 1
     hints:

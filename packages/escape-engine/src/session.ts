@@ -6,7 +6,9 @@ import type {
   GameEvent,
   InteractionStep,
   PublicState,
+  VoiceMatchMode,
 } from "@escapeai/shared";
+import { matchPlayerAnswer } from "@escapeai/shared";
 import type { PlayerContext } from "./player-context.js";
 import type { Condition, RoomDefinition, RoomPuzzle } from "./room-definition.js";
 
@@ -180,13 +182,23 @@ function submitAnswer(
   const stepErr = requireInteractionSteps(session, puzzle);
   if (stepErr) return { error: stepErr };
 
+  if (!rawValue.trim()) {
+    return { error: "Escribe una respuesta antes de enviar." };
+  }
+
   const attempts = (session.puzzleAttempts.get(puzzleId) ?? 0) + 1;
   session.puzzleAttempts.set(puzzleId, attempts);
 
-  const value = normalizeAnswer(rawValue, puzzle.normalize);
-  const expected = normalizeAnswer(puzzle.answer ?? "", puzzle.normalize);
+  const voiceMode: VoiceMatchMode =
+    puzzle.voiceMatchMode ?? (puzzle.type === "voice" ? "fuzzy" : "exact");
 
-  if (value !== expected) {
+  if (
+    !matchPlayerAnswer(rawValue, puzzle.answer ?? "", {
+      normalize: puzzle.normalize,
+      voiceMatchMode: voiceMode,
+      synonyms: puzzle.cameraSynonyms,
+    })
+  ) {
     session.narrative.push("Respuesta incorrecta.");
     return { event: { type: "puzzle_failed", puzzleId, attempts } };
   }
@@ -333,12 +345,16 @@ function completeInteraction(
   puzzleId: string,
   step: InteractionStep,
 ): string | undefined {
+  if (session.status !== "playing") return "La partida ya ha terminado.";
   const puzzle = session.room.puzzles[puzzleId];
   if (!puzzle) return "Puzzle desconocido.";
   if (!isPuzzleActive(session, puzzleId)) return "Ese puzzle no está disponible aquí.";
+  if (session.solvedPuzzles.has(puzzleId)) return "Puzzle ya resuelto.";
   const needed = requiredSteps(puzzle);
   if (!needed.includes(step)) return "Paso no aplicable a este puzzle.";
-  getInteractionSet(session, puzzleId).add(step);
+  const done = getInteractionSet(session, puzzleId);
+  if (done.has(step)) return undefined;
+  done.add(step);
   const labels: Record<InteractionStep, string> = {
     listen: "Has escuchado la pista sonora.",
     speak: "El sistema ha captado tu voz.",
@@ -368,13 +384,6 @@ function requireInteractionSteps(session: SessionRecord, puzzle: RoomPuzzle): st
     }
   }
   return undefined;
-}
-
-function normalizeAnswer(value: string, mode?: RoomPuzzle["normalize"]): string {
-  let v = value.trim();
-  if (mode === "uppercase") v = v.toUpperCase();
-  if (mode === "lowercase") v = v.toLowerCase();
-  return v;
 }
 
 function getAvailableExits(session: SessionRecord) {
@@ -444,11 +453,21 @@ export function toPublicState(session: SessionRecord, nowMs = Date.now()): Publi
         maxHints: puzzle.maxHints ?? (puzzle.hints?.length ?? 0),
         completedSteps: steps ? [...steps] : [],
         audioUrl: puzzle.audioUrl,
+        soundMode: puzzle.soundMode,
+        beepPattern: puzzle.beepPattern,
+        minListenSec: puzzle.minListenSec,
         visualUrl: puzzle.visualUrl,
         pexelsQuery: puzzle.pexelsQuery,
+        pexelsQueryB: puzzle.pexelsQueryB,
+        visualLayout: puzzle.visualLayout,
         falPrompt: puzzle.falPrompt,
         cameraPrompt: puzzle.cameraPrompt,
+        cameraMode: puzzle.cameraMode,
+        cameraSynonyms: puzzle.cameraSynonyms,
         voiceLocale: puzzle.voiceLocale,
+        voiceMatchMode: puzzle.voiceMatchMode,
+        allowTextFallback: puzzle.allowTextFallback,
+        interactionHints: puzzle.interactionHints,
       };
     }),
     exits: getAvailableExits(session),
