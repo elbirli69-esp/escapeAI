@@ -21,6 +21,8 @@ export type StoredTeam = {
   timeRemainingSec?: number;
   elapsedSec?: number;
   puzzlesSolved?: number;
+  currentSceneId?: string;
+  currentSceneTitle?: string;
 };
 
 export type StoredEvent = {
@@ -60,6 +62,8 @@ export function migrateLegacyEvent(event: StoredEvent): StoredEvent {
       timeRemainingSec: row.timeRemainingSec,
       elapsedSec: row.elapsedSec,
       puzzlesSolved: row.puzzlesSolved,
+      currentSceneId: row.currentSceneId,
+      currentSceneTitle: row.currentSceneTitle,
     };
   }
   return { ...event, teams };
@@ -148,6 +152,8 @@ export function leaderboardFromEvent(event: StoredEvent): EventTeamPublic[] {
     timeRemainingSec: t.timeRemainingSec,
     elapsedSec: t.elapsedSec,
     puzzlesSolved: t.puzzlesSolved,
+    currentSceneId: t.currentSceneId,
+    currentSceneTitle: t.currentSceneTitle,
   }));
   return rankTeams(rows);
 }

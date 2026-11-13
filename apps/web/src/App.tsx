@@ -567,14 +567,33 @@ function GameView(props: {
 
       <p className="scene prose">{state.sceneDescription}</p>
 
-      {(state.clueNotes?.length ?? 0) > 0 && (
+      {state.status === "playing" && (
         <section className="panel clue-notebook" data-testid="escape-clue-notes">
-          <p className="eyebrow">Notas de la misión</p>
-          <ul className="clue-note-list">
-            {state.clueNotes!.map((note) => (
-              <li key={note.id}>{note.text}</li>
-            ))}
-          </ul>
+          <div className="clue-notebook-head">
+            <p className="eyebrow">Cuaderno de pistas</p>
+            {(state.clueNotes?.length ?? 0) > 0 && (
+              <button
+                type="button"
+                className="ghost sm"
+                data-testid="escape-clue-copy"
+                onClick={() => {
+                  const text = state.clueNotes!.map((n) => `• ${n.text}`).join("\n");
+                  void navigator.clipboard?.writeText(text);
+                }}
+              >
+                Copiar
+              </button>
+            )}
+          </div>
+          {(state.clueNotes?.length ?? 0) === 0 ? (
+            <p className="muted sm">Las pistas que ganes al resolver retos aparecerán aquí.</p>
+          ) : (
+            <ul className="clue-note-list">
+              {state.clueNotes!.map((note) => (
+                <li key={note.id}>{note.text}</li>
+              ))}
+            </ul>
+          )}
         </section>
       )}
 

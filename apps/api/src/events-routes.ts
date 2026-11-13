@@ -16,6 +16,8 @@ import {
 import type { SessionStore } from "./session-store.js";
 import { randomUUID } from "node:crypto";
 import { pexelsPageForAdventure, resolveCoverImage } from "./pexels-search.js";
+import { computeSceneProgress, teamSceneFields } from "./event-milestones.js";
+import { applyValidatedFlavor } from "./flavor/apply-flavor.js";
 
 export function mountEventRoutes(app: Hono, eventStore: EventStore, _gm?: GameMasterService): void {
   void _gm;
@@ -46,7 +48,7 @@ export function mountEventRoutes(app: Hono, eventStore: EventStore, _gm?: GameMa
     if (err) return c.json({ error: err }, 400);
 
     const eventId = randomUUID();
-    const room = generateAdventureRoom(body, eventId);
+    const room = applyValidatedFlavor(generateAdventureRoom(body, eventId));
     let event: StoredEvent = {
       eventId,
       joinCode: createJoinCode(),
@@ -137,14 +139,18 @@ export function mountEventRoutes(app: Hono, eventStore: EventStore, _gm?: GameMa
   app.get("/events/:code/leaderboard", async (c) => {
     const event = await eventStore.getByCode(c.req.param("code"));
     if (!event) return c.json({ error: "Evento no encontrado" }, 404);
-    const teams = leaderboardFromEvent(event);
+    const e = migrateLegacyEvent(event);
+    const teams = leaderboardFromEvent(e);
+    const { progressSummary, sceneMilestones } = computeSceneProgress(e);
     return c.json({
-      joinCode: event.joinCode,
-      title: event.title,
+      joinCode: e.joinCode,
+      title: e.title,
       teams,
-      adventureType: event.config.adventureType,
-      coverImage: event.room.coverImage,
-      theme: event.room.theme,
+      adventureType: e.config.adventureType,
+      coverImage: e.room.coverImage,
+      theme: e.room.theme,
+      progressSummary,
+      sceneMilestones,
       players: teams,
     });
   });
@@ -227,6 +233,7 @@ export async function syncPlayerStatusFromSession(
   team.timeRemainingSec = Math.max(0, session.room.timeLimitSec - elapsed);
   team.elapsedSec = elapsed;
   team.puzzlesSolved = session.solvedPuzzles.size;
+  Object.assign(team, teamSceneFields(session.currentSceneId, session.room));
   if (session.status === "won") team.status = "won";
   else if (session.status === "lost") team.status = "lost";
   else team.status = "playing";

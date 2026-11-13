@@ -198,9 +198,9 @@ Arquitectura: `apps/api/src/flavor/` + tests de validación.
 
 ### P2 — Producto social y flavor
 
-- [ ] Hitos en panel organizador (“3 equipos en escena 2”).
-- [ ] Flavor LLM validado post-generación.
-- [ ] Notebook en PWA.
+- [x] Hitos en panel organizador (“3 equipos en escena 2”).
+- [x] Flavor LLM validado post-generación.
+- [x] Notebook en PWA.
 
 ### P3 — Cooperación y rejuego
 

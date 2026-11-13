@@ -254,6 +254,22 @@ body {
   border-color: color-mix(in srgb, var(--accent) 25%, var(--panel-border));
 }
 
+.clue-notebook-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.organizer-milestone {
+  margin: 0.5rem 0 1rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
 .clue-note-list {
   margin: 0.35rem 0 0;
   padding-left: 1.1rem;
