@@ -567,6 +567,12 @@ function GameView(props: {
 
       <p className="scene prose">{state.sceneDescription}</p>
 
+      {state.teamProgress && (
+        <p className="team-progress-banner sm" data-testid="escape-team-progress">
+          {state.teamProgress.label}: {state.teamProgress.value}/{state.teamProgress.goal}
+        </p>
+      )}
+
       {state.status === "playing" && (
         <section className="panel clue-notebook" data-testid="escape-clue-notes">
           <div className="clue-notebook-head">

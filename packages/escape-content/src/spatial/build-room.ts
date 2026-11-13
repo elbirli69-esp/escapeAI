@@ -17,14 +17,15 @@ export function buildSpatialRoom(
   env: ScannedEnvironment,
   proposal: SpatialAdventureProposal,
   eventId: string,
+  playSeed?: string,
 ): RoomDefinition {
   const roomId = `spatial-${eventId.slice(0, 8)}`;
-  const clockHour = deriveClockDigits(env, proposal.id);
+  const clockHour = deriveClockDigits(env, proposal.id, playSeed);
   const bookWord = deriveBookKeyword(env);
   const chairCount = deriveCountAnswer(env, "chair");
   const plantWord = derivePlantKeyword(env);
-  const ocrDigit = deriveOcrDigit(env, proposal.id);
-  const colors = deriveColorSequence(env, proposal.id);
+  const ocrDigit = deriveOcrDigit(env, proposal.id, playSeed);
+  const colors = deriveColorSequence(env, proposal.id, playSeed);
   const qrAnswer = deriveQrAnswer(proposal.id);
   const visualN = deriveVisualCount(env, "painting");
   const finalDigits = deriveFinalCode([clockHour, ocrDigit], "digits");

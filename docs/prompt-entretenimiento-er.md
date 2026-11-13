@@ -204,8 +204,8 @@ Arquitectura: `apps/api/src/flavor/` + tests de validación.
 
 ### P3 — Cooperación y rejuego
 
-- [ ] `teamVariable` opcional por evento.
-- [ ] Variantes catálogo / daily seed espacial.
+- [x] `teamVariable` opcional por evento.
+- [x] Variantes catálogo / daily seed espacial.
 
 ---
 

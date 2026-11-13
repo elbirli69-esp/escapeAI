@@ -18,6 +18,9 @@ import { randomUUID } from "node:crypto";
 import { pexelsPageForAdventure, resolveCoverImage } from "./pexels-search.js";
 import { computeSceneProgress, teamSceneFields } from "./event-milestones.js";
 import { applyValidatedFlavor } from "./flavor/apply-flavor.js";
+import { initTeamVariable, resolveTeamVariableConfig, teamVariableToPublic } from "./team-variable.js";
+import { refreshSessionTeamProgress } from "./team-variable.js";
+import { dailyPlaySeed } from "@escapeai/escape-content";
 
 export function mountEventRoutes(app: Hono, eventStore: EventStore, _gm?: GameMasterService): void {
   void _gm;
@@ -48,7 +51,15 @@ export function mountEventRoutes(app: Hono, eventStore: EventStore, _gm?: GameMa
     if (err) return c.json({ error: err }, 400);
 
     const eventId = randomUUID();
-    const room = applyValidatedFlavor(generateAdventureRoom(body, eventId));
+    const tvConfig = resolveTeamVariableConfig(body);
+    body.playSeed = body.playSeed ?? dailyPlaySeed(`generated:${eventId}`);
+    let room = applyValidatedFlavor(generateAdventureRoom(body, eventId));
+    if (tvConfig?.puzzleId) {
+      const start = room.scenes.start;
+      if (start) {
+        start.description = `${start.description.trim()} Cuando ${tvConfig.goal} equipos resuelvan el candado inicial, el organizador verá el candado comunitario al día.`;
+      }
+    }
     let event: StoredEvent = {
       eventId,
       joinCode: createJoinCode(),
@@ -57,6 +68,7 @@ export function mountEventRoutes(app: Hono, eventStore: EventStore, _gm?: GameMa
       title: body.eventTitle?.trim() || room.name,
       room,
       teams: {},
+      teamVariable: tvConfig ? initTeamVariable(tvConfig) : undefined,
     };
 
     for (let attempt = 0; attempt < 5; attempt++) {
@@ -151,6 +163,7 @@ export function mountEventRoutes(app: Hono, eventStore: EventStore, _gm?: GameMa
       theme: e.room.theme,
       progressSummary,
       sceneMilestones,
+      teamVariable: e.teamVariable ? teamVariableToPublic(e.teamVariable) : undefined,
       players: teams,
     });
   });
@@ -173,6 +186,8 @@ export async function startEventSession(
   if (team.sessionId) {
     const existing = await sessionStore.get(team.sessionId);
     if (existing) {
+      await refreshSessionTeamProgress(eventStore, existing);
+      await sessionStore.set(existing);
       const view = gm ? await buildSessionView(existing, gm) : { state: toPublicState(existing), gmInterventions: [] };
       return {
         status: 200,
@@ -196,6 +211,7 @@ export async function startEventSession(
   };
 
   const session = createSession(e.room, playerContext);
+  await refreshSessionTeamProgress(eventStore, session);
   await sessionStore.set(session);
   const interventions = gm ? await gm.processSessionStarted(session) : [];
   const view = gm

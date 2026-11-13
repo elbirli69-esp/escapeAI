@@ -1,5 +1,6 @@
 import {
   buildSpatialSiteRoom,
+  dailyPlaySeed,
   pickSiteProposal,
   proposeSiteAdventuresResponse,
 } from "@escapeai/escape-content";
@@ -9,6 +10,7 @@ import { Hono } from "hono";
 import { randomUUID } from "node:crypto";
 import type { EventStore } from "./event-store.js";
 import { createJoinCode, toEventPreview, type StoredEvent } from "./event-store.js";
+import { initTeamVariable, resolveTeamVariableConfig } from "./team-variable.js";
 import type { ScannedEnvironmentStore } from "./scanned-environment-store.js";
 import { parseAndSanitizeSiteBody, type ScannedSiteStore } from "./scanned-site-store.js";
 
@@ -88,33 +90,39 @@ export function mountSiteRoutes(
     if (!proposal) return c.json({ error: "Propuesta no válida para este recinto" }, 400);
 
     const eventId = randomUUID();
-    const room = buildSpatialSiteRoom(site, loaded.rooms, proposal, eventId);
     const teamCount = resolveTeamCount({ teamCount: body.teamCount ?? 2 });
     const durationMin = resolveDurationMin({ durationMin: body.durationMin ?? proposal.durationMin });
+    const playSeed = dailyPlaySeed(`spatial-site:${eventId}`);
+    const room = buildSpatialSiteRoom(site, loaded.rooms, proposal, eventId, playSeed);
 
     const title = body.eventTitle?.trim() || proposal.title;
     const subjectName = body.subject?.name?.trim() || site.name;
     const roomVersions = Object.fromEntries(loaded.rooms.map((r) => [r.id, r.version]));
+    const eventConfig = {
+      adventureType: "team" as const,
+      teamCount,
+      durationMin,
+      subject: { name: subjectName, nickname: body.subject?.nickname },
+      facts: [`Recinto: ${site.name}`, `Propuesta: ${proposal.title}`],
+      eventTitle: title,
+      scannedSiteId: site.id,
+      siteVersion: site.version,
+      roomInventoryVersions: roomVersions,
+      spatialProposalId: proposal.id,
+      playSeed,
+      teamVariable: body.teamVariable,
+    };
+    const tvConfig = resolveTeamVariableConfig(eventConfig);
 
     let event: StoredEvent = {
       eventId,
       joinCode: createJoinCode(),
       createdAtMs: Date.now(),
-      config: {
-        adventureType: "team",
-        teamCount,
-        durationMin,
-        subject: { name: subjectName, nickname: body.subject?.nickname },
-        facts: [`Recinto: ${site.name}`, `Propuesta: ${proposal.title}`],
-        eventTitle: title,
-        scannedSiteId: site.id,
-        siteVersion: site.version,
-        roomInventoryVersions: roomVersions,
-        spatialProposalId: proposal.id,
-      },
+      config: eventConfig,
       title,
       room,
       teams: {},
+      teamVariable: tvConfig ? initTeamVariable(tvConfig) : undefined,
     };
 
     for (let attempt = 0; attempt < 5; attempt++) {

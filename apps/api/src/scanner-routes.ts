@@ -1,10 +1,11 @@
-import { buildSpatialRoom, pickProposal, proposeSpatialAdventuresResponse } from "@escapeai/escape-content";
+import { buildSpatialRoom, dailyPlaySeed, pickProposal, proposeSpatialAdventuresResponse } from "@escapeai/escape-content";
 import type { CreateSpatialEventRequest, SaveScannedEnvironmentRequest } from "@escapeai/shared";
 import { resolveDurationMin, resolveTeamCount } from "@escapeai/shared";
 import { Hono } from "hono";
 import { randomUUID } from "node:crypto";
 import type { EventStore } from "./event-store.js";
 import { createJoinCode, toEventPreview, type StoredEvent } from "./event-store.js";
+import { initTeamVariable, resolveTeamVariableConfig } from "./team-variable.js";
 import type { ScannedEnvironmentStore } from "./scanned-environment-store.js";
 import { parseAndSanitizeScanBody } from "./scanned-environment-store.js";
 
@@ -61,31 +62,37 @@ export function mountScannerRoutes(
     if (!proposal) return c.json({ error: "Propuesta no válida para este inventario" }, 400);
 
     const eventId = randomUUID();
-    const room = buildSpatialRoom(env, proposal, eventId);
     const teamCount = resolveTeamCount({ teamCount: body.teamCount ?? 2 });
     const durationMin = resolveDurationMin({ durationMin: body.durationMin ?? proposal.durationMin });
+    const playSeed = dailyPlaySeed(`spatial:${eventId}`);
+    const room = buildSpatialRoom(env, proposal, eventId, playSeed);
 
     const title = body.eventTitle?.trim() || proposal.title;
     const subjectName = body.subject?.name?.trim() || env.name;
+    const eventConfig = {
+      adventureType: "team" as const,
+      teamCount,
+      durationMin,
+      subject: { name: subjectName, nickname: body.subject?.nickname },
+      facts: [`Espacio escaneado: ${env.name}`, `Propuesta: ${proposal.title}`],
+      eventTitle: title,
+      scannedEnvironmentId: env.id,
+      inventoryVersion: env.version,
+      spatialProposalId: proposal.id,
+      playSeed,
+      teamVariable: body.teamVariable,
+    };
+    const tvConfig = resolveTeamVariableConfig(eventConfig);
 
     let event: StoredEvent = {
       eventId,
       joinCode: createJoinCode(),
       createdAtMs: Date.now(),
-      config: {
-        adventureType: "team",
-        teamCount,
-        durationMin,
-        subject: { name: subjectName, nickname: body.subject?.nickname },
-        facts: [`Espacio escaneado: ${env.name}`, `Propuesta: ${proposal.title}`],
-        eventTitle: title,
-        scannedEnvironmentId: env.id,
-        inventoryVersion: env.version,
-        spatialProposalId: proposal.id,
-      },
+      config: eventConfig,
       title,
       room,
       teams: {},
+      teamVariable: tvConfig ? initTeamVariable(tvConfig) : undefined,
     };
 
     for (let attempt = 0; attempt < 5; attempt++) {

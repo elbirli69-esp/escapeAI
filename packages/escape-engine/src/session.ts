@@ -30,6 +30,8 @@ export type SessionRecord = {
   /** Pistas anotadas (clue ledger). */
   grantedClues: Map<string, string>;
   firedBeats: Set<string>;
+  /** Copia servidor del progreso comunitario (evento multiequipo). */
+  teamProgress?: { label: string; value: number; goal: number };
 };
 
 export function createSession(room: RoomDefinition, playerContext?: PlayerContext): SessionRecord {
@@ -460,6 +462,8 @@ function conditionMet(session: SessionRecord, condition: Condition): boolean {
       return session.inventory.has(condition.itemId);
     case "has_clue":
       return session.grantedClues.has(condition.clueId);
+    case "team_progress_gte":
+      return (session.teamProgress?.value ?? 0) >= condition.min;
     default:
       return false;
   }
@@ -709,6 +713,7 @@ export function toPublicState(session: SessionRecord, nowMs = Date.now()): Publi
     spatialSiteMap,
     spatialRoomLabel: spatialRoom?.label,
     clueNotes: [...session.grantedClues.entries()].map(([id, text]) => ({ id, text })),
+    teamProgress: session.teamProgress,
     sceneCharacters: buildSceneCharacters(session),
   };
 }
