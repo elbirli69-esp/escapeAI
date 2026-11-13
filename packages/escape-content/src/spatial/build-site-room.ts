@@ -115,6 +115,7 @@ export function buildSpatialSiteRoom(
     };
   }
 
+  let lastInteriorGatePuzzleId = "site_clock";
   for (let i = 0; i < ordered.length; i++) {
     const env = ordered[i]!;
     const sid = sceneIdForInventoryRoom(env.id);
@@ -194,6 +195,7 @@ export function buildSpatialSiteRoom(
       puzzles: [...new Set(puzzleIds)],
       exits,
     };
+    lastInteriorGatePuzzleId = gatePuzzleId;
   }
 
   const hubScene = sceneIdForInventoryRoom(ordered[ordered.length - 1]!.id);
@@ -202,7 +204,7 @@ export function buildSpatialSiteRoom(
     {
       toSceneId: "site_finale_scene",
       label: "Salida del recinto",
-      when: { type: "puzzle_solved", puzzleId: "site_finale" },
+      when: { type: "puzzle_solved", puzzleId: lastInteriorGatePuzzleId },
     },
   ];
 

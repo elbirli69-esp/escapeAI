@@ -1,14 +1,17 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { AdventureType, CreateEventRequest } from "@escapeai/shared";
+import type { AdventureType, CreateEventRequest, ScannedEnvironment, ScannedSite } from "@escapeai/shared";
 import { defaultEnvironmentConstraints } from "@escapeai/shared";
-import type { ScannedEnvironment } from "@escapeai/shared";
 import { applyAction, createSession, parseRoomDefinition, type RoomDefinition } from "@escapeai/escape-engine";
 import { generateAdventureRoom, listAdventureTemplates } from "./generate-adventure.js";
 import { ROOM_CATALOG, ROOM_FILES } from "./rooms.js";
 import { listLobbyHomeModes } from "./lobby-home-modes.js";
+import { sceneIdForInventoryRoom } from "./spatial/build-site-links.js";
+import { buildSpatialSiteRoom } from "./spatial/build-site-room.js";
 import { buildSpatialRoom } from "./spatial/build-room.js";
+import { deriveBookKeyword, deriveClockDigits, deriveFinalCode } from "./spatial/derive-answers.js";
+import { proposeSiteAdventures } from "./spatial/generate-site-proposals.js";
 import { pickProposal, proposeSpatialAdventures } from "./spatial/generate-proposals.js";
 
 type Severity = "error" | "warning" | "ok";
@@ -156,6 +159,266 @@ function runGeneratedWinPath(room: RoomDefinition): { ok: boolean; step?: string
 
 function coastalKeywords(text: string): boolean {
   return /costa|orilla|faro|marea|niebla|mar|tormenta|olas/i.test(text);
+}
+
+function mkSiteRoomEnv(
+  id: string,
+  name: string,
+  objects: ScannedEnvironment["objects"],
+): ScannedEnvironment {
+  return {
+    id,
+    name,
+    environmentType: "living_room",
+    version: 1,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    constraints: defaultEnvironmentConstraints(),
+    objects,
+  };
+}
+
+function auditSpatialSiteFixtures(findings: Finding[]): void {
+  const salon = mkSiteRoomEnv("aaaa-1111-1111-1111-111111111111", "Salón", [
+    {
+      id: "c1",
+      category: "clock",
+      label: "Reloj",
+      quantity: 1,
+      confidence: 1,
+      confirmed: true,
+      interactable: true,
+      movable: false,
+      canHideClue: true,
+      restricted: false,
+    },
+  ]);
+  const cocina = mkSiteRoomEnv("bbbb-2222-2222-2222-222222222222", "Cocina", [
+    {
+      id: "c2",
+      category: "clock",
+      label: "Reloj",
+      quantity: 1,
+      confidence: 1,
+      confirmed: true,
+      interactable: true,
+      movable: false,
+      canHideClue: true,
+      restricted: false,
+    },
+    {
+      id: "b1",
+      category: "book",
+      label: "Atlas viajes",
+      quantity: 1,
+      confidence: 1,
+      confirmed: true,
+      interactable: true,
+      movable: false,
+      canHideClue: true,
+      restricted: false,
+    },
+  ]);
+
+  const linearSite: ScannedSite = {
+    id: "site-audit-linear",
+    name: "Piso audit",
+    roomIds: [salon.id, cocina.id],
+    links: [
+      {
+        id: "lnk-audit",
+        fromRoomId: salon.id,
+        toRoomId: cocina.id,
+        label: "Puerta",
+        transitionKind: "door",
+        confirmed: true,
+      },
+    ],
+    mapLayout: "linear",
+    version: 1,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  const hubSite: ScannedSite = {
+    ...linearSite,
+    id: "site-audit-hub",
+    name: "Piso hub",
+    mapLayout: "hub",
+    roomIds: [salon.id, cocina.id, mkSiteRoomEnv("cccc-3333-3333-3333-333333333333", "Dormitorio", salon.objects).id],
+    links: [
+      {
+        id: "l1",
+        fromRoomId: salon.id,
+        toRoomId: cocina.id,
+        label: "A cocina",
+        transitionKind: "door",
+        confirmed: true,
+      },
+      {
+        id: "l2",
+        fromRoomId: salon.id,
+        toRoomId: "cccc-3333-3333-3333-333333333333",
+        label: "A dormitorio",
+        transitionKind: "door",
+        confirmed: true,
+      },
+    ],
+  };
+
+  const dormitorio = mkSiteRoomEnv("cccc-3333-3333-3333-333333333333", "Dormitorio", salon.objects);
+  const roomSets: Array<{ label: string; site: ScannedSite; rooms: ScannedEnvironment[] }> = [
+    { label: "linear-2", site: linearSite, rooms: [salon, cocina] },
+    { label: "hub-3", site: hubSite, rooms: [salon, cocina, dormitorio] },
+  ];
+
+  for (const { label, site, rooms } of roomSets) {
+  for (const proposal of proposeSiteAdventures(site, rooms)) {
+      const mode = `spatial-site:${proposal.id}@${label}`;
+      let room: RoomDefinition;
+      try {
+        room = buildSpatialSiteRoom(site, rooms, proposal, SAMPLE_EVENT_ID);
+      } catch (e) {
+        push(findings, "error", mode, "build", (e as Error).message);
+        continue;
+      }
+
+      if (room.tagline !== proposal.premise) {
+        push(findings, "warning", mode, "tagline-premise", "tagline de sala ≠ premise de la propuesta");
+      } else {
+        push(findings, "ok", mode, "tagline-premise", "tagline = premise");
+      }
+
+      const map = room.spatialSiteMap;
+      if (!map) {
+        push(findings, "error", mode, "spatial-map", "sin spatialSiteMap");
+        continue;
+      }
+      if (map.rooms.length !== rooms.length) {
+        push(
+          findings,
+          "error",
+          mode,
+          "spatial-map",
+          `map.rooms (${map.rooms.length}) ≠ habitaciones (${rooms.length})`,
+        );
+      }
+      if (map.suggestedVisit.length !== rooms.length) {
+        push(findings, "error", mode, "visit-order", "suggestedVisit no cubre todas las habitaciones");
+      } else {
+        push(findings, "ok", mode, "visit-order", "ruta sugerida completa");
+      }
+      for (const entry of map.rooms) {
+        if (!room.scenes[entry.sceneId]) {
+          push(findings, "error", mode, "spatial-map", `escena ${entry.sceneId} ausente en scenes`);
+        }
+      }
+
+      for (const scene of Object.values(room.scenes)) {
+        for (const exit of scene.exits ?? []) {
+          if (!room.scenes[exit.toSceneId]) {
+            push(
+              findings,
+              "error",
+              mode,
+              "exit-target",
+              `salida ${scene.id} → ${exit.toSceneId} inexistente`,
+            );
+          }
+          if (exit.when?.type === "puzzle_solved" && !room.puzzles[exit.when.puzzleId]) {
+            push(findings, "error", mode, "exit-puzzle", `salida referencia puzzle '${exit.when.puzzleId}' inexistente`);
+          }
+          if (exit.toSceneId === "site_finale_scene" && exit.when?.type === "puzzle_solved") {
+            const pid = exit.when.puzzleId;
+            const finalePuzzles = room.scenes.site_finale_scene?.puzzles ?? [];
+            if (finalePuzzles.includes(pid)) {
+              push(
+                findings,
+                "error",
+                mode,
+                "finale-deadlock",
+                `entrada al cierre exige resolver '${pid}' antes de llegar a la escena que lo contiene`,
+              );
+            }
+          }
+        }
+      }
+
+      if (
+        room.winCondition.type !== "puzzle_solved" ||
+        room.winCondition.puzzleId !== "site_finale" ||
+        !room.puzzles.site_finale?.answer
+      ) {
+        push(findings, "error", mode, "win-condition", "victoria debe ser site_finale con respuesta");
+      }
+
+      if (proposal.id === "spatial-site-recorrido") {
+        const clockHour = deriveClockDigits(rooms[0]!, proposal.id);
+        const bookWord = deriveBookKeyword(rooms[1] ?? rooms[0]!);
+        const expectedFinale = deriveFinalCode([clockHour, bookWord], "digits");
+        const actual = room.puzzles.site_finale?.answer ?? "";
+        if (actual !== expectedFinale) {
+          push(
+            findings,
+            "warning",
+            mode,
+            "recorrido-finale-code",
+            `site_finale '${actual}' ≠ deriveFinalCode esperado '${expectedFinale}'`,
+          );
+        } else {
+          push(findings, "ok", mode, "recorrido-finale-code", "candado final enlaza reloj+libro");
+        }
+      }
+
+      try {
+        createSession(room);
+        push(findings, "ok", mode, "session", "RoomDefinition instanciable");
+      } catch (e) {
+        push(findings, "error", mode, "session", (e as Error).message);
+      }
+
+      if (proposal.id === "spatial-site-recorrido" && label === "linear-2") {
+        const path = runSiteRecorridoLinearWin(room, cocina);
+        if (!path.ok) {
+          push(findings, "error", mode, "win-path", `recorrido lineal falló en: ${path.step}`);
+        } else {
+          push(findings, "ok", mode, "win-path", "recorrido lineal hasta victoria");
+        }
+      }
+    }
+  }
+}
+
+function runSiteRecorridoLinearWin(
+  room: RoomDefinition,
+  cocina: ScannedEnvironment,
+): { ok: boolean; step?: string } {
+  const session = createSession(room);
+  const p = room.puzzles;
+  const sid1 = sceneIdForInventoryRoom(cocina.id);
+
+  applyAction(session, { type: "complete_interaction", puzzleId: "site_clock", step: "capture" });
+  if (!applyAction(session, { type: "submit_answer", puzzleId: "site_clock", value: p.site_clock!.answer! }).ok) {
+    return { ok: false, step: "site_clock" };
+  }
+  if (!applyAction(session, { type: "move", sceneId: sid1 }).ok) {
+    return { ok: false, step: `move ${sid1}` };
+  }
+  applyAction(session, { type: "complete_interaction", puzzleId: "site_book", step: "capture" });
+  if (!applyAction(session, { type: "submit_answer", puzzleId: "site_book", value: p.site_book!.answer! }).ok) {
+    return { ok: false, step: "site_book" };
+  }
+  if (!applyAction(session, { type: "move", sceneId: "site_finale_scene" }).ok) {
+    return { ok: false, step: "move site_finale_scene" };
+  }
+  const final = applyAction(session, {
+    type: "submit_answer",
+    puzzleId: "site_finale",
+    value: p.site_finale!.answer!,
+  });
+  if (!final.ok) return { ok: false, step: "site_finale" };
+  if (final.state.status !== "won") return { ok: false, step: "won status" };
+  return { ok: true };
 }
 
 export function auditCoherence(): Finding[] {
@@ -353,6 +616,9 @@ export function auditCoherence(): Finding[] {
   if (catalogMode?.coverImage?.includes("lighthouse") && !/faro|costa/i.test(catalogMode.description)) {
     push(findings, "warning", "lobby:catalog", "visual-copy", "portada costera con descripción solo YAML genérica");
   }
+
+  // --- Recinto multi-habitación (Scanner site) — último bloque del alcance ER ---
+  auditSpatialSiteFixtures(findings);
 
   return findings;
 }

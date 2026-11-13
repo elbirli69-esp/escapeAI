@@ -15,6 +15,7 @@
 | **Evento generado** | `celebration`, `birthday`, `mystery`, `team` | Cadena sensorial, códigos desde `facts`/`subject`, tono por tipo |
 | **Scanner espacial (1 habitación)** | arquetipos `temporal`, `inventory_hunt`, `visual_trace` | Objetos escaneados → respuestas derivadas → salida |
 | **Lobby / promesa UX** | `lobby-home-modes.ts`, `ROOM_CATALOG`, `ADVENTURE_VISUAL` | Misma temática urban/coastal entre tarjeta y sala |
+| **Recinto multi-habitación (site)** | `buildSpatialSiteRoom`, `spatialSiteMap` | Mapa ↔ escenas, salidas, candado sin deadlock, win-path `spatial-site-recorrido` lineal |
 
 No auditar en esta pasada: copy del GameMaster LLM, balance de dificultad subjetivo, ni legalidad de Pexels.
 
@@ -29,6 +30,7 @@ No auditar en esta pasada: copy del GameMaster LLM, balance de dificultad subjet
 3. **Salidas:** cada `exit.when` referencia puzzles que existen en la escena actual o ya resueltos en el camino.
 4. **Espacial `temporal`:** `spatial_bridge.answer` alineado con `spatial_finale.answer` cuando el diseño dice «combinar pistas».
 5. **Victoria:** solo `winCondition.puzzleId` marca `won`; puzzles opcionales no bloquean sin copy que lo explique.
+6. **Site multi-room:** `spatialSiteMap.rooms` y `suggestedVisit` cubren cada habitación; la salida a `site_finale_scene` no puede exigir `site_finale` antes de que el puzzle esté activo en escena (deadlock).
 
 ### B. Narrativa y tono
 
