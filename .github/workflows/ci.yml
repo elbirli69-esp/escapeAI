@@ -22,6 +22,7 @@ jobs:
       - run: pnpm build
       - run: pnpm test
       - run: pnpm validate-rooms
+      - run: pnpm audit-coherence
 
   e2e:
     runs-on: ubuntu-latest

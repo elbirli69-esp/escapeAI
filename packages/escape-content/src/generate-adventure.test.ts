@@ -23,6 +23,21 @@ describe("generateAdventureRoom", () => {
     expect(room.puzzles.final_code.answer).toBe("ALAE");
   });
 
+  it("mystery y team tienen arcos de escena distintos y finale guiado", () => {
+    const mystery = generateAdventureRoom(
+      { ...baseInput, adventureType: "mystery" },
+      "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    );
+    const team = generateAdventureRoom(
+      { ...baseInput, adventureType: "team" },
+      "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    );
+    expect(mystery.scenes.start.title).not.toBe(team.scenes.start.title);
+    expect(mystery.scenes.finale.description).toMatch(/opcional/i);
+    expect(team.scenes.finale.description).toMatch(/ranking|victoria/i);
+    expect(mystery.puzzles.voice_seal?.prompt).toMatch(/Opcional/i);
+  });
+
   it("sound_intro procedural con tts o beeps", () => {
     const room = generateAdventureRoom(baseInput, "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
     const sound = room.puzzles.sound_intro;

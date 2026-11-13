@@ -312,11 +312,26 @@ export function buildSpatialSiteRoom(
   for (const link of site.links) {
     const bridgeId = bridgePuzzleIdForLink(link);
     if (!puzzles[bridgeId]) {
+      const fromRoom = ordered.find((r) => r.id === link.fromRoomId);
+      const toRoom = ordered.find((r) => r.id === link.toRoomId);
+      const route =
+        fromRoom && toRoom ? `de «${fromRoom.name}» a «${toRoom.name}»` : `«${link.label}»`;
+      const objectHint = ordered
+        .flatMap((r) => r.objects.filter((o) => o.confirmed).map((o) => o.label ?? o.category))
+        .slice(0, 3)
+        .join(", ");
       puzzles[bridgeId] = {
         id: bridgeId,
         type: "code",
         label: link.label,
-        prompt: `Confirma el pasaje «${link.label}» (código SITE-${link.id.slice(0, 4).toUpperCase()} en la puerta o QR).`,
+        prompt: `Pasaje ${route}: coloca el código en la puerta física o escanea el QR del organizador.`,
+        interactionHints: [
+          `Enlace confirmado: ${link.label} (${link.transitionKind}).`,
+          objectHint
+            ? `Objetos del inventario en juego: ${objectHint}.`
+            : "Usa el inventario escaneado para orientarte en cada estancia.",
+          `Código esperado: SITE-${link.id.slice(0, 4).toUpperCase()} (etiqueta o QR).`,
+        ],
         answer: `SITE-${link.id.slice(0, 4).toUpperCase()}`,
         normalize: "uppercase",
       };
