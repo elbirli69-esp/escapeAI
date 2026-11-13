@@ -19,6 +19,8 @@ import { mountScannerRoutes } from "./scanner-routes.js";
 import { mountSiteRoutes } from "./site-routes.js";
 import { mountEventRoutes, startEventSession } from "./events-routes.js";
 import { mountMediaRoutes } from "./media-routes.js";
+import { mountLobbyRoutes } from "./lobby-routes.js";
+import { resolveCoverImage } from "./pexels-search.js";
 import { resolveLlmConfig } from "./llm-config.js";
 import {
   createSessionStore,
@@ -72,21 +74,31 @@ export async function createApp(store?: SessionStore): Promise<Hono> {
   mountScannerRoutes(app, scannedStore, eventStore);
   mountSiteRoutes(app, siteStore, scannedStore, eventStore);
   mountMediaRoutes(app);
+  mountLobbyRoutes(app);
 
-  app.get("/rooms", (c) => {
-    const rooms = ROOM_CATALOG.map((entry) => {
-      const def = loadRoomById(entry.id);
-      return {
-        id: entry.id,
-        title: entry.title,
-        summary: entry.summary,
-        tagline: def.tagline ?? entry.tagline,
-        coverImage: def.coverImage ?? entry.coverImage,
-        theme: def.theme ?? entry.theme,
-        sceneCount: Object.keys(def.scenes).length,
-        timeLimitSec: def.timeLimitSec,
-      };
-    });
+  app.get("/rooms", async (c) => {
+    const rooms = await Promise.all(
+      ROOM_CATALOG.map(async (entry) => {
+        const def = loadRoomById(entry.id);
+        const localCover = def.coverImage ?? entry.coverImage ?? "/media/pilot-cover.jpg";
+        const { coverImage, coverImageSource } = await resolveCoverImage({
+          pexelsQuery: entry.pexelsQuery,
+          page: entry.pexelsPage ?? 1,
+          localFallback: localCover,
+        });
+        return {
+          id: entry.id,
+          title: entry.title,
+          summary: entry.summary,
+          tagline: def.tagline ?? entry.tagline,
+          coverImage,
+          coverImageSource,
+          theme: def.theme ?? entry.theme,
+          sceneCount: Object.keys(def.scenes).length,
+          timeLimitSec: def.timeLimitSec,
+        };
+      }),
+    );
     return c.json({ rooms, ids: listRoomIds() });
   });
 

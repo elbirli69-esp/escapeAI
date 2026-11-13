@@ -6,11 +6,12 @@ import type {
   PublicState,
 } from "@escapeai/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import type { EventDurationMin } from "@escapeai/shared";
 import {
   createCustomEvent,
   fetchAdventureTemplates,
+  fetchLobbyHomeCards,
   joinEventAsTeam,
   startEventSession,
   type RoomSummary,
@@ -122,6 +123,22 @@ export function ExperienceLobby(props: {
     refetchOnMount: "always",
   });
 
+  const homeCardsQuery = useQuery({
+    queryKey: ["lobby", "home-cards", "pexels"],
+    queryFn: fetchLobbyHomeCards,
+    enabled: mode === "home",
+    staleTime: 15 * 60 * 1000,
+    refetchOnMount: "always",
+  });
+
+  const homeImageByMode = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const card of homeCardsQuery.data ?? []) {
+      map.set(card.mode, card.image);
+    }
+    return map;
+  }, [homeCardsQuery.data]);
+
   useEffect(() => {
     if (mode === "home") {
       void queryClient.prefetchQuery({
@@ -197,7 +214,7 @@ export function ExperienceLobby(props: {
               key={card.mode}
               title={card.title}
               description={card.description}
-              imageSrc={card.image}
+              imageSrc={homeImageByMode.get(card.mode) ?? card.image}
               imageAlt={card.imageAlt}
               layout="stack"
               data-testid={

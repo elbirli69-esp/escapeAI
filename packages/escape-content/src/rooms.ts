@@ -13,6 +13,8 @@ export const ROOM_CATALOG: Array<{
   summary: string;
   tagline?: string;
   coverImage?: string;
+  pexelsQuery: string;
+  pexelsPage?: number;
   theme?: string;
 }> = [
   {
@@ -21,6 +23,8 @@ export const ROOM_CATALOG: Array<{
     summary: "Candado, fusible y panel maestro en un bloque que despierta.",
     tagline: "Un edificio dormido, un candado que guarda secretos de otro siglo.",
     coverImage: "/media/pilot-cover.jpg",
+    pexelsQuery: "urban apartment hallway mystery door padlock",
+    pexelsPage: 1,
     theme: "urban",
   },
   {
@@ -29,6 +33,8 @@ export const ROOM_CATALOG: Array<{
     summary: "Marea, almacén y un faro que debe volver a guiar barcos.",
     tagline: "Marea alta, aceite escaso y una tormenta que no perdona.",
     coverImage: "/media/lighthouse-cover.jpg",
+    pexelsQuery: "lighthouse cliff storm ocean beacon",
+    pexelsPage: 2,
     theme: "coastal",
   },
   {
@@ -37,6 +43,8 @@ export const ROOM_CATALOG: Array<{
     summary: "Sonido, voz, cámara e imágenes en un solo hub de pruebas.",
     tagline: "Demuestra todas las pistas interactivas en el móvil.",
     coverImage: "/media/pilot-basement.jpg",
+    pexelsQuery: "colorful technology lab interactive screens",
+    pexelsPage: 1,
     theme: "urban",
   },
   {
@@ -45,6 +53,8 @@ export const ROOM_CATALOG: Array<{
     summary: "Llega a un waypoint y responde un quiz según tu ubicación.",
     tagline: "Geolocalización validada en el motor, sin guardar tu trayecto.",
     coverImage: "/media/lighthouse-dock.jpg",
+    pexelsQuery: "hiking map compass outdoor adventure trail",
+    pexelsPage: 3,
     theme: "urban",
   },
 ];

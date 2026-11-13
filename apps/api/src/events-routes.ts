@@ -15,7 +15,7 @@ import {
 } from "./event-store.js";
 import type { SessionStore } from "./session-store.js";
 import { randomUUID } from "node:crypto";
-import { pexelsPageForAdventure, searchPexelsImage } from "./pexels-search.js";
+import { pexelsPageForAdventure, resolveCoverImage } from "./pexels-search.js";
 
 export function mountEventRoutes(app: Hono, eventStore: EventStore, _gm?: GameMasterService): void {
   void _gm;
@@ -24,14 +24,15 @@ export function mountEventRoutes(app: Hono, eventStore: EventStore, _gm?: GameMa
     const enriched = await Promise.all(
       templates.map(async (t) => {
         if (!t.pexelsQuery) return t;
-        const { url, source } = await searchPexelsImage(
-          t.pexelsQuery,
-          pexelsPageForAdventure(t.id),
-        );
+        const { coverImage, coverImageSource } = await resolveCoverImage({
+          pexelsQuery: t.pexelsQuery,
+          page: pexelsPageForAdventure(t.id),
+          localFallback: t.coverImage,
+        });
         return {
           ...t,
-          coverImage: source === "pexels" ? url : t.coverImage,
-          coverImageSource: source,
+          coverImage,
+          coverImageSource,
         };
       }),
     );

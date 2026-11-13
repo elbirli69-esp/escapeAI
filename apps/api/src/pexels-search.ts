@@ -59,3 +59,15 @@ export async function searchPexelsImage(
 export function pexelsPageForAdventure(id: AdventureType): number {
   return PEXELS_PAGE[id] ?? 1;
 }
+
+export async function resolveCoverImage(opts: {
+  pexelsQuery: string;
+  page?: number;
+  localFallback: string;
+}): Promise<{ coverImage: string; coverImageSource: "pexels" | "fallback" }> {
+  const { url, source } = await searchPexelsImage(opts.pexelsQuery, opts.page ?? 1);
+  return {
+    coverImage: source === "pexels" ? url : opts.localFallback,
+    coverImageSource: source,
+  };
+}

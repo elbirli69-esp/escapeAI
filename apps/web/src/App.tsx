@@ -1,7 +1,7 @@
 import type { NarrativeIntervention, PublicItem, PublicState } from "@escapeai/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { createSession, fetchRooms, fetchState, sendAction } from "./api";
+import { createSession, fetchLobbyHomeCards, fetchRooms, fetchState, sendAction } from "./api";
 import { ExperienceLobby } from "./ExperienceLobby";
 import { InteractivePuzzle } from "./InteractivePuzzle";
 import { SceneHero } from "./SceneHero";
@@ -128,10 +128,21 @@ export function App() {
   type SessionCache = { state: PublicState; gmInterventions: NarrativeIntervention[] };
 
   const roomsQuery = useQuery({
-    queryKey: ["rooms"],
+    queryKey: ["rooms", "pexels-covers"],
     queryFn: fetchRooms,
     enabled: !sessionId,
+    staleTime: 15 * 60 * 1000,
+    refetchOnMount: "always",
   });
+
+  useEffect(() => {
+    if (!sessionId) {
+      void queryClient.prefetchQuery({
+        queryKey: ["lobby", "home-cards", "pexels"],
+        queryFn: fetchLobbyHomeCards,
+      });
+    }
+  }, [sessionId, queryClient]);
 
   const startGame = useMutation({
     mutationFn: (roomId: string) => createSession(roomId),
