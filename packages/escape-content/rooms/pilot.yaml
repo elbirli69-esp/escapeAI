@@ -64,6 +64,8 @@ characters:
     voiceTone: Irónico, cansado; evita cifras concretas.
     backstoryPublic: Lleva décadas en la entrada y conoce cada rumor del edificio.
     greeting: "¿Otra vez despierto a estas horas? Pregunta lo que quieras, no prometo milagros."
+    spokenReplies: true
+    voiceLocale: es-ES
     authorizedKnowledge:
       - La humedad del pasillo borró casi todo el post-it del candado.
       - El candado es digital y nuevo; el viejo mecánico ya no funciona.

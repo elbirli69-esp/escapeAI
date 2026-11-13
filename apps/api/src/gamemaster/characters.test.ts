@@ -29,5 +29,6 @@ describe("CHARACTER_TURN", () => {
     expect(created[0].kind).toBe("character");
     expect(created[0].characterId).toBe("night_concierge");
     expect(created[0].text.toLowerCase()).not.toContain("1984");
+    expect(created[0].presentation).toBe("tts");
   });
 });

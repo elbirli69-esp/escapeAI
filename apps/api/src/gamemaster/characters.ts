@@ -14,6 +14,12 @@ export function isCharacterInScene(session: SessionRecord, characterId: string):
   return (scene.characters ?? []).includes(characterId);
 }
 
+export function characterUsesSpokenPresentation(profile: RoomCharacter | undefined): boolean {
+  if (!profile) return false;
+  if (profile.spokenReplies === false) return false;
+  return profile.spokenReplies === true || Boolean(profile.voiceTone);
+}
+
 export function pickCharacterFallback(profile: RoomCharacter): string {
   const lines = profile.fallbackLines?.length
     ? profile.fallbackLines
