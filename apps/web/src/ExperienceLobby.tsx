@@ -5,13 +5,12 @@ import type {
   JoinEventResponse,
   PublicState,
 } from "@escapeai/shared";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import type { EventDurationMin } from "@escapeai/shared";
 import {
   createCustomEvent,
-  fetchAdventureTemplates,
-  fetchLobbyHomeCards,
+  type LobbyHomeCard,
   joinEventAsTeam,
   startEventSession,
   type RoomSummary,
@@ -76,6 +75,10 @@ function themeClass(theme?: string): string {
 }
 
 export function ExperienceLobby(props: {
+  homeCards?: LobbyHomeCard[];
+  homeCardsError?: boolean;
+  adventureTemplates?: AdventureTemplateInfo[];
+  adventureTemplatesLoading?: boolean;
   rooms: RoomSummary[];
   roomsLoading: boolean;
   selectedRoomId: string;
@@ -113,40 +116,13 @@ export function ExperienceLobby(props: {
     stripJoinParamFromUrl();
   }, []);
 
-  const queryClient = useQueryClient();
-
-  const templatesQuery = useQuery({
-    queryKey: ["adventures", "pexels-covers"],
-    queryFn: fetchAdventureTemplates,
-    enabled: mode === "create",
-    staleTime: 15 * 60 * 1000,
-    refetchOnMount: "always",
-  });
-
-  const homeCardsQuery = useQuery({
-    queryKey: ["lobby", "home-cards", "pexels"],
-    queryFn: fetchLobbyHomeCards,
-    enabled: mode === "home",
-    staleTime: 15 * 60 * 1000,
-    refetchOnMount: "always",
-  });
-
   const homeImageByMode = useMemo(() => {
     const map = new Map<string, string>();
-    for (const card of homeCardsQuery.data ?? []) {
+    for (const card of props.homeCards ?? []) {
       map.set(card.mode, card.image);
     }
     return map;
-  }, [homeCardsQuery.data]);
-
-  useEffect(() => {
-    if (mode === "home") {
-      void queryClient.prefetchQuery({
-        queryKey: ["adventures", "pexels-covers"],
-        queryFn: fetchAdventureTemplates,
-      });
-    }
-  }, [mode, queryClient]);
+  }, [props.homeCards]);
 
   const createMutation = useMutation({
     mutationFn: createCustomEvent,
@@ -180,7 +156,7 @@ export function ExperienceLobby(props: {
     onError: (e: Error) => setFormError(e.message),
   });
 
-  const templates = templatesQuery.data ?? [];
+  const templates = props.adventureTemplates ?? [];
 
   function applyTemplate(t: AdventureTemplateInfo) {
     setAdventureType(t.id);
@@ -214,8 +190,9 @@ export function ExperienceLobby(props: {
               key={card.mode}
               title={card.title}
               description={card.description}
-              imageSrc={homeImageByMode.get(card.mode) ?? card.image}
+              imageSrc={props.homeCardsError ? card.image : homeImageByMode.get(card.mode)}
               imageAlt={card.imageAlt}
+              imagePriority
               layout="stack"
               data-testid={
                 card.mode === "catalog"
@@ -284,18 +261,21 @@ export function ExperienceLobby(props: {
           >
             <fieldset className="template-picker">
               <legend className="picker-legend">Tipo de aventura</legend>
-              {templatesQuery.isLoading && <p className="muted">Cargando plantillas…</p>}
-              <ul className="room-grid room-grid-visual template-grid">
-                {templates.map((t) => (
-                  <li key={t.id}>
-                    <AdventureTemplateCard
-                      template={t}
-                      active={adventureType === t.id}
-                      onSelect={() => setAdventureType(t.id)}
-                    />
-                  </li>
-                ))}
-              </ul>
+              {props.adventureTemplatesLoading ? (
+                <p className="muted">Cargando plantillas…</p>
+              ) : (
+                <ul className="room-grid room-grid-visual template-grid">
+                  {templates.map((t) => (
+                    <li key={t.id}>
+                      <AdventureTemplateCard
+                        template={t}
+                        active={adventureType === t.id}
+                        onSelect={() => setAdventureType(t.id)}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
             </fieldset>
             {selectedTemplate && (
               <p className="template-detail muted">
@@ -516,7 +496,9 @@ export function ExperienceLobby(props: {
         </p>
       </header>
       {props.classicError && <p className="error">{props.classicError}</p>}
-      {props.roomsLoading && <p className="muted">Cargando salas…</p>}
+      {props.roomsLoading ? (
+        <p className="muted">Cargando salas…</p>
+      ) : (
       <ul className="room-grid room-grid-visual">
         {props.rooms.map((room) => {
           const metaParts = [
@@ -541,11 +523,12 @@ export function ExperienceLobby(props: {
           );
         })}
       </ul>
+      )}
       <button
         type="button"
         className="primary wide"
         data-testid="escape-start-classic"
-        disabled={props.classicBusy}
+        disabled={props.roomsLoading || props.classicBusy}
         onClick={props.onClassicStart}
       >
         {props.classicBusy ? "Preparando…" : "Empezar partida"}
