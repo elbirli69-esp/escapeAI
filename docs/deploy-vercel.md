@@ -35,6 +35,8 @@ En **Project → Settings → Environment Variables**:
 | `OPENAI_BASE_URL` | con DeepSeek | `https://api.deepseek.com/v1` |
 | `OPENAI_MODEL` | con DeepSeek | `deepseek-chat` (o el modelo en traveltoblog) |
 | `OPENAI_API_KEY` | alternativa | OpenAI directa en lugar de DeepSeek |
+| `PEXELS_API_KEY` | opcional | Portadas de plantillas de evento y puzzles `visual` (`/api/media/pexels`) |
+| `FAL_KEY` | opcional | Imágenes generadas en puzzles (`/api/media/fal-image`) |
 | `CORS_ORIGINS` | opcional | Dominio custom adicional |
 
 Vercel inyecta `VERCEL_URL` / `VERCEL_PROJECT_PRODUCTION_URL`; la API los usa para CORS.

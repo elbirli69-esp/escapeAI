@@ -4,48 +4,66 @@ import { durationMinToSec, resolveDurationMin } from "@escapeai/shared";
 import type { RoomDefinition } from "@escapeai/escape-engine";
 import { buildProceduralSoundIntro } from "./sound-digit-clues.js";
 
-const IMAGE_SETS: Record<AdventureType, { cover: string; scenes: [string, string, string] }> = {
-  birthday: {
-    cover: "/media/pilot-cover.jpg",
-    scenes: ["/media/pilot-entrance.jpg", "/media/pilot-basement.jpg", "/media/pilot-control.jpg"],
-  },
+type AdventureVisual = {
+  cover: string;
+  pexelsQuery: string;
+  scenes: [string, string, string];
+  tagline: string;
+  theme: "urban" | "coastal";
+};
+
+/** Fotos locales del repo (salas pilot/lighthouse); Pexels sustituye portada en lobby si hay API key. */
+const ADVENTURE_VISUAL: Record<AdventureType, AdventureVisual> = {
   celebration: {
-    cover: "/media/pilot-cover.jpg",
-    scenes: ["/media/pilot-entrance.jpg", "/media/pilot-basement.jpg", "/media/pilot-control.jpg"],
+    cover: "/media/lighthouse-dock.jpg",
+    pexelsQuery: "friends party celebration outdoor night",
+    scenes: ["/media/lighthouse-dock.jpg", "/media/pilot-entrance.jpg", "/media/pilot-control.jpg"],
+    tagline: "Fiesta y datos del grupo en la pista.",
+    theme: "urban",
+  },
+  birthday: {
+    cover: "/media/pilot-entrance.jpg",
+    pexelsQuery: "birthday candles celebration table",
+    scenes: ["/media/pilot-entrance.jpg", "/media/pilot-cover.jpg", "/media/pilot-basement.jpg"],
+    tagline: "Homenaje íntimo en torno a una persona.",
+    theme: "urban",
   },
   mystery: {
     cover: "/media/lighthouse-cover.jpg",
+    pexelsQuery: "lighthouse fog storm mystery coast",
     scenes: [
       "/media/lighthouse-dock.jpg",
       "/media/lighthouse-supply.jpg",
       "/media/lighthouse-cover.jpg",
     ],
-  },
-  team: {
-    cover: "/media/pilot-cover.jpg",
-    scenes: ["/media/pilot-entrance.jpg", "/media/pilot-basement.jpg", "/media/pilot-control.jpg"],
-  },
-};
-
-const TEMPLATE_META: Record<
-  AdventureType,
-  { tagline: string; theme: "urban" | "coastal" }
-> = {
-  celebration: {
-    tagline: "Competid entre equipos con datos reales del grupo.",
-    theme: "urban",
-  },
-  birthday: {
-    tagline: "Un nombre en el centro, tono íntimo y festivo.",
-    theme: "urban",
-  },
-  mystery: {
-    tagline: "Costa, niebla y pistas que no esperan al amanecer.",
+    tagline: "Costa, niebla y pistas nocturnas.",
     theme: "coastal",
   },
   team: {
-    tagline: "Reto puro: ranking, ritmo y un código que activa el edificio.",
+    cover: "/media/pilot-control.jpg",
+    pexelsQuery: "team competition office challenge",
+    scenes: ["/media/pilot-control.jpg", "/media/pilot-basement.jpg", "/media/pilot-entrance.jpg"],
+    tagline: "Ranking y ritmo entre equipos.",
     theme: "urban",
+  },
+};
+
+const IMAGE_SETS: Record<AdventureType, { cover: string; scenes: [string, string, string] }> = {
+  celebration: {
+    cover: ADVENTURE_VISUAL.celebration.cover,
+    scenes: ADVENTURE_VISUAL.celebration.scenes,
+  },
+  birthday: {
+    cover: ADVENTURE_VISUAL.birthday.cover,
+    scenes: ADVENTURE_VISUAL.birthday.scenes,
+  },
+  mystery: {
+    cover: ADVENTURE_VISUAL.mystery.cover,
+    scenes: ADVENTURE_VISUAL.mystery.scenes,
+  },
+  team: {
+    cover: ADVENTURE_VISUAL.team.cover,
+    scenes: ADVENTURE_VISUAL.team.scenes,
   },
 };
 
@@ -55,10 +73,16 @@ export function listAdventureTemplates(): Array<{
   description: string;
   suggestedFacts: string[];
   coverImage: string;
+  pexelsQuery: string;
   theme: "urban" | "coastal";
   tagline: string;
 }> {
-  return [
+  const defs: Array<{
+    id: AdventureType;
+    title: string;
+    description: string;
+    suggestedFacts: string[];
+  }> = [
     {
       id: "celebration",
       title: "Celebración",
@@ -68,8 +92,6 @@ export function listAdventureTemplates(): Array<{
         "Lugar o fecha simbólica (p. ej. año 2018)",
         "Frase o chiste interno del grupo",
       ],
-      coverImage: IMAGE_SETS.celebration.cover,
-      ...TEMPLATE_META.celebration,
     },
     {
       id: "birthday",
@@ -80,26 +102,31 @@ export function listAdventureTemplates(): Array<{
         "Apodo o canción favorita",
         "Detalle que solo los del grupo saben",
       ],
-      coverImage: IMAGE_SETS.birthday.cover,
-      ...TEMPLATE_META.birthday,
     },
     {
       id: "mystery",
       title: "Misterio",
       description: "Tono investigación costera o nocturna.",
       suggestedFacts: ["Sospechoso o pista clave", "Hora del suceso", "Objeto perdido"],
-      coverImage: IMAGE_SETS.mystery.cover,
-      ...TEMPLATE_META.mystery,
     },
     {
       id: "team",
       title: "Reto de equipo",
       description: "Escape genérico para competir entre equipos.",
       suggestedFacts: ["Nombre del reto", "Regla interna", "Meta del día"],
-      coverImage: IMAGE_SETS.team.cover,
-      ...TEMPLATE_META.team,
     },
   ];
+
+  return defs.map((d) => {
+    const visual = ADVENTURE_VISUAL[d.id];
+    return {
+      ...d,
+      coverImage: visual.cover,
+      pexelsQuery: visual.pexelsQuery,
+      theme: visual.theme,
+      tagline: visual.tagline,
+    };
+  });
 }
 
 export function generateAdventureRoom(

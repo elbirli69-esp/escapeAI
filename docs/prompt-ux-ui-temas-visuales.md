@@ -95,6 +95,16 @@ mood: Frase corta en cursiva bajo el hero.
 
 Checklist foto: 1200×750 mín., peso < 200 KB, `object-fit: cover`, sin texto embebido ilegible en móvil.
 
+## Origen de las imágenes (plantillas y salas)
+
+| Fuente | Uso |
+|--------|-----|
+| `apps/web/public/media/*` | Fotos de las salas YAML (pilot / lighthouse) y **fallback** offline de plantillas de evento. |
+| **Pexels** (`PEXELS_API_KEY` en API) | Portadas de tipo de aventura en “Configurar aventura”; búsqueda por `pexelsQuery` en `generate-adventure.ts`. Sin key → solo fallback local. |
+| Puzzles `visual` | Ya usan `/api/media/pexels?q=` en partida (`pexelsQuery` en YAML). |
+
+Cada plantilla tiene **fallback distinto** (muelle, entrada, panel, faro) aunque Pexels no esté configurado; con key, la tarjeta sustituye la foto por stock acorde al tipo.
+
 ## Métricas de éxito UX
 
 - Usuario nuevo elige sala **sin leer README** (test moderado: 5 personas, < 30 s hasta “Empezar”).

@@ -7,6 +7,8 @@ type VisualCardProps = {
   meta?: string;
   active?: boolean;
   layout?: "stack" | "row";
+  /** Menos texto y foto más baja (plantillas, catálogo). */
+  variant?: "default" | "compact";
   className?: string;
   onClick?: () => void;
   type?: "button" | "article";
@@ -23,6 +25,7 @@ export function VisualCard(props: VisualCardProps) {
     meta,
     active,
     layout = "stack",
+    variant = "default",
     className = "",
     onClick,
     type = "button",
@@ -32,6 +35,7 @@ export function VisualCard(props: VisualCardProps) {
   const cardClass = [
     "room-card-v2",
     layout === "stack" ? "layout-stack" : "",
+    variant === "compact" ? "compact" : "",
     active ? "active" : "",
     className,
   ]
@@ -52,7 +56,11 @@ export function VisualCard(props: VisualCardProps) {
     <div className="room-card-copy">
       {eyebrow && <span className="card-eyebrow">{eyebrow}</span>}
       <strong>{title}</strong>
-      {description && <span className="room-tagline">{description}</span>}
+      {description && (
+        <span className={variant === "compact" ? "room-tagline room-tagline-compact" : "room-tagline"}>
+          {description}
+        </span>
+      )}
       {meta && <span className="meta card-meta">{meta}</span>}
     </div>
   );

@@ -5,10 +5,18 @@ type PexelsPhotoResponse = {
 };
 
 const FALLBACK_IMAGES: Record<string, string> = {
-  mystery: "/media/lighthouse-shore.jpg",
-  party: "/media/pilot-cover.jpg",
+  mystery: "/media/lighthouse-cover.jpg",
+  lighthouse: "/media/lighthouse-cover.jpg",
+  fog: "/media/lighthouse-dock.jpg",
+  party: "/media/lighthouse-dock.jpg",
+  birthday: "/media/pilot-entrance.jpg",
+  candles: "/media/pilot-entrance.jpg",
+  team: "/media/pilot-control.jpg",
+  competition: "/media/pilot-control.jpg",
+  celebration: "/media/lighthouse-dock.jpg",
+  friends: "/media/lighthouse-dock.jpg",
   lock: "/media/pilot-entrance.jpg",
-  default: "/media/pilot-control.jpg",
+  default: "/media/pilot-cover.jpg",
 };
 
 export function mountMediaRoutes(app: Hono): void {

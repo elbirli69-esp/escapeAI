@@ -42,7 +42,10 @@ export type AdventureTemplateInfo = {
   title: string;
   description: string;
   suggestedFacts: string[];
+  /** Portada local si Pexels no está configurado o falla. */
   coverImage?: string;
+  /** Búsqueda Pexels para portada temática (API en servidor). */
+  pexelsQuery?: string;
   theme?: "urban" | "coastal" | string;
   tagline?: string;
 };

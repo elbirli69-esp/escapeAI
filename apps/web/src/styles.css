@@ -556,6 +556,43 @@ button {
 
 .template-grid {
   margin-bottom: 0.35rem;
+  gap: 0.65rem;
+}
+
+.room-card-v2.compact.layout-stack .room-card-media {
+  aspect-ratio: 2.2 / 1;
+  max-height: 5.25rem;
+}
+
+.room-card-v2.compact.layout-stack .room-card-copy {
+  padding: 0.45rem 0.6rem 0.55rem;
+  gap: 0.12rem;
+}
+
+.room-card-v2.compact .room-card-copy strong {
+  font-size: 0.92rem;
+  line-height: 1.2;
+}
+
+.room-tagline-compact {
+  font-size: 0.72rem;
+  opacity: 0.72;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.room-card-v2.compact .card-meta {
+  font-size: 0.68rem;
+  margin-top: 0;
+  opacity: 0.6;
+}
+
+.lobby-hero .lede {
+  font-size: 0.92rem;
+  margin-bottom: 0.5rem;
 }
 
 .template-detail {
