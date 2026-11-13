@@ -32,6 +32,10 @@ El equipo **Rodrigo** puede tener **Deployment Protection** con SSO en `*.vercel
 
 ### Opción C2 — Sin dominio propio aún
 
+**Hecho en escapeai (2026-11):** Deployment Protection con SSO solo en **Preview**; Production en `escapeai-*.vercel.app` es pública.
+
+Si cambias de proyecto o equipo:
+
 1. **Project → Settings → Deployment Protection**
 2. En **Production**, desactiva *Vercel Authentication* / SSO **solo para este proyecto** (los previews pueden seguir protegidos).
 3. Confirma en ventana de incógnito: `https://escapeai-rodrigo-cv.vercel.app/` carga el selector de salas.
