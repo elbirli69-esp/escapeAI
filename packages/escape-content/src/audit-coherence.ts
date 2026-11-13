@@ -1,0 +1,449 @@
+import { readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import type { AdventureType, CreateEventRequest } from "@escapeai/shared";
+import { defaultEnvironmentConstraints } from "@escapeai/shared";
+import type { ScannedEnvironment } from "@escapeai/shared";
+import { applyAction, createSession, parseRoomDefinition, type RoomDefinition } from "@escapeai/escape-engine";
+import { generateAdventureRoom, listAdventureTemplates } from "./generate-adventure.js";
+import { ROOM_CATALOG, ROOM_FILES } from "./rooms.js";
+import { listLobbyHomeModes } from "./lobby-home-modes.js";
+import { buildSpatialRoom } from "./spatial/build-room.js";
+import { pickProposal, proposeSpatialAdventures } from "./spatial/generate-proposals.js";
+
+type Severity = "error" | "warning" | "ok";
+
+type Finding = {
+  severity: Severity;
+  mode: string;
+  check: string;
+  detail: string;
+};
+
+const rootDir = dirname(fileURLToPath(import.meta.url));
+const roomsDir = join(rootDir, "..", "rooms");
+const repoRoot = join(rootDir, "..", "..", "..");
+
+const SAMPLE_EVENT_ID = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
+
+const SAMPLE_EVENT: CreateEventRequest = {
+  adventureType: "birthday",
+  teamCount: 4,
+  subject: { name: "Ada Lovelace", age: 36, nickname: "Ada" },
+  facts: ["Nació en 1815", "Le gustan los puzzles"],
+};
+
+const sampleEnv: ScannedEnvironment = {
+  id: "env-audit-1",
+  name: "Salón demo",
+  environmentType: "living_room",
+  version: 1,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  constraints: defaultEnvironmentConstraints(),
+  objects: [
+    {
+      id: "o1",
+      category: "clock",
+      label: "Reloj",
+      quantity: 1,
+      confidence: 0.9,
+      confirmed: true,
+      interactable: true,
+      movable: false,
+      canHideClue: true,
+      restricted: false,
+    },
+    {
+      id: "o2",
+      category: "book",
+      label: "Atlas viajes",
+      quantity: 2,
+      confidence: 0.8,
+      confirmed: true,
+      interactable: true,
+      movable: false,
+      canHideClue: true,
+      restricted: false,
+    },
+    {
+      id: "o3",
+      category: "chair",
+      label: "Silla",
+      quantity: 4,
+      confidence: 0.7,
+      confirmed: true,
+      interactable: false,
+      movable: false,
+      canHideClue: false,
+      restricted: true,
+    },
+    {
+      id: "o4",
+      category: "plant",
+      label: "Ficus",
+      quantity: 1,
+      confidence: 0.85,
+      confirmed: true,
+      interactable: false,
+      movable: false,
+      canHideClue: true,
+      restricted: false,
+    },
+    {
+      id: "o5",
+      category: "painting",
+      label: "Cuadro",
+      quantity: 2,
+      confidence: 0.8,
+      confirmed: true,
+      interactable: false,
+      movable: false,
+      canHideClue: true,
+      restricted: false,
+    },
+  ],
+};
+
+function push(findings: Finding[], severity: Severity, mode: string, check: string, detail: string): void {
+  findings.push({ severity, mode, check, detail });
+}
+
+function loadCatalogRoom(fileName: string) {
+  return parseRoomDefinition(readFileSync(join(roomsDir, fileName), "utf8"));
+}
+
+function runGeneratedWinPath(room: RoomDefinition): { ok: boolean; step?: string } {
+  const session = createSession(room);
+  const p = room.puzzles;
+
+  const listen = applyAction(session, { type: "complete_interaction", puzzleId: "sound_intro", step: "listen" });
+  if (!listen.ok) return { ok: false, step: "sound_intro listen" };
+
+  if (!applyAction(session, { type: "submit_answer", puzzleId: "sound_intro", value: p.sound_intro!.answer! }).ok) {
+    return { ok: false, step: "sound_intro answer" };
+  }
+  if (!applyAction(session, { type: "submit_answer", puzzleId: "entry_lock", value: p.entry_lock!.answer! }).ok) {
+    return { ok: false, step: "entry_lock" };
+  }
+  if (!applyAction(session, { type: "move", sceneId: "middle" }).ok) return { ok: false, step: "move middle" };
+
+  applyAction(session, { type: "complete_interaction", puzzleId: "camera_hunt", step: "capture" });
+  if (!applyAction(session, { type: "submit_answer", puzzleId: "camera_hunt", value: p.camera_hunt!.answer! }).ok) {
+    return { ok: false, step: "camera_hunt" };
+  }
+  if (!applyAction(session, { type: "take_item", itemId: "token" }).ok) return { ok: false, step: "take token" };
+  if (
+    !applyAction(session, { type: "use_item", itemId: "token", puzzleId: "token_slot" }).ok
+  ) {
+    return { ok: false, step: "token_slot" };
+  }
+  if (!applyAction(session, { type: "move", sceneId: "finale" }).ok) return { ok: false, step: "move finale" };
+
+  applyAction(session, { type: "complete_interaction", puzzleId: "visual_gallery", step: "view" });
+  if (!applyAction(session, { type: "submit_answer", puzzleId: "visual_gallery", value: p.visual_gallery!.answer! }).ok) {
+    return { ok: false, step: "visual_gallery" };
+  }
+  const final = applyAction(session, {
+    type: "submit_answer",
+    puzzleId: "final_code",
+    value: p.final_code!.answer!,
+  });
+  if (!final.ok) return { ok: false, step: "final_code" };
+  if (final.state.status !== "won") return { ok: false, step: "won status" };
+  return { ok: true };
+}
+
+function coastalKeywords(text: string): boolean {
+  return /costa|orilla|faro|marea|niebla|mar|tormenta|olas/i.test(text);
+}
+
+export function auditCoherence(): Finding[] {
+  const findings: Finding[] = [];
+
+  // --- Catálogo ---
+  for (const entry of ROOM_CATALOG) {
+    const file = ROOM_FILES[entry.id];
+    const room = loadCatalogRoom(file);
+    const mode = `catalog:${entry.id}`;
+
+    if (room.theme && entry.theme && room.theme !== entry.theme) {
+      push(
+        findings,
+        "error",
+        mode,
+        "catalog-theme",
+        `ROOM_CATALOG.theme='${entry.theme}' ≠ room.theme='${room.theme}'`,
+      );
+    } else {
+      push(findings, "ok", mode, "catalog-theme", "theme alineado con catálogo");
+    }
+
+    if (entry.tagline && room.tagline && entry.tagline !== room.tagline) {
+      push(
+        findings,
+        "warning",
+        mode,
+        "tagline-drift",
+        "tagline del catálogo difiere del YAML (puede ser copy marketing distinto)",
+      );
+    }
+
+    const production = entry.id === "pilot" || entry.id === "lighthouse";
+    for (const puzzle of Object.values(room.puzzles)) {
+      const hints = puzzle.hints ?? [];
+      if (puzzle.answer && hints.length > 0) {
+        for (const h of hints) {
+          const ans = String(puzzle.answer);
+          const digits = h.text.match(/\b\d{2,8}\b/g) ?? [];
+          for (const d of digits) {
+            if (d === ans) continue;
+            if (ans.startsWith(d) || d.startsWith(ans)) continue;
+            if (/demo|orientativ|empieza por|primeros?/i.test(h.text)) continue;
+            if (h.level === 3 && (h.text.includes(ans) || /prueba|solución/i.test(h.text))) continue;
+            if (!/demo|prueba|orientativ/i.test(h.text)) {
+              const sev: Severity = production && h.level <= 2 ? "error" : "warning";
+              push(
+                findings,
+                sev,
+                mode,
+                "hint-vs-answer",
+                `'${puzzle.id}' pista ${h.level}: cifra '${d}' ≠ answer '${ans}'`,
+              );
+            }
+          }
+        }
+      }
+    }
+
+    if (entry.id === "lighthouse" && room.theme !== "coastal") {
+      push(findings, "error", mode, "theme-narrative", "faro sin theme coastal");
+    }
+    const start = room.scenes[room.startSceneId];
+    if (start && room.tagline && entry.id === "lighthouse") {
+      if (!coastalKeywords(start.description + start.mood)) {
+        push(findings, "warning", mode, "narrative-mood", "escena inicial poco costera vs promesa de faro");
+      } else {
+        push(findings, "ok", mode, "narrative-mood", "escena inicial coherente con faro");
+      }
+    }
+  }
+
+  // --- Eventos generados (4 tipos) ---
+  const types: AdventureType[] = ["celebration", "birthday", "mystery", "team"];
+  const bodiesByType: Record<string, string> = {};
+
+  for (const adventureType of types) {
+    const mode = `generated:${adventureType}`;
+    const input: CreateEventRequest = { ...SAMPLE_EVENT, adventureType };
+    const room = generateAdventureRoom(input, SAMPLE_EVENT_ID);
+    bodiesByType[adventureType] = Object.values(room.scenes)
+      .map((s) => s.description + s.mood)
+      .join(" ");
+
+    const soundAns = room.puzzles.sound_intro?.answer ?? "";
+    const lockAns = room.puzzles.entry_lock?.answer ?? "";
+    if (!lockAns.startsWith(soundAns) || soundAns.length < 2) {
+      push(
+        findings,
+        "error",
+        mode,
+        "sound-lock-chain",
+        `sound_intro '${soundAns}' no es prefijo de entry_lock '${lockAns}'`,
+      );
+    } else {
+      push(findings, "ok", mode, "sound-lock-chain", "cadena sonido → candado numérico");
+    }
+
+    if (adventureType === "mystery") {
+      if (room.theme !== "coastal") {
+        push(findings, "error", mode, "theme-type", `mystery debería theme=coastal, tiene '${room.theme}'`);
+      }
+      const body = bodiesByType[adventureType]!;
+      if (!coastalKeywords(body)) {
+        push(findings, "warning", mode, "tone-mystery", "textos de escena poco costeros/investigación");
+      } else {
+        push(findings, "ok", mode, "tone-mystery", "tono costero presente en copy");
+      }
+    }
+
+    if (adventureType === "team" && room.theme !== "urban") {
+      push(findings, "warning", mode, "theme-type", `team usa theme '${room.theme}' (esperado urban)`);
+    }
+
+    const nick = input.subject.nickname ?? "Ada";
+    const camAns = room.puzzles.camera_hunt?.answer ?? "";
+    const voiceAns = room.puzzles.voice_seal?.answer ?? "";
+    if (voiceAns && voiceAns !== nick.toLowerCase()) {
+      push(findings, "warning", mode, "voice-camera", `voice_seal '${voiceAns}' vs apodo '${nick}'`);
+    }
+    if (camAns && camAns !== nick.toUpperCase().replace(/[^A-ZÁÉÍÓÚÑ]/gi, "X").slice(0, 12)) {
+      push(findings, "warning", mode, "voice-camera", "camera_hunt no coincide con apodo normalizado");
+    } else if (camAns) {
+      push(findings, "ok", mode, "voice-camera", "cámara y voz enlazadas al apodo");
+    }
+
+    const path = runGeneratedWinPath(room);
+    if (!path.ok) {
+      push(findings, "error", mode, "win-path", `recorrido hasta victoria falló en: ${path.step}`);
+    } else {
+      push(findings, "ok", mode, "win-path", "recorrido completo hasta victoria");
+    }
+  }
+
+  const celBody = bodiesByType.celebration ?? "";
+  const bdayBody = bodiesByType.birthday ?? "";
+  if (celBody === bdayBody) {
+    push(findings, "warning", "generated", "type-differentiation", "celebration y birthday comparten el mismo cuerpo de escenas");
+  } else {
+    push(findings, "ok", "generated", "type-differentiation", "celebration ≠ birthday en copy");
+  }
+
+  // Plantillas API vs visuales
+  const templates = listAdventureTemplates();
+  for (const t of templates) {
+    if (t.id === "mystery" && t.theme !== "coastal") {
+      push(findings, "error", `template:${t.id}`, "list-adventures", "plantilla mystery sin theme coastal");
+    }
+  }
+
+  // --- Espacial ---
+  const proposals = proposeSpatialAdventures(sampleEnv);
+  for (const proposal of proposals) {
+    const mode = `spatial:${proposal.archetype}`;
+    const room = buildSpatialRoom(sampleEnv, proposal, SAMPLE_EVENT_ID);
+
+    if (!room.puzzles.spatial_finale?.answer) {
+      push(findings, "error", mode, "finale-missing", "sin respuesta en spatial_finale");
+      continue;
+    }
+
+    if (proposal.archetype === "temporal") {
+      const bridge = room.puzzles.spatial_bridge?.answer ?? "";
+      const finale = room.puzzles.spatial_finale?.answer ?? "";
+      if (bridge !== finale) {
+        push(
+          findings,
+          "warning",
+          mode,
+          "bridge-finale",
+          `temporal: bridge '${bridge}' y finale '${finale}' difieren (revisar copy «combinar»)`,
+        );
+      } else {
+        push(findings, "ok", mode, "bridge-finale", "bridge y finale alineados");
+      }
+    }
+
+    try {
+      createSession(room);
+      push(findings, "ok", mode, "session", "RoomDefinition instanciable");
+    } catch (e) {
+      push(findings, "error", mode, "session", (e as Error).message);
+    }
+  }
+
+  const temporal = pickProposal(sampleEnv, "spatial-temporal");
+  if (!temporal) {
+    push(findings, "error", "spatial", "proposals", "falta propuesta spatial-temporal");
+  }
+
+  // --- Lobby cross-check (heurístico) ---
+  const modes = listLobbyHomeModes();
+  const catalogMode = modes.find((m) => m.mode === "catalog");
+  if (catalogMode?.coverImage?.includes("lighthouse") && !/faro|costa/i.test(catalogMode.description)) {
+    push(findings, "warning", "lobby:catalog", "visual-copy", "portada costera con descripción solo YAML genérica");
+  }
+
+  return findings;
+}
+
+function formatReport(findings: Finding[]): string {
+  const errors = findings.filter((f) => f.severity === "error");
+  const warnings = findings.filter((f) => f.severity === "warning");
+  const oks = findings.filter((f) => f.severity === "ok");
+
+  const byMode = new Map<string, Finding[]>();
+  for (const f of findings) {
+    const list = byMode.get(f.mode) ?? [];
+    list.push(f);
+    byMode.set(f.mode, list);
+  }
+
+  const lines: string[] = [
+    `# Informe coherencia partidas — ${new Date().toISOString().slice(0, 10)}`,
+    "",
+    "## Resumen",
+    `- Errores: **${errors.length}**`,
+    `- Warnings: **${warnings.length}**`,
+    `- Comprobaciones OK: **${oks.length}**`,
+    "",
+  ];
+
+  if (errors.length > 0) {
+    lines.push("## Errores (acción requerida)", "");
+    for (const f of errors) {
+      lines.push(`- **${f.mode}** · ${f.check}: ${f.detail}`);
+    }
+    lines.push("");
+  }
+
+  if (warnings.length > 0) {
+    lines.push("## Warnings", "");
+    for (const f of warnings) {
+      lines.push(`- **${f.mode}** · ${f.check}: ${f.detail}`);
+    }
+    lines.push("");
+  }
+
+  lines.push("## Por modo (detalle)", "");
+  for (const [mode, list] of [...byMode.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+    lines.push(`### ${mode}`, "");
+    for (const f of list) {
+      const icon = f.severity === "ok" ? "✓" : f.severity === "warning" ? "⚠" : "✗";
+      lines.push(`- ${icon} ${f.check}: ${f.detail}`);
+    }
+    lines.push("");
+  }
+
+  lines.push("## Recomendaciones priorizadas", "");
+  const recs: string[] = [];
+  if (errors.some((e) => e.check === "hint-vs-answer")) {
+    recs.push("1. Corregir pistas YAML que citan códigos distintos al `answer` en salas de producción.");
+  }
+  if (warnings.some((w) => w.mode === "generated:mystery")) {
+    recs.push("2. Reforzar léxico costero en `toneForType('mystery')` si se quiere paridad narrativa con imágenes.");
+  }
+  if (warnings.some((w) => w.check === "tagline-drift")) {
+    recs.push("3. Unificar taglines entre `ROOM_CATALOG` y YAML o documentar divergencia marketing.");
+  }
+  if (warnings.some((w) => w.mode === "catalog:interactive-lab")) {
+    recs.push("4. En `interactive-lab`, aclarar en pistas que son demo (evitar cifras falsas sin el disclaimer).");
+  }
+  if (recs.length === 0) {
+    recs.push("1. Sin cambios bloqueantes; revisar warnings antes del próximo release.");
+  }
+  lines.push(...recs.map((r) => `- ${r}`));
+  lines.push("");
+
+  return lines.join("\n");
+}
+
+export function runAuditCoherenceCli(): void {
+  const findings = auditCoherence();
+  const report = formatReport(findings);
+  const outPath = join(repoRoot, "docs", "coherencia-partidas-informe.md");
+  writeFileSync(outPath, report, "utf8");
+
+  const errors = findings.filter((f) => f.severity === "error");
+  console.log(report);
+  console.log(`\nInforme escrito en ${outPath}`);
+
+  if (errors.length > 0) {
+    console.error(`\nAuditoría: ${errors.length} error(es).`);
+    process.exit(1);
+  }
+  console.log("\nAuditoría: sin errores bloqueantes.");
+}
+
+const isCli = process.argv[1]?.includes("audit-coherence");
+if (isCli) runAuditCoherenceCli();
