@@ -115,15 +115,19 @@ export function ExperienceLobby(props: {
   const queryClient = useQueryClient();
 
   const templatesQuery = useQuery({
-    queryKey: ["adventures"],
+    queryKey: ["adventures", "pexels-covers"],
     queryFn: fetchAdventureTemplates,
     enabled: mode === "create",
     staleTime: 15 * 60 * 1000,
+    refetchOnMount: "always",
   });
 
   useEffect(() => {
     if (mode === "home") {
-      void queryClient.prefetchQuery({ queryKey: ["adventures"], queryFn: fetchAdventureTemplates });
+      void queryClient.prefetchQuery({
+        queryKey: ["adventures", "pexels-covers"],
+        queryFn: fetchAdventureTemplates,
+      });
     }
   }, [mode, queryClient]);
 
