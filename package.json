@@ -8,6 +8,7 @@
     "test:e2e": "pnpm --filter @escapeai/e2e run e2e",
     "test:e2e:ui": "pnpm --filter @escapeai/e2e run e2e:ui",
     "validate-rooms": "pnpm --filter @escapeai/escape-content run validate-rooms",
+    "audit-coherence": "pnpm --filter @escapeai/escape-content run audit-coherence",
     "dev": "pnpm --parallel --filter @escapeai/api --filter @escapeai/web run dev",
     "dev:api": "pnpm --filter @escapeai/api run dev",
     "dev:web": "pnpm --filter @escapeai/web run dev",

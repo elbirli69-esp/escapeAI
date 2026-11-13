@@ -50,4 +50,5 @@ pnpm dev
 
 ```bash
 pnpm validate-rooms   # comprobar YAML antes de commit
+pnpm audit-coherence  # coherencia narrativa/mecánica entre tipos de partida (ver docs/prompt-coherencia-partidas.md)
 ```
