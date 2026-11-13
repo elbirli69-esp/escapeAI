@@ -86,6 +86,18 @@ export function staticInterventionText(
         meta: STATIC_META,
       };
     }
+    case "PACE_NUDGE": {
+      const mode = String(trigger.payload?.pacingMode ?? "behind");
+      const text =
+        mode === "critical"
+          ? "El reloj apremia: concentrad energía en el reto que tenéis delante antes de explorar más."
+          : "El director nota que el tiempo corre más rápido que los avances. Priorizad un puzzle abierto.";
+      return {
+        text,
+        kind: "notification",
+        meta: STATIC_META,
+      };
+    }
     case "TEAM_STUCK": {
       const label =
         session.room.puzzles[String(trigger.payload?.puzzleId ?? "")]?.label ?? "este reto";

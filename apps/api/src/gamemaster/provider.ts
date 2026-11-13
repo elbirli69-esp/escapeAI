@@ -55,6 +55,8 @@ export async function generateNarrationLlm(
       ? ` Responde en primera persona como ${context.activeCharacterDisplayName}. Usa solo character.knowledge. No cites forbiddenTopics ni soluciones numéricas. Máximo 3 frases.`
       : "";
 
+    const tempoRule = context.tempoDirective ? ` Directriz de ritmo: ${context.tempoDirective}` : "";
+
     const { text } = await generateText({
       model: client(llm.model),
       abortSignal: controller.signal,
@@ -67,6 +69,7 @@ export async function generateNarrationLlm(
         "Máximo 2 frases, tono inmersivo, sin markdown.",
         hintRule,
         characterRule,
+        tempoRule,
       ]
         .join(" ")
         .trim(),

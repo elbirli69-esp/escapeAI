@@ -2,6 +2,7 @@ import type { SessionRecord } from "@escapeai/escape-engine";
 import { toPublicState } from "@escapeai/escape-engine";
 import type { GmViewContext, NarrativeIntervention } from "@escapeai/shared";
 import { getAuthorizedHintText } from "./hints.js";
+import { computeGmPacing } from "./pacing.js";
 
 function humanizeId(id: string): string {
   return id.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
@@ -49,6 +50,8 @@ export function buildGmViewContext(
   if (playerCtx?.eventTitle) authorizedNarrativeFacts.push(`Evento: ${playerCtx.eventTitle}`);
   if (session.room.tagline) authorizedNarrativeFacts.push(session.room.tagline);
 
+  const pacing = computeGmPacing(session, nowMs);
+
   const view: GmViewContext = {
     sessionId: session.sessionId,
     teamId: playerCtx?.playerId,
@@ -69,6 +72,9 @@ export function buildGmViewContext(
     recentAuthorizedEvents,
     recentInterventions: recentInterventions.slice(-5).map((i) => i.text),
     authorizedNarrativeFacts,
+    pacingMode: pacing.mode,
+    progressRatio: Math.round(pacing.solvedRatio * 100) / 100,
+    tempoDirective: pacing.tempoDirective,
   };
   return view;
 }

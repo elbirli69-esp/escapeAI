@@ -67,7 +67,13 @@ export type GmViewContext = {
   activeCharacterKnowledge?: string[];
   activeCharacterForbiddenTopics?: string[];
   playerUtterance?: string;
+  /** GM-5: ritmo inferido (sin secretos). */
+  pacingMode?: GmPacingMode;
+  progressRatio?: number;
+  tempoDirective?: string;
 };
+
+export type GmPacingMode = "ahead" | "steady" | "behind" | "critical";
 
 export type GmTriggerType =
   | "SESSION_STARTED"
@@ -81,7 +87,8 @@ export type GmTriggerType =
   | "TIME_WARNING"
   | "TEAM_STUCK"
   | "HINT_GRANTED"
-  | "CHARACTER_TURN";
+  | "CHARACTER_TURN"
+  | "PACE_NUDGE";
 
 export type GmProcessTrigger = {
   type: GmTriggerType;

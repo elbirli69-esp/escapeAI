@@ -20,6 +20,7 @@ export const TRIGGER_POLICY: Record<string, TriggerMode> = {
   TEAM_STUCK: "static",
   HINT_GRANTED: "llm_optional",
   CHARACTER_TURN: "llm_optional",
+  PACE_NUDGE: "static",
 };
 
 export function collectTriggersFromGameplay(input: {

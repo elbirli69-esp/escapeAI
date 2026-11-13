@@ -19,6 +19,8 @@ export type GmSessionMeta = {
   stuckNotifiedPuzzleIds: string[];
   characterTurnCount: number;
   lastCharacterTurnMs: number;
+  /** Un aviso PACE_NUDGE por partida como máximo. */
+  paceNudgeIssued: boolean;
 };
 
 const defaultMeta = (): GmSessionMeta => ({
@@ -31,6 +33,7 @@ const defaultMeta = (): GmSessionMeta => ({
   stuckNotifiedPuzzleIds: [],
   characterTurnCount: 0,
   lastCharacterTurnMs: 0,
+  paceNudgeIssued: false,
 });
 
 export interface GmInterventionStore {

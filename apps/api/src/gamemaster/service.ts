@@ -11,6 +11,12 @@ import { buildGmViewContext, buildGmViewContextForHint, collectForbiddenAnswerTo
 import { staticInterventionText } from "./fallbacks.js";
 import { hintSpoilerLevel } from "./hints.js";
 import {
+  computeGmPacing,
+  detectPaceNudgeTrigger,
+  markPaceNudgeIssued,
+  resolveAdaptivePolicy,
+} from "./pacing.js";
+import {
   detectTeamStuckTrigger,
   markStuckNotified,
   updateProgressMeta,
@@ -64,10 +70,12 @@ export class GameMasterService {
     });
     const stuck = detectTeamStuckTrigger(input.session, meta);
     const stuckTriggers = stuck ? [stuck] : [];
+    const pace = detectPaceNudgeTrigger(input.session, meta);
+    const paceTriggers = pace ? [pace] : [];
     const recentEvents = input.events.map((e) => e.type);
     return this.processTriggers(
       input.session,
-      [...gameplayTriggers, ...timeTriggers, ...stuckTriggers],
+      [...gameplayTriggers, ...timeTriggers, ...stuckTriggers, ...paceTriggers],
       recentEvents,
     );
   }
@@ -77,8 +85,12 @@ export class GameMasterService {
     const timeTriggers = await checkTimeWarningTriggers(session, this.store);
     const stuck = detectTeamStuckTrigger(session, meta);
     const stuckTriggers = stuck ? [stuck] : [];
-    if (timeTriggers.length === 0 && stuckTriggers.length === 0) return [];
-    return this.processTriggers(session, [...timeTriggers, ...stuckTriggers], []);
+    const pace = detectPaceNudgeTrigger(session, meta);
+    const paceTriggers = pace ? [pace] : [];
+    if (timeTriggers.length === 0 && stuckTriggers.length === 0 && paceTriggers.length === 0) {
+      return [];
+    }
+    return this.processTriggers(session, [...timeTriggers, ...stuckTriggers, ...paceTriggers], []);
   }
 
   private async processTriggers(
@@ -92,13 +104,15 @@ export class GameMasterService {
     const existing = await this.store.list(session.sessionId);
     let meta = await this.store.loadMeta(session.sessionId);
     const forbidden = collectForbiddenAnswerTokens(session);
+    const pacing = computeGmPacing(session);
 
     for (const trigger of triggers) {
       if (trigger.type === "PUZZLE_FAILED" && TRIGGER_POLICY.PUZZLE_FAILED === "silent") {
         continue;
       }
 
-      const policy = TRIGGER_POLICY[trigger.type] ?? "static";
+      const basePolicy = TRIGGER_POLICY[trigger.type] ?? "static";
+      const policy = resolveAdaptivePolicy(trigger.type, basePolicy, pacing);
       if (policy === "silent") continue;
 
       const recent = [...existing, ...created];
@@ -131,6 +145,10 @@ export class GameMasterService {
       if (trigger.type === "CHARACTER_TURN") {
         meta.characterTurnCount += 1;
         meta.lastCharacterTurnMs = Date.now();
+        await this.store.saveMeta(session.sessionId, meta);
+      }
+      if (trigger.type === "PACE_NUDGE") {
+        meta = markPaceNudgeIssued(meta);
         await this.store.saveMeta(session.sessionId, meta);
       }
     }
@@ -266,7 +284,11 @@ export class GameMasterService {
         : undefined;
 
     let presentation: NarrativeIntervention["presentation"] =
-      trigger.type === "TIME_WARNING" || trigger.type === "TEAM_STUCK" ? "banner" : "inline";
+      trigger.type === "TIME_WARNING" ||
+      trigger.type === "TEAM_STUCK" ||
+      trigger.type === "PACE_NUDGE"
+        ? "banner"
+        : "inline";
     if (trigger.type === "CHARACTER_TURN" && characterId) {
       const profile = getRoomCharacter(session, characterId);
       if (characterUsesSpokenPresentation(profile)) {
