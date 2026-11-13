@@ -11,6 +11,7 @@ import {
   buildSessionView,
   createGmInterventionStore,
   GameMasterService,
+  getGmHealthSnapshot,
   snapshotExits,
   toOrchestratorShim,
 } from "./gamemaster/index.js";
@@ -59,7 +60,11 @@ export async function createApp(store?: SessionStore): Promise<Hono> {
       narrator: llm
         ? { configured: true, provider: llm.provider, model: llm.model }
         : { configured: false },
-      gameMaster: { enabled: true },
+      gameMaster: {
+        enabled: true,
+        llmConfigured: Boolean(llm),
+        runtime: getGmHealthSnapshot(),
+      },
     });
   });
 

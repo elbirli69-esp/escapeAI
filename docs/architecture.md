@@ -5,7 +5,7 @@
 1. **Motor determinista en servidor** — puzzles, inventario, escenas y victoria/derrota viven en `@escapeai/escape-engine`.
 2. **Contenido en datos** — salas en YAML (`@escapeai/escape-content`), no hardcodeadas en la UI.
 3. **Cliente ligero (PWA)** — Vite + React; muestra `PublicState` y envía acciones tipadas.
-4. **GameMasterAI** — `apps/api/src/gamemaster/` observa eventos del motor y emite `NarrativeIntervention` sin modificar el estado. Docs: [GM-1](./gamemaster-ai-gm1.md) … [GM-5](./gamemaster-ai-gm5.md).
+4. **GameMasterAI** — `apps/api/src/gamemaster/` observa eventos del motor y emite `NarrativeIntervention` sin modificar el estado. Resumen: [gamemaster-ai-summary.md](./gamemaster-ai-summary.md); fases: [GM-1](./gamemaster-ai-gm1.md) … [GM-5](./gamemaster-ai-gm5.md).
 
 ## Monorepo
 

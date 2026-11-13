@@ -30,6 +30,7 @@ import {
   TRIGGER_POLICY,
   type ExitSnapshot,
 } from "./triggers.js";
+import { recordGmIntervention, recordGmLlmAttempt } from "./metrics.js";
 import { validateIntervention } from "./validation.js";
 
 const MAX_LLM_PER_SESSION = Number(process.env.GM_MAX_LLM_CALLS ?? 40);
@@ -116,7 +117,7 @@ export class GameMasterService {
       if (policy === "silent") continue;
 
       const recent = [...existing, ...created];
-      let intervention = await this.renderIntervention(
+      const rendered = await this.renderIntervention(
         session,
         trigger,
         recent,
@@ -125,11 +126,13 @@ export class GameMasterService {
         forbidden,
         policy,
       );
-      if (!intervention) continue;
+      if (!rendered.intervention) continue;
 
+      let intervention = rendered.intervention;
       const seq = await this.store.bumpSequence(session.sessionId);
       intervention = { ...intervention, sequence: seq };
       await this.store.append(session.sessionId, intervention);
+      recordGmIntervention(trigger.type, intervention.meta, rendered.llmAttempted);
       created.push(intervention);
 
       if (trigger.type === "SCENE_ENTERED" && trigger.payload?.sceneId) {
@@ -164,7 +167,8 @@ export class GameMasterService {
     meta: Awaited<ReturnType<GmInterventionStore["loadMeta"]>>,
     forbidden: string[],
     policy: string,
-  ): Promise<NarrativeIntervention | null> {
+  ): Promise<{ intervention: NarrativeIntervention | null; llmAttempted: boolean }> {
+    let llmAttempted = false;
     const dedupe = `${trigger.type}:${
       trigger.payload?.puzzleId ??
       trigger.payload?.sceneId ??
@@ -173,7 +177,7 @@ export class GameMasterService {
       trigger.sourceEventId
     }`;
     if (recentInterventions.some((i) => i.meta.trigger === dedupe)) {
-      return null;
+      return { intervention: null, llmAttempted: false };
     }
 
     const staticPack = staticInterventionText(session, trigger);
@@ -230,8 +234,10 @@ export class GameMasterService {
                 recentAuthorizedEvents,
               );
       if (!ctx && (trigger.type === "HINT_GRANTED" || trigger.type === "CHARACTER_TURN")) {
-        return null;
+        return { intervention: null, llmAttempted: false };
       }
+      llmAttempted = true;
+      recordGmLlmAttempt();
       const llm = await generateNarrationLlmWithRetry(ctx!, trigger.type);
       if (llm.ok) {
         const v = validateIntervention({ text: llm.text, spoilerLevel, clueRefs }, forbidden);
@@ -297,19 +303,22 @@ export class GameMasterService {
     }
 
     return {
-      id: randomUUID(),
-      sessionId: session.sessionId,
-      teamId,
-      sourceEventId: trigger.sourceEventId,
-      kind: staticPack.kind,
-      characterId,
-      text,
-      spoilerLevel,
-      clueRefs,
-      presentation,
-      createdAt: Date.now(),
-      sequence: 0,
-      meta: metaOut,
+      intervention: {
+        id: randomUUID(),
+        sessionId: session.sessionId,
+        teamId,
+        sourceEventId: trigger.sourceEventId,
+        kind: staticPack.kind,
+        characterId,
+        text,
+        spoilerLevel,
+        clueRefs,
+        presentation,
+        createdAt: Date.now(),
+        sequence: 0,
+        meta: metaOut,
+      },
+      llmAttempted,
     };
   }
 }
