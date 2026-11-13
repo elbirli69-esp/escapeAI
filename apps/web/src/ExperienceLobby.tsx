@@ -5,7 +5,7 @@ import type {
   JoinEventResponse,
   PublicState,
 } from "@escapeai/shared";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { lazy, Suspense, useEffect, useState } from "react";
 import type { EventDurationMin } from "@escapeai/shared";
 import {
@@ -112,11 +112,20 @@ export function ExperienceLobby(props: {
     stripJoinParamFromUrl();
   }, []);
 
+  const queryClient = useQueryClient();
+
   const templatesQuery = useQuery({
     queryKey: ["adventures"],
     queryFn: fetchAdventureTemplates,
     enabled: mode === "create",
+    staleTime: 15 * 60 * 1000,
   });
+
+  useEffect(() => {
+    if (mode === "home") {
+      void queryClient.prefetchQuery({ queryKey: ["adventures"], queryFn: fetchAdventureTemplates });
+    }
+  }, [mode, queryClient]);
 
   const createMutation = useMutation({
     mutationFn: createCustomEvent,

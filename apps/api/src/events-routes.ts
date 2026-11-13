@@ -15,10 +15,28 @@ import {
 } from "./event-store.js";
 import type { SessionStore } from "./session-store.js";
 import { randomUUID } from "node:crypto";
+import { pexelsPageForAdventure, searchPexelsImage } from "./pexels-search.js";
 
 export function mountEventRoutes(app: Hono, eventStore: EventStore, _gm?: GameMasterService): void {
   void _gm;
-  app.get("/adventures", (c) => c.json({ templates: listAdventureTemplates() }));
+  app.get("/adventures", async (c) => {
+    const templates = listAdventureTemplates();
+    const enriched = await Promise.all(
+      templates.map(async (t) => {
+        if (!t.pexelsQuery) return t;
+        const { url, source } = await searchPexelsImage(
+          t.pexelsQuery,
+          pexelsPageForAdventure(t.id),
+        );
+        return {
+          ...t,
+          coverImage: url,
+          coverImageSource: source,
+        };
+      }),
+    );
+    return c.json({ templates: enriched });
+  });
 
   app.post("/events", async (c) => {
     const body = (await c.req.json<CreateEventRequest>().catch(() => null)) as CreateEventRequest | null;
