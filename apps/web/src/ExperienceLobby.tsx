@@ -17,6 +17,7 @@ import {
 } from "./api";
 import { EventJoinQr } from "./EventJoinQr";
 import { EventOrganizerBoard } from "./EventOrganizerBoard";
+import { AdventureTemplateCard } from "./AdventureTemplateCard";
 import { formatRoomDuration, VisualCard } from "./VisualCard";
 import { readJoinCodeFromLocation, stripJoinParamFromUrl } from "./lib/event-join-url";
 const ScannerFlow = lazy(() =>
@@ -257,14 +258,10 @@ export function ExperienceLobby(props: {
               <ul className="room-grid room-grid-visual template-grid">
                 {templates.map((t) => (
                   <li key={t.id}>
-                    <VisualCard
-                      title={t.title}
-                      description={t.tagline ?? t.description}
-                      imageSrc={t.coverImage}
-                      imageAlt={`Plantilla: ${t.title}`}
+                    <AdventureTemplateCard
+                      template={t}
                       active={adventureType === t.id}
-                      layout="stack"
-                      onClick={() => setAdventureType(t.id)}
+                      onSelect={() => setAdventureType(t.id)}
                     />
                   </li>
                 ))}
@@ -492,12 +489,9 @@ export function ExperienceLobby(props: {
       {props.roomsLoading && <p className="muted">Cargando salas…</p>}
       <ul className="room-grid room-grid-visual">
         {props.rooms.map((room) => {
-          const themeLabel =
-            room.theme === "coastal" ? "Costa · faro" : room.theme === "urban" ? "Urbano · noche" : "Aventura";
           const metaParts = [
             formatRoomDuration(room.timeLimitSec),
-            room.sceneCount != null ? `${room.sceneCount} escenas` : null,
-            themeLabel,
+            room.sceneCount != null ? `${room.sceneCount} esc.` : null,
           ].filter(Boolean);
           return (
             <li key={room.id}>
@@ -507,9 +501,9 @@ export function ExperienceLobby(props: {
                 imageSrc={room.coverImage}
                 imageAlt={`Portada: ${room.title}`}
                 meta={metaParts.join(" · ")}
-                eyebrow={room.summary !== (room.tagline ?? "") ? room.summary : undefined}
                 active={room.id === props.selectedRoomId}
                 layout="stack"
+                variant="compact"
                 data-testid={`escape-room-${room.id}`}
                 onClick={() => props.onSelectRoom(room.id)}
               />
