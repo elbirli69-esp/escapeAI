@@ -30,7 +30,7 @@ export function mountEventRoutes(app: Hono, eventStore: EventStore, _gm?: GameMa
         );
         return {
           ...t,
-          coverImage: url,
+          coverImage: source === "pexels" ? url : t.coverImage,
           coverImageSource: source,
         };
       }),
