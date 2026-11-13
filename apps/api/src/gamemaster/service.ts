@@ -11,6 +11,12 @@ import { buildGmViewContext, buildGmViewContextForHint, collectForbiddenAnswerTo
 import { staticInterventionText } from "./fallbacks.js";
 import { hintSpoilerLevel } from "./hints.js";
 import {
+  computeGmPacing,
+  detectPaceNudgeTrigger,
+  markPaceNudgeIssued,
+  resolveAdaptivePolicy,
+} from "./pacing.js";
+import {
   detectTeamStuckTrigger,
   markStuckNotified,
   updateProgressMeta,
@@ -24,6 +30,7 @@ import {
   TRIGGER_POLICY,
   type ExitSnapshot,
 } from "./triggers.js";
+import { recordGmIntervention, recordGmLlmAttempt } from "./metrics.js";
 import { validateIntervention } from "./validation.js";
 
 const MAX_LLM_PER_SESSION = Number(process.env.GM_MAX_LLM_CALLS ?? 40);
@@ -64,10 +71,12 @@ export class GameMasterService {
     });
     const stuck = detectTeamStuckTrigger(input.session, meta);
     const stuckTriggers = stuck ? [stuck] : [];
+    const pace = detectPaceNudgeTrigger(input.session, meta);
+    const paceTriggers = pace ? [pace] : [];
     const recentEvents = input.events.map((e) => e.type);
     return this.processTriggers(
       input.session,
-      [...gameplayTriggers, ...timeTriggers, ...stuckTriggers],
+      [...gameplayTriggers, ...timeTriggers, ...stuckTriggers, ...paceTriggers],
       recentEvents,
     );
   }
@@ -77,8 +86,12 @@ export class GameMasterService {
     const timeTriggers = await checkTimeWarningTriggers(session, this.store);
     const stuck = detectTeamStuckTrigger(session, meta);
     const stuckTriggers = stuck ? [stuck] : [];
-    if (timeTriggers.length === 0 && stuckTriggers.length === 0) return [];
-    return this.processTriggers(session, [...timeTriggers, ...stuckTriggers], []);
+    const pace = detectPaceNudgeTrigger(session, meta);
+    const paceTriggers = pace ? [pace] : [];
+    if (timeTriggers.length === 0 && stuckTriggers.length === 0 && paceTriggers.length === 0) {
+      return [];
+    }
+    return this.processTriggers(session, [...timeTriggers, ...stuckTriggers, ...paceTriggers], []);
   }
 
   private async processTriggers(
@@ -92,17 +105,19 @@ export class GameMasterService {
     const existing = await this.store.list(session.sessionId);
     let meta = await this.store.loadMeta(session.sessionId);
     const forbidden = collectForbiddenAnswerTokens(session);
+    const pacing = computeGmPacing(session);
 
     for (const trigger of triggers) {
       if (trigger.type === "PUZZLE_FAILED" && TRIGGER_POLICY.PUZZLE_FAILED === "silent") {
         continue;
       }
 
-      const policy = TRIGGER_POLICY[trigger.type] ?? "static";
+      const basePolicy = TRIGGER_POLICY[trigger.type] ?? "static";
+      const policy = resolveAdaptivePolicy(trigger.type, basePolicy, pacing);
       if (policy === "silent") continue;
 
       const recent = [...existing, ...created];
-      let intervention = await this.renderIntervention(
+      const rendered = await this.renderIntervention(
         session,
         trigger,
         recent,
@@ -111,11 +126,13 @@ export class GameMasterService {
         forbidden,
         policy,
       );
-      if (!intervention) continue;
+      if (!rendered.intervention) continue;
 
+      let intervention = rendered.intervention;
       const seq = await this.store.bumpSequence(session.sessionId);
       intervention = { ...intervention, sequence: seq };
       await this.store.append(session.sessionId, intervention);
+      recordGmIntervention(trigger.type, intervention.meta, rendered.llmAttempted);
       created.push(intervention);
 
       if (trigger.type === "SCENE_ENTERED" && trigger.payload?.sceneId) {
@@ -133,6 +150,10 @@ export class GameMasterService {
         meta.lastCharacterTurnMs = Date.now();
         await this.store.saveMeta(session.sessionId, meta);
       }
+      if (trigger.type === "PACE_NUDGE") {
+        meta = markPaceNudgeIssued(meta);
+        await this.store.saveMeta(session.sessionId, meta);
+      }
     }
 
     return created;
@@ -146,7 +167,8 @@ export class GameMasterService {
     meta: Awaited<ReturnType<GmInterventionStore["loadMeta"]>>,
     forbidden: string[],
     policy: string,
-  ): Promise<NarrativeIntervention | null> {
+  ): Promise<{ intervention: NarrativeIntervention | null; llmAttempted: boolean }> {
+    let llmAttempted = false;
     const dedupe = `${trigger.type}:${
       trigger.payload?.puzzleId ??
       trigger.payload?.sceneId ??
@@ -155,7 +177,7 @@ export class GameMasterService {
       trigger.sourceEventId
     }`;
     if (recentInterventions.some((i) => i.meta.trigger === dedupe)) {
-      return null;
+      return { intervention: null, llmAttempted: false };
     }
 
     const staticPack = staticInterventionText(session, trigger);
@@ -212,8 +234,10 @@ export class GameMasterService {
                 recentAuthorizedEvents,
               );
       if (!ctx && (trigger.type === "HINT_GRANTED" || trigger.type === "CHARACTER_TURN")) {
-        return null;
+        return { intervention: null, llmAttempted: false };
       }
+      llmAttempted = true;
+      recordGmLlmAttempt();
       const llm = await generateNarrationLlmWithRetry(ctx!, trigger.type);
       if (llm.ok) {
         const v = validateIntervention({ text: llm.text, spoilerLevel, clueRefs }, forbidden);
@@ -266,7 +290,11 @@ export class GameMasterService {
         : undefined;
 
     let presentation: NarrativeIntervention["presentation"] =
-      trigger.type === "TIME_WARNING" || trigger.type === "TEAM_STUCK" ? "banner" : "inline";
+      trigger.type === "TIME_WARNING" ||
+      trigger.type === "TEAM_STUCK" ||
+      trigger.type === "PACE_NUDGE"
+        ? "banner"
+        : "inline";
     if (trigger.type === "CHARACTER_TURN" && characterId) {
       const profile = getRoomCharacter(session, characterId);
       if (characterUsesSpokenPresentation(profile)) {
@@ -275,19 +303,22 @@ export class GameMasterService {
     }
 
     return {
-      id: randomUUID(),
-      sessionId: session.sessionId,
-      teamId,
-      sourceEventId: trigger.sourceEventId,
-      kind: staticPack.kind,
-      characterId,
-      text,
-      spoilerLevel,
-      clueRefs,
-      presentation,
-      createdAt: Date.now(),
-      sequence: 0,
-      meta: metaOut,
+      intervention: {
+        id: randomUUID(),
+        sessionId: session.sessionId,
+        teamId,
+        sourceEventId: trigger.sourceEventId,
+        kind: staticPack.kind,
+        characterId,
+        text,
+        spoilerLevel,
+        clueRefs,
+        presentation,
+        createdAt: Date.now(),
+        sequence: 0,
+        meta: metaOut,
+      },
+      llmAttempted,
     };
   }
 }

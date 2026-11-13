@@ -56,6 +56,8 @@ Igual que StorIAteller: **Settings → Domains** → tu dominio + `CORS_ORIGINS=
 
 ```text
 GET https://<tu-proyecto>.vercel.app/api/health
+
+Incluye `gameMaster.runtime` (contadores del proceso: intervenciones, intentos LLM, `fallbackRate`, desglose por trigger). Ver [gamemaster-ai-summary.md](./gamemaster-ai-summary.md).
 GET https://<tu-proyecto>.vercel.app/api/rooms
 ```
 

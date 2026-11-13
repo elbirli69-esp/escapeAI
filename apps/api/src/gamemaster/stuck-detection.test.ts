@@ -19,6 +19,7 @@ function metaBase(overrides: Partial<GmSessionMeta> = {}): GmSessionMeta {
     stuckNotifiedPuzzleIds: [],
     characterTurnCount: 0,
     lastCharacterTurnMs: 0,
+    paceNudgeIssued: false,
     ...overrides,
   };
 }

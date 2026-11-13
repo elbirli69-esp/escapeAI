@@ -6,3 +6,4 @@ export {
 } from "./persistence.js";
 export { buildGmViewContext, assertGmViewContextSafe, collectForbiddenAnswerTokens } from "./context.js";
 export { TRIGGER_POLICY } from "./triggers.js";
+export { getGmHealthSnapshot } from "./metrics.js";

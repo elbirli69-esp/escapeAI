@@ -257,6 +257,7 @@ export type AiContext = {
 
 export * from "./events.js";
 export type {
+  GmPacingMode,
   GmProcessTrigger,
   GmTriggerType,
   GmViewContext,
