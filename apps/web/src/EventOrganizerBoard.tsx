@@ -98,6 +98,11 @@ export function EventOrganizerBoard(props: { joinCode: string; onBack?: () => vo
           </div>
         </div>
       </div>
+      {board?.progressSummary && (
+        <p className="organizer-milestone" data-testid="escape-organizer-milestone">
+          {board.progressSummary}
+        </p>
+      )}
       {q.isError && <p className="error">No se pudo cargar el evento.</p>}
       {q.isLoading && <p className="muted">Actualizando equipos…</p>}
       <ol className="leaderboard-list leaderboard-projector" data-testid="escape-leaderboard-list">
@@ -119,6 +124,9 @@ export function EventOrganizerBoard(props: { joinCode: string; onBack?: () => vo
                   {statusLabel(t)}
                   {t.puzzlesSolved !== undefined && t.status === "playing"
                     ? ` · ${t.puzzlesSolved} retos`
+                    : ""}
+                  {t.status === "playing" && t.currentSceneTitle
+                    ? ` · ${t.currentSceneTitle}`
                     : ""}
                   {t.status === "won" && t.elapsedSec !== undefined
                     ? ` · ${Math.floor(t.elapsedSec / 60)}:${(t.elapsedSec % 60).toString().padStart(2, "0")}`

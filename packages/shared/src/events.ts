@@ -88,6 +88,15 @@ export type EventTeamPublic = {
   timeRemainingSec?: number;
   elapsedSec?: number;
   puzzlesSolved?: number;
+  currentSceneId?: string;
+  currentSceneTitle?: string;
+};
+
+export type EventSceneMilestone = {
+  sceneId: string;
+  sceneTitle: string;
+  sceneNumber: number;
+  teamsCount: number;
 };
 
 /** @deprecated Usar EventTeamPublic */
@@ -103,6 +112,9 @@ export type EventLeaderboard = {
   adventureType?: AdventureType;
   coverImage?: string;
   theme?: string;
+  /** Resumen para proyector: «3 equipos en escena 2 (…)». */
+  progressSummary?: string;
+  sceneMilestones?: EventSceneMilestone[];
   /** @deprecated */
   players?: EventTeamPublic[];
 };
