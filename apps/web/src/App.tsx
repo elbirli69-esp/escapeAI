@@ -15,6 +15,13 @@ import { SceneHero } from "./SceneHero";
 import { SpatialSitePlayMap } from "./SpatialSitePlayMap";
 import { useGmSpeech } from "./hooks/useGmSpeech";
 import { useRoomAmbience } from "./hooks/useRoomAmbience";
+import {
+  clearStoredSessionKeys,
+  markSessionActiveForAutoResume,
+  readStoredRoomId,
+  readStoredSessionId,
+  shouldAutoResumeSession,
+} from "./lib/session-persistence";
 
 function themeClass(theme?: string): string {
   return theme === "coastal" ? "theme-coastal" : "theme-urban";
@@ -123,9 +130,15 @@ function ItemCard(props: {
 }
 
 export function App() {
-  const [sessionId, setSessionId] = useState<string | null>(
-    () => localStorage.getItem("escapeai.sessionId"),
-  );
+  const [sessionId, setSessionId] = useState<string | null>(() => {
+    const stored = readStoredSessionId();
+    return stored && shouldAutoResumeSession() ? stored : null;
+  });
+  const [pendingResumeId, setPendingResumeId] = useState<string | null>(() => {
+    const stored = readStoredSessionId();
+    return stored && !shouldAutoResumeSession() ? stored : null;
+  });
+  const [pendingResumeRoomId] = useState<string | null>(() => readStoredRoomId());
   const [selectedRoomId, setSelectedRoomId] = useState("pilot");
   const [answer, setAnswer] = useState("");
   const [selectedPuzzle, setSelectedPuzzle] = useState<string | null>(null);
@@ -156,6 +169,10 @@ export function App() {
     staleTime: 15 * 60 * 1000,
   });
 
+  useEffect(() => {
+    if (sessionId) markSessionActiveForAutoResume();
+  }, [sessionId]);
+
   const startGame = useMutation({
     mutationFn: (roomId: string) => createSession(roomId),
     onSuccess: (data, roomId) => {
@@ -181,13 +198,24 @@ export function App() {
   });
 
   function clearSessionAndReturnHome() {
-    localStorage.removeItem("escapeai.sessionId");
-    localStorage.removeItem("escapeai.roomId");
-    localStorage.removeItem("escapeai.eventCode");
-    localStorage.removeItem("escapeai.teamId");
+    clearStoredSessionKeys();
     setSessionId(null);
+    setPendingResumeId(null);
     setActionError(null);
     queryClient.removeQueries({ queryKey: ["state"] });
+  }
+
+  function continuePendingSession() {
+    if (!pendingResumeId) return;
+    setSessionId(pendingResumeId);
+    setPendingResumeId(null);
+    markSessionActiveForAutoResume();
+  }
+
+  function abandonPendingSession() {
+    clearStoredSessionKeys();
+    setPendingResumeId(null);
+    setActionError(null);
   }
 
   const actionMutation = useMutation({
@@ -238,9 +266,14 @@ export function App() {
             : null
         }
         onClassicStart={() => startGame.mutate(selectedRoomId)}
+        pendingResume={Boolean(pendingResumeId)}
+        pendingResumeRoomId={pendingResumeRoomId}
+        onContinuePendingSession={continuePendingSession}
+        onAbandonPendingSession={abandonPendingSession}
         onEventSession={(id, initial) => {
           localStorage.setItem("escapeai.sessionId", id);
           setSessionId(id);
+          setPendingResumeId(null);
           setActionError(null);
           if (initial) {
             queryClient.setQueryData<SessionCache>(["state", id], initial);
@@ -295,9 +328,9 @@ export function App() {
       onDismissError={() => setActionError(null)}
       gmInterventions={gmInterventions}
       onNewGame={() => {
-        localStorage.removeItem("escapeai.sessionId");
-        localStorage.removeItem("escapeai.roomId");
+        clearStoredSessionKeys();
         setSessionId(null);
+        setPendingResumeId(null);
         setSelectedPuzzle(null);
         setActionError(null);
       }}

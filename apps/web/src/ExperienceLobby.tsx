@@ -90,6 +90,10 @@ export function ExperienceLobby(props: {
     sessionId: string,
     initial?: { state: PublicState; gmInterventions: import("@escapeai/shared").NarrativeIntervention[] },
   ) => void;
+  pendingResume?: boolean;
+  pendingResumeRoomId?: string | null;
+  onContinuePendingSession?: () => void;
+  onAbandonPendingSession?: () => void;
 }) {
   const [mode, setMode] = useState<LobbyMode>("home");
   const [adventureType, setAdventureType] = useState<AdventureType>("celebration");
@@ -184,6 +188,37 @@ export function ExperienceLobby(props: {
             proyecta el ranking.
           </p>
         </header>
+        {props.pendingResume && (
+          <section
+            className="panel glass resume-banner"
+            role="region"
+            aria-label="Partida guardada"
+            data-testid="escape-resume-banner"
+          >
+            <p className="resume-banner-text">
+              Tienes una partida en curso
+              {props.pendingResumeRoomId ? ` (${props.pendingResumeRoomId})` : ""}. ¿Qué quieres hacer?
+            </p>
+            <div className="row wrap resume-banner-actions">
+              <button
+                type="button"
+                className="primary"
+                data-testid="escape-resume-continue"
+                onClick={props.onContinuePendingSession}
+              >
+                Continuar partida
+              </button>
+              <button
+                type="button"
+                className="ghost"
+                data-testid="escape-resume-abandon"
+                onClick={props.onAbandonPendingSession}
+              >
+                Empezar de nuevo
+              </button>
+            </div>
+          </section>
+        )}
         <div className="mode-grid mode-grid-visual">
           {HOME_MODES.map((card) => (
             <VisualCard
