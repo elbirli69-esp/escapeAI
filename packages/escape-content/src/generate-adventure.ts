@@ -206,7 +206,7 @@ export function generateAdventureRoom(
         title: introTone.scene3Title,
         image: imgs.scenes[2],
         mood: introTone.mood3,
-        description: introTone.scene3Body,
+        description: introTone.finaleSceneBody,
         puzzles: ["visual_gallery", "final_code", "voice_seal"],
         exits: [],
       },
@@ -277,6 +277,10 @@ export function generateAdventureRoom(
         type: "visual",
         label: "Galería enigma",
         prompt: `Mira la imagen. ¿Cuántas letras tiene el apodo «${nickname}»? (número)`,
+        interactionHints: [
+          "Paso 1 del cierre: anota el número; conecta con las iniciales de quien da nombre al evento.",
+          "El código de cuatro letras (siguiente prueba) no usa este número directamente, pero confirma el apodo.",
+        ],
         pexelsQuery:
           input.adventureType === "mystery"
             ? "fog lighthouse night"
@@ -294,7 +298,11 @@ export function generateAdventureRoom(
         id: "final_code",
         type: "code",
         label: "Código final",
-        prompt: introTone.finalPrompt,
+        prompt: `${introTone.finalPrompt} Resuelve esto para ganar la partida.`,
+        interactionHints: [
+          "Paso 2 del cierre: las cuatro letras salen del nombre central del evento (iniciales y cierres).",
+          `Tras el visual, el candado oficial es este; no hace falta el sello de voz para victoria.`,
+        ],
         answer: codes.letterCode,
         normalize: "uppercase",
         maxHints: 3,
@@ -307,12 +315,12 @@ export function generateAdventureRoom(
       voice_seal: {
         id: "voice_seal",
         type: "voice",
-        label: "Sello vocal",
+        label: "Sello vocal (extra)",
         interactionHints: [
+          "Opcional: no desbloquea la victoria; úsalo para cerrar el momento con el grupo.",
           "Repite el apodo que ya usaste en la prueba de cámara.",
-          "El código de cuatro letras del mismo acto viene de las iniciales del nombre central.",
         ],
-        prompt: `Di en voz alta el apodo «${nickname}» para sellar la victoria (opcional antes del código final).`,
+        prompt: `Opcional: di el apodo «${nickname}» en voz alta para celebrar (la victoria oficial es el código de letras).`,
         answer: nickname.toLowerCase(),
         normalize: "lowercase",
         voiceMatchMode: "fuzzy",
@@ -413,6 +421,8 @@ function toneForType(type: AdventureType, name: string, nickname: string) {
         scene3Title: "Cierre",
         scene3Body: `La salida pide el código vinculado al nombre central «${name}».`,
         mood3: "Últimos minutos: el grupo compite en paralelo.",
+        finaleSceneBody:
+          "Primero la imagen, después el código de letras para celebrar la salida. El sello de voz es opcional para brindar.",
       };
     case "birthday":
       return {
@@ -427,34 +437,40 @@ function toneForType(type: AdventureType, name: string, nickname: string) {
         scene3Title: "Gran final",
         scene3Body: `El último código honra a ${nickname}.`,
         mood3: "Aplauso contenido antes de la salida.",
+        finaleSceneBody:
+          "Cierra el homenaje con el enigma visual y el código de letras dedicado a quien da nombre al evento. La voz es un detalle emotivo extra.",
       };
     case "mystery":
       return {
         ...shared,
-        tagline: `Investiga, conecta datos y sal antes de que expire el plazo.`,
-        scene1Title: "Orilla",
-        scene1Body: `Un dossier con el nombre ${name} marca el inicio. La primera cerradura guarda una fecha del informe.`,
+        tagline: `Caso vinculado a ${name}: fechas, pruebas y un cierre antes de que venza el plazo.`,
+        scene1Title: "Archivo confidencial",
+        scene1Body: `Expediente «${name}»: un audio distorsionado y un candado numérico sellan la primera pista del informe.`,
         mood1: "Niebla, faro lejano, pasos en la arena.",
-        scene2Title: "Torre",
-        scene2Body: "Una evidencia material debe colocarse en el mecanismo del ascensor improvisado.",
+        scene2Title: "Sala de evidencias",
+        scene2Body: `Fotografiáis el entorno y colocáis el recuerdo de ${nickname} en el mecanismo que une los datos del dossier.`,
         mood2: "Viento salado y tablones crujiendo.",
-        scene3Title: "Linterna",
-        scene3Body: "El culpable no importa ahora: importa el código que abre la salida.",
+        scene3Title: "Veredicto provisional",
+        scene3Body: "El misterio se cierra con letras, no con sospechosos: el enigma visual precede al candado final.",
         mood3: "Luz intermitente, olas contra la roca.",
+        finaleSceneBody:
+          "Acto final del caso: primero el enigma visual, luego el código de cuatro letras que firma la salida. El sello de voz es un broche opcional.",
       };
     case "team":
       return {
         ...shared,
-        tagline: `Reto «${name}»: competid en paralelo con la misma sala.`,
-        scene1Title: "Briefing",
-        scene1Body: `El organizador fijó los datos; el candado numérico sale de ahí.`,
+        tagline: `Carrera «${name}»: mismos puzzles, distintos tiempos en cada móvil.`,
+        scene1Title: "Pistola de salida",
+        scene1Body: `Briefing exprés: el audio y el candado numérico salen de los datos que fijó el organizador de «${name}».`,
         mood1: "Energía de equipo y pizarras llenas de garabatos.",
-        scene2Title: "Taller",
-        scene2Body: "Recoge el token del equipo y actívalo en la consola central.",
+        scene2Title: "Zona de pruebas",
+        scene2Body: `Token de equipo, foto en el sitio y ritmo alto: cada segundo cuenta en el ranking.`,
         mood2: "Risas nerviosas y LEDs parpadeando.",
-        scene3Title: "Meta",
-        scene3Body: "Quien descifre las cuatro letras finales desbloquea la victoria oficial.",
+        scene3Title: "Podio técnico",
+        scene3Body: "Último sprint: enigma visual y código de letras; quien envíe primero gana la ronda.",
         mood3: "Cuenta atrás audible en cada móvil.",
+        finaleSceneBody:
+          "Meta del reto: resuelve el visual y el código de letras para registrar victoria. El micrófono es extra para el podio, no obligatorio.",
       };
     default:
       return {
@@ -469,6 +485,8 @@ function toneForType(type: AdventureType, name: string, nickname: string) {
         scene3Title: "Meta",
         scene3Body: "Código final ligado al nombre central.",
         mood3: "Último empujón.",
+        finaleSceneBody:
+          "Enigma visual, luego código de letras para victoria; el sello vocal no es obligatorio.",
       };
   }
 }

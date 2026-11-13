@@ -184,11 +184,11 @@ Arquitectura: `apps/api/src/flavor/` + tests de validación.
 
 ### P0 — Quick wins (solo contenido + copy + GM estático)
 
-- [ ] Finale evento generado: orden y copy de puzzles opcionales.
-- [ ] Arcos de texto diferenciados mystery vs team en `toneForType` + títulos de escena distintos (no solo párrafos).
-- [ ] Payoff de victoria en API fallback GM (`GAME_WON` nombra subject + lugar del evento).
-- [ ] Site: prompts de pasaje citan etiquetas de `links` y objetos escaneados.
-- [ ] Ejecutar `pnpm audit-coherence` en CI (job opcional).
+- [x] Finale evento generado: orden y copy de puzzles opcionales.
+- [x] Arcos de texto diferenciados mystery vs team en `toneForType` + títulos de escena distintos (no solo párrafos).
+- [x] Payoff de victoria en API fallback GM (`GAME_WON` nombra subject + lugar del evento).
+- [x] Site: prompts de pasaje citan etiquetas de `links` y objetos escaneados.
+- [x] Ejecutar `pnpm audit-coherence` en CI (job opcional).
 
 ### P1 — Motor + GM context
 

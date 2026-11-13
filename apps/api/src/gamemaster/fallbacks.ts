@@ -64,14 +64,37 @@ export function staticInterventionText(
         meta: STATIC_META,
       };
     }
-    case "GAME_WON":
+    case "GAME_WON": {
+      const ctx = session.playerContext;
+      const eventLabel = ctx?.eventTitle ?? name;
+      const tag = session.room.tagline?.trim();
+      const teamPrefix = team ? `${team} — ` : "";
+      let payoff: string;
+      switch (ctx?.adventureType) {
+        case "birthday":
+          payoff = `El homenaje a «${eventLabel}» tiene cierre en esta sala.`;
+          break;
+        case "celebration":
+          payoff = `La celebración «${eventLabel}» puede brindar: misión completada.`;
+          break;
+        case "mystery":
+          payoff = `El informe sobre «${eventLabel}» puede archivarse. Conectaste datos, pruebas y salida.`;
+          break;
+        case "team":
+          payoff = `Reto «${eventLabel}» registrado. Comparad tiempos en el ranking del organizador.`;
+          break;
+        default:
+          payoff = team
+            ? `«${eventLabel}» queda resuelto para vuestro equipo.`
+            : `«${eventLabel}» queda resuelto.`;
+      }
+      const tagSuffix = tag ? ` ${tag}` : "";
       return {
-        text: team
-          ? `¡Victoria, ${team}! «${name}» cede ante vuestra deducción. Repasad el diario: lo vivido es real.`
-          : `¡Victoria! El misterio queda resuelto.`,
+        text: `¡Victoria! ${teamPrefix}${payoff}${tagSuffix}`,
         kind: "narration",
         meta: STATIC_META,
       };
+    }
     case "GAME_LOST":
       return {
         text: `El tiempo se agotó sobre «${name}». El enigma queda para otro intento.`,
