@@ -6,6 +6,7 @@ import { applyAction, toPublicState } from "@escapeai/escape-engine";
 import type { SessionStore } from "./session-store.js";
 import type { EventStore } from "./event-store.js";
 import { syncPlayerStatusFromSession } from "./events-routes.js";
+import { onPuzzleSolvedForTeamVariable, refreshSessionTeamProgress } from "./team-variable.js";
 
 const GM_RESPONSE_BUDGET_MS = Number(process.env.GM_RESPONSE_BUDGET_MS ?? 3500);
 
@@ -21,6 +22,13 @@ export async function runGameplayAction(deps: {
   const beforeExits = snapshotExits(session);
   const result = applyAction(session, action);
 
+  await sessionStore.set(session);
+  for (const ev of result.events) {
+    if (ev.type === "puzzle_solved") {
+      await onPuzzleSolvedForTeamVariable({ eventStore, session, puzzleId: ev.puzzleId });
+    }
+  }
+  await refreshSessionTeamProgress(eventStore, session);
   await sessionStore.set(session);
   await syncPlayerStatusFromSession(eventStore, session);
 

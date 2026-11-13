@@ -35,6 +35,27 @@ export type CreateEventRequest = {
   eventTitle?: string;
   /** Duración orientativa de la partida. */
   durationMin?: EventDurationMin;
+  /**
+   * Progreso comunitario opcional (candado compartido entre equipos).
+   * `false` desactiva incluso en modos team/celebration.
+   */
+  teamVariable?:
+    | false
+    | {
+        enabled?: boolean;
+        label?: string;
+        goal?: number;
+        puzzleId?: string;
+      };
+  /** Semilla fijada al crear evento (variante espacial reproducible). */
+  playSeed?: string;
+};
+
+export type EventTeamVariablePublic = {
+  label: string;
+  goal: number;
+  value: number;
+  puzzleId: string;
 };
 
 export type AdventureTemplateInfo = {
@@ -115,6 +136,7 @@ export type EventLeaderboard = {
   /** Resumen para proyector: «3 equipos en escena 2 (…)». */
   progressSummary?: string;
   sceneMilestones?: EventSceneMilestone[];
+  teamVariable?: EventTeamVariablePublic;
   /** @deprecated */
   players?: EventTeamPublic[];
 };

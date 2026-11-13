@@ -25,6 +25,14 @@ export type StoredTeam = {
   currentSceneTitle?: string;
 };
 
+export type StoredTeamVariable = {
+  label: string;
+  goal: number;
+  puzzleId: string;
+  value: number;
+  contributedTeamIds: string[];
+};
+
 export type StoredEvent = {
   eventId: string;
   joinCode: string;
@@ -33,6 +41,7 @@ export type StoredEvent = {
   title: string;
   room: RoomDefinition;
   teams: Record<string, StoredTeam>;
+  teamVariable?: StoredTeamVariable;
   /** @deprecated Lectura legacy */
   players?: Record<string, StoredTeam & { playerId?: string; displayName?: string }>;
 };

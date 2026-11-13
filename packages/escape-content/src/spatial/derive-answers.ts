@@ -9,8 +9,13 @@ function stableHash(input: string): number {
   return h >>> 0;
 }
 
-export function deriveClockDigits(env: ScannedEnvironment, proposalId: string): string {
-  const n = stableHash(`${env.id}:${proposalId}:clock`) % 12;
+export function deriveClockDigits(
+  env: ScannedEnvironment,
+  proposalId: string,
+  playSeed?: string,
+): string {
+  const salt = playSeed ? `:${playSeed}` : "";
+  const n = stableHash(`${env.id}:${proposalId}:clock${salt}`) % 12;
   const hour = n + 10;
   return String(hour);
 }
@@ -36,13 +41,19 @@ export function derivePlantKeyword(env: ScannedEnvironment): string {
   return (plant?.label ?? "PLANTA").toUpperCase().replace(/[^A-ZÁÉÍÓÚÑ ]/gi, "").trim().split(/\s+/)[0] ?? "PLANTA";
 }
 
-export function deriveOcrDigit(env: ScannedEnvironment, proposalId: string): string {
-  return String((stableHash(`${env.id}:${proposalId}:ocr`) % 9) + 1);
+export function deriveOcrDigit(env: ScannedEnvironment, proposalId: string, playSeed?: string): string {
+  const salt = playSeed ? `:${playSeed}` : "";
+  return String((stableHash(`${env.id}:${proposalId}:ocr${salt}`) % 9) + 1);
 }
 
-export function deriveColorSequence(env: ScannedEnvironment, proposalId: string): string {
+export function deriveColorSequence(
+  env: ScannedEnvironment,
+  proposalId: string,
+  playSeed?: string,
+): string {
+  const salt = playSeed ? `:${playSeed}` : "";
   const palettes = ["314", "132", "231"];
-  return palettes[stableHash(`${env.id}:${proposalId}:color`) % palettes.length]!;
+  return palettes[stableHash(`${env.id}:${proposalId}:color${salt}`) % palettes.length]!;
 }
 
 export function deriveQrAnswer(proposalId: string): string {

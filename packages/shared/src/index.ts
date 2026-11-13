@@ -197,6 +197,8 @@ export type PublicState = {
   spatialRoomLabel?: string;
   /** Notas jugables (clue ledger) anotadas al resolver puzzles. */
   clueNotes?: Array<{ id: string; text: string }>;
+  /** Progreso comunitario del evento (solo partidas multiequipo). */
+  teamProgress?: { label: string; value: number; goal: number };
   /** Personajes con los que se puede hablar en la escena actual. */
   sceneCharacters?: PublicCharacter[];
 };

@@ -30,6 +30,7 @@ export function buildSpatialSiteRoom(
   rooms: ScannedEnvironment[],
   proposal: SpatialAdventureProposal,
   eventId: string,
+  playSeed?: string,
 ): RoomDefinition {
   const ordered = site.roomIds
     .map((id) => rooms.find((r) => r.id === id))
@@ -218,7 +219,7 @@ export function buildSpatialSiteRoom(
     exits: [],
   };
 
-  const clockHour = deriveClockDigits(ordered[0]!, proposal.id);
+  const clockHour = deriveClockDigits(ordered[0]!, proposal.id, playSeed);
   const bookWord = deriveBookKeyword(ordered[1] ?? ordered[0]!);
   const chairCount = deriveCountAnswer(ordered[0]!, "chair");
   const outdoorEnv =

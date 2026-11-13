@@ -1,7 +1,8 @@
 export type Condition =
   | { type: "puzzle_solved"; puzzleId: string }
   | { type: "has_item"; itemId: string }
-  | { type: "has_clue"; clueId: string };
+  | { type: "has_clue"; clueId: string }
+  | { type: "team_progress_gte"; min: number };
 
 export type PuzzleType =
   | "code"

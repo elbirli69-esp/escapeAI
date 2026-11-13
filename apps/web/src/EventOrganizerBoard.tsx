@@ -103,6 +103,11 @@ export function EventOrganizerBoard(props: { joinCode: string; onBack?: () => vo
           {board.progressSummary}
         </p>
       )}
+      {board?.teamVariable && (
+        <p className="organizer-team-variable" data-testid="escape-organizer-team-variable">
+          {board.teamVariable.label}: {board.teamVariable.value}/{board.teamVariable.goal}
+        </p>
+      )}
       {q.isError && <p className="error">No se pudo cargar el evento.</p>}
       {q.isLoading && <p className="muted">Actualizando equipos…</p>}
       <ol className="leaderboard-list leaderboard-projector" data-testid="escape-leaderboard-list">

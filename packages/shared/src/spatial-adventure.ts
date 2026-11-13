@@ -70,6 +70,8 @@ export type CreateSpatialEventRequest = {
   durationMin?: 30 | 45 | 60;
   eventTitle?: string;
   subject?: { name: string; nickname?: string };
+  teamVariable?: import("./events.js").CreateEventRequest["teamVariable"];
+  playSeed?: string;
 };
 
 export type SiteProposalsResponse = {
