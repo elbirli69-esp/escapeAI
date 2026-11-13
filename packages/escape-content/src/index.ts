@@ -7,6 +7,11 @@ import { ROOM_CATALOG, ROOM_FILES, type RoomId } from "./rooms.js";
 const roomsDir = join(dirname(fileURLToPath(import.meta.url)), "rooms");
 
 export { ROOM_CATALOG, ROOM_FILES, type RoomId };
+export {
+  listLobbyHomeModes,
+  type LobbyHomeModeId,
+  type LobbyHomeModeInfo,
+} from "./lobby-home-modes.js";
 
 export function getPilotRoom(): RoomDefinition {
   return loadRoomById("pilot");

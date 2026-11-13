@@ -29,9 +29,19 @@ export type RoomSummary = {
   summary: string;
   tagline?: string;
   coverImage?: string;
+  coverImageSource?: "pexels" | "fallback";
   theme?: string;
   sceneCount?: number;
   timeLimitSec: number;
+};
+
+export type LobbyHomeCard = {
+  mode: "scan" | "create" | "join" | "organizer" | "catalog";
+  title: string;
+  description: string;
+  imageAlt: string;
+  image: string;
+  coverImageSource?: "pexels" | "fallback";
 };
 
 export async function fetchRooms(): Promise<RoomSummary[]> {
@@ -39,6 +49,13 @@ export async function fetchRooms(): Promise<RoomSummary[]> {
   if (!res.ok) throw new Error("No se pudo cargar el catálogo");
   const data = await res.json();
   return data.rooms as RoomSummary[];
+}
+
+export async function fetchLobbyHomeCards(): Promise<LobbyHomeCard[]> {
+  const res = await fetch(`${base}/lobby/home`);
+  if (!res.ok) throw new Error("No se pudieron cargar las tarjetas del inicio");
+  const data = await res.json();
+  return data.cards as LobbyHomeCard[];
 }
 
 export async function createSession(roomId = "pilot"): Promise<{
