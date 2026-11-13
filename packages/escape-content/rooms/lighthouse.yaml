@@ -22,7 +22,7 @@ scenes:
     description: >
       Las olas golpean los pilotes como tambores. En el poste de marea una placa
       oxidadíssima advierte: «Solo con la marea alta se abre el almacén».
-      La aguja indica HIGH.
+      La aguja trepa al tramo marcado en inglés en el borde superior de la escala.
     puzzles: [tide_lock]
     exits:
       - toSceneId: supply

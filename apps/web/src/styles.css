@@ -560,8 +560,8 @@ button {
 }
 
 .room-card-v2.compact.layout-stack .room-card-media {
-  aspect-ratio: 2.2 / 1;
-  max-height: 5.25rem;
+  aspect-ratio: 16 / 10;
+  max-height: none;
 }
 
 .room-card-v2.compact.layout-stack .room-card-copy {
@@ -576,10 +576,11 @@ button {
 
 .room-tagline-compact {
   font-size: 0.72rem;
-  opacity: 0.72;
-  line-height: 1.25;
+  opacity: 0.82;
+  line-height: 1.3;
   display: -webkit-box;
-  -webkit-line-clamp: 1;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -866,6 +867,19 @@ button {
 
 .meta-inline {
   font-weight: 400;
+}
+
+.resume-banner {
+  margin-bottom: 1rem;
+}
+
+.resume-banner-text {
+  margin: 0 0 0.65rem;
+  line-height: 1.45;
+}
+
+.resume-banner-actions {
+  gap: 0.5rem;
 }
 
 .mode-grid {
