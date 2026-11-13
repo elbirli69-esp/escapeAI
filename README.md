@@ -44,6 +44,7 @@ pnpm dev
 - [GameMasterAI — GM-1](./docs/gamemaster-ai-gm1.md)
 - [Plan UX/UI visual por tema](./docs/prompt-ux-ui-temas-visuales.md)
 - [Sensory escape room v3 (pistas hiladas)](./docs/prompt-sensory-escape-room-v3.md)
+- [Entretenimiento ER (narrativa, ritmo, arquitectura)](./docs/prompt-entretenimiento-er.md)
 - [Diseñar salas (YAML)](./docs/authoring-rooms.md)
 - [Despliegue en Vercel](./docs/deploy-vercel.md)
 - [Checklist lanzamiento público](./docs/public-launch-checklist.md)
