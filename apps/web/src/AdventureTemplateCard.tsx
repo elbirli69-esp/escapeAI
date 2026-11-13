@@ -1,6 +1,4 @@
 import type { AdventureTemplateInfo } from "@escapeai/shared";
-import { useEffect, useState } from "react";
-import { fetchPexelsImage } from "./api";
 import { VisualCard } from "./VisualCard";
 
 export function AdventureTemplateCard(props: {
@@ -9,21 +7,7 @@ export function AdventureTemplateCard(props: {
   onSelect: () => void;
 }) {
   const { template } = props;
-  const fallback = template.coverImage ?? "/media/pilot-cover.jpg";
-  const [cover, setCover] = useState(fallback);
-
-  useEffect(() => {
-    setCover(fallback);
-    if (!template.pexelsQuery) return;
-    let cancelled = false;
-    void fetchPexelsImage(template.pexelsQuery).then((res) => {
-      if (cancelled || !res.url) return;
-      setCover(res.url);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [template.id, template.pexelsQuery, fallback]);
+  const cover = template.coverImage ?? "/media/pilot-cover.jpg";
 
   return (
     <VisualCard

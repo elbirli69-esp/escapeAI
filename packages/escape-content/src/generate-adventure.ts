@@ -16,14 +16,14 @@ type AdventureVisual = {
 const ADVENTURE_VISUAL: Record<AdventureType, AdventureVisual> = {
   celebration: {
     cover: "/media/lighthouse-dock.jpg",
-    pexelsQuery: "friends party celebration outdoor night",
+    pexelsQuery: "confetti friends party dancing night",
     scenes: ["/media/lighthouse-dock.jpg", "/media/pilot-entrance.jpg", "/media/pilot-control.jpg"],
     tagline: "Fiesta y datos del grupo en la pista.",
     theme: "urban",
   },
   birthday: {
     cover: "/media/pilot-entrance.jpg",
-    pexelsQuery: "birthday candles celebration table",
+    pexelsQuery: "birthday cake candles colorful close up",
     scenes: ["/media/pilot-entrance.jpg", "/media/pilot-cover.jpg", "/media/pilot-basement.jpg"],
     tagline: "Homenaje íntimo en torno a una persona.",
     theme: "urban",
@@ -41,7 +41,7 @@ const ADVENTURE_VISUAL: Record<AdventureType, AdventureVisual> = {
   },
   team: {
     cover: "/media/pilot-control.jpg",
-    pexelsQuery: "team competition office challenge",
+    pexelsQuery: "escape room teamwork puzzle neon",
     scenes: ["/media/pilot-control.jpg", "/media/pilot-basement.jpg", "/media/pilot-entrance.jpg"],
     tagline: "Ranking y ritmo entre equipos.",
     theme: "urban",

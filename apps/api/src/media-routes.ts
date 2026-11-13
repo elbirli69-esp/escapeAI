@@ -1,51 +1,12 @@
 import { Hono } from "hono";
-
-type PexelsPhotoResponse = {
-  photos: Array<{ src: { large2x?: string; large?: string; medium?: string } }>;
-};
-
-const FALLBACK_IMAGES: Record<string, string> = {
-  mystery: "/media/lighthouse-cover.jpg",
-  lighthouse: "/media/lighthouse-cover.jpg",
-  fog: "/media/lighthouse-dock.jpg",
-  party: "/media/lighthouse-dock.jpg",
-  birthday: "/media/pilot-entrance.jpg",
-  candles: "/media/pilot-entrance.jpg",
-  team: "/media/pilot-control.jpg",
-  competition: "/media/pilot-control.jpg",
-  celebration: "/media/lighthouse-dock.jpg",
-  friends: "/media/lighthouse-dock.jpg",
-  lock: "/media/pilot-entrance.jpg",
-  default: "/media/pilot-cover.jpg",
-};
+import { pickPexelsFallback, searchPexelsImage } from "./pexels-search.js";
 
 export function mountMediaRoutes(app: Hono): void {
   app.get("/media/pexels", async (c) => {
     const q = (c.req.query("q") ?? "mystery").trim();
-    const key = process.env.PEXELS_API_KEY?.trim();
-  if (!key) {
-      return c.json({
-        url: pickFallback(q),
-        source: "fallback",
-        query: q,
-      });
-    }
-
-    try {
-      const res = await fetch(
-        `https://api.pexels.com/v1/search?per_page=1&query=${encodeURIComponent(q)}`,
-        { headers: { Authorization: key } },
-      );
-      if (!res.ok) throw new Error(`Pexels ${res.status}`);
-      const data = (await res.json()) as PexelsPhotoResponse;
-      const photo = data.photos[0];
-      const url = photo?.src.large2x ?? photo?.src.large ?? photo?.src.medium;
-      if (!url) throw new Error("Sin resultados");
-      return c.json({ url, source: "pexels", query: q });
-    } catch (err) {
-      console.warn("Pexels failed:", err);
-      return c.json({ url: pickFallback(q), source: "fallback", query: q });
-    }
+    const page = Math.max(1, Number(c.req.query("page") ?? "1") || 1);
+    const result = await searchPexelsImage(q, page);
+    return c.json({ url: result.url, source: result.source, query: q });
   });
 
   app.post("/media/fal-image", async (c) => {
@@ -55,7 +16,7 @@ export function mountMediaRoutes(app: Hono): void {
 
     if (!key) {
       return c.json({
-        url: pickFallback(prompt),
+        url: pickPexelsFallback(prompt),
         source: "fallback",
         prompt,
       });
@@ -81,15 +42,7 @@ export function mountMediaRoutes(app: Hono): void {
       return c.json({ url, source: "fal", prompt });
     } catch (err) {
       console.warn("fal failed:", err);
-      return c.json({ url: pickFallback(prompt), source: "fallback", prompt });
+      return c.json({ url: pickPexelsFallback(prompt), source: "fallback", prompt });
     }
   });
-}
-
-function pickFallback(query: string): string {
-  const lower = query.toLowerCase();
-  for (const [key, url] of Object.entries(FALLBACK_IMAGES)) {
-    if (lower.includes(key)) return url;
-  }
-  return FALLBACK_IMAGES.default;
 }

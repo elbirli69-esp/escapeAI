@@ -46,6 +46,8 @@ export type AdventureTemplateInfo = {
   coverImage?: string;
   /** Búsqueda Pexels para portada temática (API en servidor). */
   pexelsQuery?: string;
+  /** `pexels` si la portada viene de stock; `fallback` si es media local. */
+  coverImageSource?: "pexels" | "fallback";
   theme?: "urban" | "coastal" | string;
   tagline?: string;
 };
