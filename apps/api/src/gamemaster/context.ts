@@ -52,6 +52,34 @@ export function buildGmViewContext(
 
   const pacing = computeGmPacing(session, nowMs);
 
+  const siteMap = session.room.spatialSiteMap;
+  let spatialSiteSummary: GmViewContext["spatialSiteSummary"];
+  if (siteMap) {
+    const visitedSet = new Set(visitedSceneIds);
+    const visitedRoomLabels = siteMap.suggestedVisit
+      .filter((step) => visitedSet.has(step.sceneId))
+      .map((step) => step.label);
+    const currentIdx = siteMap.suggestedVisit.findIndex((s) => s.sceneId === session.currentSceneId);
+    const next =
+      currentIdx >= 0 && currentIdx < siteMap.suggestedVisit.length - 1
+        ? siteMap.suggestedVisit[currentIdx + 1]
+        : undefined;
+    spatialSiteSummary = {
+      siteName: siteMap.siteName,
+      mapLayout: siteMap.mapLayout,
+      visitedRoomLabels,
+      nextSuggestedRoomLabel: next?.label,
+      currentVisitOrder: currentIdx >= 0 ? currentIdx + 1 : undefined,
+      totalRooms: siteMap.suggestedVisit.length,
+    };
+    authorizedNarrativeFacts.push(
+      `Recinto «${siteMap.siteName}»: ${visitedRoomLabels.length}/${siteMap.suggestedVisit.length} tramos visitados.`,
+    );
+    if (next?.label) {
+      authorizedNarrativeFacts.push(`Siguiente tramo sugerido del recinto: ${next.label}.`);
+    }
+  }
+
   const view: GmViewContext = {
     sessionId: session.sessionId,
     teamId: playerCtx?.playerId,
@@ -75,6 +103,7 @@ export function buildGmViewContext(
     pacingMode: pacing.mode,
     progressRatio: Math.round(pacing.solvedRatio * 100) / 100,
     tempoDirective: pacing.tempoDirective,
+    spatialSiteSummary,
   };
   return view;
 }

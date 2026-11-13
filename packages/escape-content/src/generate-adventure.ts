@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { AdventureType, CreateEventRequest, EventSubject } from "@escapeai/shared";
 import { durationMinToSec, resolveDurationMin } from "@escapeai/shared";
-import type { RoomDefinition } from "@escapeai/escape-engine";
+import type { RoomBeat, RoomDefinition } from "@escapeai/escape-engine";
 import { buildProceduralSoundIntro } from "./sound-digit-clues.js";
 
 type AdventureVisual = {
@@ -163,6 +163,7 @@ export function generateAdventureRoom(
     timeLimitSec: durationMinToSec(resolveDurationMin(input)),
     startSceneId: "start",
     winCondition: { type: "puzzle_solved", puzzleId: "final_code" },
+    beats: buildGeneratedBeats(introTone, nickname),
     items: {
       token: {
         name: `Recuerdo de ${nickname}`,
@@ -216,6 +217,12 @@ export function generateAdventureRoom(
         id: "sound_intro",
         type: "sound",
         label: "Mensaje oculto",
+        onSolve: {
+          grantClue: {
+            id: "numeric_prefix",
+            text: `Prefijo de dos cifras anotado: úsalo en el candado de cuatro dígitos del mismo acto.`,
+          },
+        },
         prompt: soundIntro.prompt,
         soundMode: soundIntro.soundMode,
         beepPattern: soundIntro.beepPattern,
@@ -234,6 +241,12 @@ export function generateAdventureRoom(
         id: "entry_lock",
         type: "code",
         label: "Primer candado",
+        onSolve: {
+          grantClue: {
+            id: "numeric_code_complete",
+            text: `Candado numérico abierto. El recuerdo de ${nickname} te espera en la siguiente sala.`,
+          },
+        },
         prompt: `${introTone.lockPrompt} El audio de la misma sala ya dio el prefijo de dos cifras.`,
         interactionHints: ["Combina el prefijo del mensaje oculto con el resto del código (año o cifra clave)."],
         answer: codes.yearCode,
@@ -400,6 +413,33 @@ function pickLetterCode(fullName: string): string {
 function sanitizeFact(fact: string | undefined, name: string): string {
   const t = (fact ?? `Algo único de ${name}`).trim();
   return t.length > 220 ? `${t.slice(0, 217)}…` : t;
+}
+
+function buildGeneratedBeats(
+  introTone: ReturnType<typeof toneForType>,
+  nickname: string,
+): RoomBeat[] {
+  return [
+    { id: "gen-open", after: "session_started", text: introTone.tagline },
+    {
+      id: "gen-sound",
+      after: "puzzle_solved",
+      puzzleId: "sound_intro",
+      text: "El mensaje oculto dejó un prefijo en tu diario: combínalo con los datos del evento.",
+    },
+    {
+      id: "gen-lock",
+      after: "puzzle_solved",
+      puzzleId: "entry_lock",
+      text: `Interior desbloqueado: activa el recuerdo ligado a ${nickname}.`,
+    },
+    {
+      id: "gen-finale",
+      after: "scene_entered",
+      sceneId: "finale",
+      text: introTone.scene3Body,
+    },
+  ];
 }
 
 function toneForType(type: AdventureType, name: string, nickname: string) {

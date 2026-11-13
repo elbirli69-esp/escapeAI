@@ -10,7 +10,7 @@ import type {
 } from "@escapeai/shared";
 import { matchPlayerAnswer, sanitizePlayerUtterance, validatePlayerAtTarget } from "@escapeai/shared";
 import type { PlayerContext } from "./player-context.js";
-import type { Condition, RoomDefinition, RoomPuzzle } from "./room-definition.js";
+import type { Condition, RoomBeat, RoomDefinition, RoomPuzzle } from "./room-definition.js";
 
 export type SessionRecord = {
   sessionId: string;
@@ -27,6 +27,9 @@ export type SessionRecord = {
   narrative: string[];
   startedAtMs: number;
   status: "playing" | "won" | "lost";
+  /** Pistas anotadas (clue ledger). */
+  grantedClues: Map<string, string>;
+  firedBeats: Set<string>;
 };
 
 export function createSession(room: RoomDefinition, playerContext?: PlayerContext): SessionRecord {
@@ -53,10 +56,13 @@ export function createSession(room: RoomDefinition, playerContext?: PlayerContex
     narrative: [greeting],
     startedAtMs: Date.now(),
     status: "playing",
+    grantedClues: new Map(),
+    firedBeats: new Set(),
   };
 
   const start = room.scenes[room.startSceneId];
   session.narrative.push(start.description.trim());
+  fireMatchingBeats(session, [{ kind: "session_started" }]);
   return session;
 }
 
@@ -186,7 +192,56 @@ export function applyAction(
     events.push({ type: "game_won" });
   }
 
+  const beatHooks: BeatHook[] = [];
+  for (const ev of events) {
+    if (ev.type === "puzzle_solved") {
+      beatHooks.push({ kind: "puzzle_solved", puzzleId: ev.puzzleId });
+      grantClueForPuzzle(session, ev.puzzleId);
+    }
+    if (ev.type === "scene_entered") {
+      beatHooks.push({ kind: "scene_entered", sceneId: ev.sceneId });
+    }
+  }
+  fireMatchingBeats(session, beatHooks);
+
   return { ok: true, state: toPublicState(session, nowMs), events };
+}
+
+type BeatHook =
+  | { kind: "session_started" }
+  | { kind: "puzzle_solved"; puzzleId: string }
+  | { kind: "scene_entered"; sceneId: string };
+
+function grantClueForPuzzle(session: SessionRecord, puzzleId: string): void {
+  const clue = session.room.puzzles[puzzleId]?.onSolve?.grantClue;
+  if (!clue) return;
+  if (session.grantedClues.has(clue.id)) return;
+  session.grantedClues.set(clue.id, clue.text);
+  session.narrative.push(`📓 ${clue.text}`);
+}
+
+function fireMatchingBeats(session: SessionRecord, hooks: BeatHook[]): void {
+  const beats = session.room.beats;
+  if (!beats?.length) return;
+  for (const hook of hooks) {
+    for (const beat of beats) {
+      if (!beatMatches(beat, hook)) continue;
+      if (session.firedBeats.has(beat.id)) continue;
+      session.firedBeats.add(beat.id);
+      session.narrative.push(beat.text);
+    }
+  }
+}
+
+function beatMatches(beat: RoomBeat, hook: BeatHook): boolean {
+  if (beat.after !== hook.kind) return false;
+  if (beat.after === "puzzle_solved" && hook.kind === "puzzle_solved") {
+    return beat.puzzleId === hook.puzzleId;
+  }
+  if (beat.after === "scene_entered" && hook.kind === "scene_entered") {
+    return beat.sceneId === hook.sceneId;
+  }
+  return beat.after === "session_started" && hook.kind === "session_started";
 }
 
 function submitAnswer(
@@ -233,6 +288,11 @@ function submitAnswer(
   session.solvedPuzzles.add(puzzleId);
   session.narrative.push(`¡Puzzle resuelto! (${puzzle.prompt})`);
   return { solvedEvent: { type: "puzzle_solved", puzzleId } };
+}
+
+/** Expuesto para tests. */
+export function sessionHasClue(session: SessionRecord, clueId: string): boolean {
+  return session.grantedClues.has(clueId);
 }
 
 function submitLocation(
@@ -353,7 +413,7 @@ function takeItem(session: SessionRecord, itemId: string): string | undefined {
 }
 
 function moveToScene(session: SessionRecord, sceneId: string): string | undefined {
-  const exit = getAvailableExits(session).find((e) => e.toSceneId === sceneId);
+  const exit = getAvailableExits(session).find((e) => e.toSceneId === sceneId && e.available);
   if (!exit) return "No puedes ir ahí todavía.";
   session.currentSceneId = sceneId;
   const scene = session.room.scenes[sceneId];
@@ -398,6 +458,8 @@ function conditionMet(session: SessionRecord, condition: Condition): boolean {
       return session.solvedPuzzles.has(condition.puzzleId);
     case "has_item":
       return session.inventory.has(condition.itemId);
+    case "has_clue":
+      return session.grantedClues.has(condition.clueId);
     default:
       return false;
   }
@@ -646,6 +708,7 @@ export function toPublicState(session: SessionRecord, nowMs = Date.now()): Publi
     timeRemainingSec,
     spatialSiteMap,
     spatialRoomLabel: spatialRoom?.label,
+    clueNotes: [...session.grantedClues.entries()].map(([id, text]) => ({ id, text })),
     sceneCharacters: buildSceneCharacters(session),
   };
 }

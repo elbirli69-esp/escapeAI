@@ -195,6 +195,8 @@ export type PublicState = {
   spatialSiteMap?: import("./spatial-site-public.js").SpatialSiteMapPublic;
   /** Texto «Estás en: …» cuando la escena es una habitación del recinto. */
   spatialRoomLabel?: string;
+  /** Notas jugables (clue ledger) anotadas al resolver puzzles. */
+  clueNotes?: Array<{ id: string; text: string }>;
   /** Personajes con los que se puede hablar en la escena actual. */
   sceneCharacters?: PublicCharacter[];
 };

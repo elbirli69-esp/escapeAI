@@ -1,6 +1,7 @@
 export type Condition =
   | { type: "puzzle_solved"; puzzleId: string }
-  | { type: "has_item"; itemId: string };
+  | { type: "has_item"; itemId: string }
+  | { type: "has_clue"; clueId: string };
 
 export type PuzzleType =
   | "code"
@@ -64,6 +65,18 @@ export type RoomPuzzle = {
   waypointLabel?: string;
   /** Pregunta mostrada tras confirmar GPS en modo quiz. */
   quizPrompt?: string;
+  /** Tras resolver: anota una pista jugable en el diario (sin exponer answers al cliente vía API dedicada). */
+  onSolve?: { grantClue?: { id: string; text: string } };
+};
+
+export type RoomBeatAfter = "session_started" | "puzzle_solved" | "scene_entered";
+
+export type RoomBeat = {
+  id: string;
+  after: RoomBeatAfter;
+  puzzleId?: string;
+  sceneId?: string;
+  text: string;
 };
 
 export type RoomCharacter = {
@@ -119,4 +132,6 @@ export type RoomDefinition = {
   characters?: Record<string, RoomCharacter>;
   /** Mapa esquemático de recinto ScannerAI (partidas multi-habitación). */
   spatialSiteMap?: import("@escapeai/shared").SpatialSiteMapPublic;
+  /** Momentos narrativos fijos del motor (sin LLM). */
+  beats?: RoomBeat[];
 };

@@ -567,6 +567,17 @@ function GameView(props: {
 
       <p className="scene prose">{state.sceneDescription}</p>
 
+      {(state.clueNotes?.length ?? 0) > 0 && (
+        <section className="panel clue-notebook" data-testid="escape-clue-notes">
+          <p className="eyebrow">Notas de la misión</p>
+          <ul className="clue-note-list">
+            {state.clueNotes!.map((note) => (
+              <li key={note.id}>{note.text}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {(state.sceneCharacters?.length ?? 0) > 0 && (
         <CharacterChat
           characters={state.sceneCharacters!}

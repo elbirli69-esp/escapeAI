@@ -192,9 +192,9 @@ Arquitectura: `apps/api/src/flavor/` + tests de validación.
 
 ### P1 — Motor + GM context
 
-- [ ] `grantClue` / `has_clue` (o MVP: clues en narrative parseables por UI).
-- [ ] `GmViewContext.spatialSiteMap` visitado.
-- [ ] Beat sheet mínimo en `pilot` y sala generada (3 beats fijos en YAML).
+- [x] `grantClue` / `has_clue` (clue ledger en motor + panel «Notas» en PWA).
+- [x] `GmViewContext.spatialSiteSummary` (visitas y siguiente tramo del recinto).
+- [x] Beat sheet mínimo en `pilot` y sala generada (beats en YAML / generador).
 
 ### P2 — Producto social y flavor
 
