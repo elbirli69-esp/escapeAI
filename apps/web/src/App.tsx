@@ -1,7 +1,14 @@
 import type { NarrativeIntervention, PublicItem, PublicState } from "@escapeai/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { createSession, fetchLobbyHomeCards, fetchRooms, fetchState, sendAction } from "./api";
+import {
+  createSession,
+  fetchAdventureTemplates,
+  fetchLobbyHomeCards,
+  fetchRooms,
+  fetchState,
+  sendAction,
+} from "./api";
 import { ExperienceLobby } from "./ExperienceLobby";
 import { InteractivePuzzle } from "./InteractivePuzzle";
 import { SceneHero } from "./SceneHero";
@@ -135,14 +142,19 @@ export function App() {
     refetchOnMount: "always",
   });
 
-  useEffect(() => {
-    if (!sessionId) {
-      void queryClient.prefetchQuery({
-        queryKey: ["lobby", "home-cards", "pexels"],
-        queryFn: fetchLobbyHomeCards,
-      });
-    }
-  }, [sessionId, queryClient]);
+  const homeCardsQuery = useQuery({
+    queryKey: ["lobby", "home-cards", "pexels"],
+    queryFn: fetchLobbyHomeCards,
+    enabled: !sessionId,
+    staleTime: 15 * 60 * 1000,
+  });
+
+  const adventuresQuery = useQuery({
+    queryKey: ["adventures", "pexels-covers"],
+    queryFn: fetchAdventureTemplates,
+    enabled: !sessionId,
+    staleTime: 15 * 60 * 1000,
+  });
 
   const startGame = useMutation({
     mutationFn: (roomId: string) => createSession(roomId),
@@ -211,8 +223,12 @@ export function App() {
   if (!sessionId) {
     return (
       <ExperienceLobby
+        homeCards={homeCardsQuery.data}
+        homeCardsError={homeCardsQuery.isError}
+        adventureTemplates={adventuresQuery.data}
+        adventureTemplatesLoading={adventuresQuery.isPending && !adventuresQuery.data}
         rooms={roomsQuery.data ?? []}
-        roomsLoading={roomsQuery.isLoading}
+        roomsLoading={roomsQuery.isPending && !roomsQuery.data}
         selectedRoomId={selectedRoomId}
         onSelectRoom={setSelectedRoomId}
         classicBusy={startGame.isPending}

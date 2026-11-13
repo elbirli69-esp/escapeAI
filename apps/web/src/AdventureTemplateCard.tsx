@@ -7,7 +7,7 @@ export function AdventureTemplateCard(props: {
   onSelect: () => void;
 }) {
   const { template } = props;
-  const cover = template.coverImage ?? "/media/pilot-cover.jpg";
+  const cover = template.coverImage;
 
   return (
     <VisualCard
