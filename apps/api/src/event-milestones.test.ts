@@ -23,8 +23,8 @@ describe("event scene milestones", () => {
     const store = new MemoryEventStore();
     const teamA = randomUUID();
     const teamB = randomUUID();
-    const sessionA = createSession(room, { displayName: "Rojos" });
-    const sessionB = createSession(room, { displayName: "Azules" });
+    const sessionA = createSession(room);
+    const sessionB = createSession(room);
     const lockAnswer = room.puzzles.entry_lock.answer ?? "";
     applyAction(sessionA, { type: "submit_answer", puzzleId: "entry_lock", value: lockAnswer });
     applyAction(sessionA, { type: "move", sceneId: "middle" });
@@ -61,12 +61,14 @@ describe("event scene milestones", () => {
       playerId: teamA,
       joinCode,
       eventId: "ev",
+      slot: 1,
     };
     sessionB.playerContext = {
       displayName: "Azules",
       playerId: teamB,
       joinCode,
       eventId: "ev",
+      slot: 2,
     };
 
     await syncPlayerStatusFromSession(store, sessionA);
