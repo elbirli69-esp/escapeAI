@@ -16,6 +16,7 @@
 | **Scanner espacial (1 habitación)** | arquetipos `temporal`, `inventory_hunt`, `visual_trace` | Objetos escaneados → respuestas derivadas → salida |
 | **Lobby / promesa UX** | `lobby-home-modes.ts`, `ROOM_CATALOG`, `ADVENTURE_VISUAL` | Misma temática urban/coastal entre tarjeta y sala |
 | **Recinto multi-habitación (site)** | `buildSpatialSiteRoom`, `spatialSiteMap` | Mapa ↔ escenas, salidas, candado sin deadlock, win-path `spatial-site-recorrido` lineal |
+| **Site interior + exterior + geo** | `geoContext`, `spatial-site-exterior` | Sin propuesta urbana, `site_context` → curiosidad local, win-path con quiz textual o GPS ancla |
 
 No auditar en esta pasada: copy del GameMaster LLM, balance de dificultad subjetivo, ni legalidad de Pexels.
 

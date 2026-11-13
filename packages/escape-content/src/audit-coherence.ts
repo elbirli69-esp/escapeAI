@@ -1,8 +1,19 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { AdventureType, CreateEventRequest, ScannedEnvironment, ScannedSite } from "@escapeai/shared";
-import { defaultEnvironmentConstraints } from "@escapeai/shared";
+import type {
+  AdventureType,
+  CreateEventRequest,
+  ScannedEnvironment,
+  ScannedSite,
+  SpatialAdventureProposal,
+} from "@escapeai/shared";
+import {
+  defaultEnvironmentConstraints,
+  deriveNearbyKeyword,
+  deriveNeighborhoodQuizAnswer,
+  hasGeoAnchor,
+} from "@escapeai/shared";
 import { applyAction, createSession, parseRoomDefinition, type RoomDefinition } from "@escapeai/escape-engine";
 import { generateAdventureRoom, listAdventureTemplates } from "./generate-adventure.js";
 import { ROOM_CATALOG, ROOM_FILES } from "./rooms.js";
@@ -267,9 +278,93 @@ function auditSpatialSiteFixtures(findings: Finding[]): void {
   };
 
   const dormitorio = mkSiteRoomEnv("cccc-3333-3333-3333-333333333333", "Dormitorio", salon.objects);
+
+  const indoorEx = mkSiteRoomEnv("in1-aaaa-bbbb-cccc-dddddddddddd", "Salón", [
+    {
+      id: "ch1",
+      category: "chair",
+      label: "Silla",
+      quantity: 2,
+      confidence: 1,
+      confirmed: true,
+      interactable: false,
+      movable: false,
+      canHideClue: false,
+      restricted: true,
+    },
+  ]);
+  const outdoorEx: ScannedEnvironment = {
+    ...mkSiteRoomEnv("out1-aaaa-bbbb-cccc-eeeeeeeeeeee", "Portal", [
+      {
+        id: "p1",
+        category: "plant",
+        label: "Ficus",
+        quantity: 1,
+        confidence: 1,
+        confirmed: true,
+        interactable: true,
+        movable: false,
+        canHideClue: true,
+        restricted: false,
+      },
+    ]),
+    environmentType: "exterior",
+  };
+  const geoExteriorSite: ScannedSite = {
+    id: "site-audit-exterior-geo",
+    name: "Casa audit",
+    roomIds: [indoorEx.id, outdoorEx.id],
+    outdoorRoomId: outdoorEx.id,
+    geoContext: { city: "Valencia", neighborhood: "Ciutat Vella" },
+    mapLayout: "linear",
+    links: [
+      {
+        id: "lnk-ext",
+        fromRoomId: indoorEx.id,
+        toRoomId: outdoorEx.id,
+        label: "Salir",
+        transitionKind: "open",
+        confirmed: true,
+      },
+    ],
+    version: 1,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  const geoAnchorSite: ScannedSite = {
+    ...geoExteriorSite,
+    id: "site-audit-geo-anchor",
+    name: "Casa ancla GPS",
+    geoContext: {
+      city: "Madrid",
+      neighborhood: "Centro",
+      anchorLat: 40.4168,
+      anchorLon: -3.7038,
+    },
+  };
+
+  const geoProposalIds = proposeSiteAdventures(geoExteriorSite, [indoorEx, outdoorEx]).map((p) => p.id);
+  if (geoProposalIds.includes("spatial-site-urban")) {
+    push(
+      findings,
+      "error",
+      "spatial-site:exterior-geo",
+      "proposal-set",
+      "con exterior+geo no debe ofrecerse spatial-site-urban",
+    );
+  } else {
+    push(findings, "ok", "spatial-site:exterior-geo", "proposal-set", "propuesta exterior en lugar de urbana");
+  }
+  if (!geoProposalIds.includes("spatial-site-exterior")) {
+    push(findings, "error", "spatial-site:exterior-geo", "proposal-set", "falta spatial-site-exterior");
+  }
+
   const roomSets: Array<{ label: string; site: ScannedSite; rooms: ScannedEnvironment[] }> = [
     { label: "linear-2", site: linearSite, rooms: [salon, cocina] },
     { label: "hub-3", site: hubSite, rooms: [salon, cocina, dormitorio] },
+    { label: "exterior-geo", site: geoExteriorSite, rooms: [indoorEx, outdoorEx] },
+    { label: "geo-anchor", site: geoAnchorSite, rooms: [indoorEx, outdoorEx] },
   ];
 
   for (const { label, site, rooms } of roomSets) {
@@ -385,8 +480,150 @@ function auditSpatialSiteFixtures(findings: Finding[]): void {
           push(findings, "ok", mode, "win-path", "recorrido lineal hasta victoria");
         }
       }
+
+      if (site.geoContext) {
+        auditSiteGeoContext(findings, mode, room, site);
+      }
+
+      if (proposal.id === "spatial-site-exterior" && (label === "exterior-geo" || label === "geo-anchor")) {
+        if (label === "exterior-geo") {
+          if (!map.suggestedVisit.some((v) => v.kind === "outdoor")) {
+            push(findings, "error", mode, "exterior-route", "suggestedVisit sin tramo outdoor");
+          } else {
+            push(findings, "ok", mode, "exterior-route", "ruta incluye exterior");
+          }
+        }
+        const path = runSiteExteriorGeoWin(room, site, proposal, indoorEx, outdoorEx);
+        if (!path.ok) {
+          push(findings, "error", mode, "win-path", `interior+exterior+geo falló en: ${path.step}`);
+        } else {
+          push(findings, "ok", mode, "win-path", "recorrido exterior con geo hasta victoria");
+        }
+      }
     }
   }
+}
+
+function auditSiteGeoContext(
+  findings: Finding[],
+  mode: string,
+  room: RoomDefinition,
+  site: ScannedSite,
+): void {
+  const geo = site.geoContext!;
+  if (room.startSceneId !== "site_context") {
+    push(findings, "error", mode, "geo-start", `startSceneId '${room.startSceneId}' debería site_context`);
+    return;
+  }
+  const ctx = room.scenes.site_context;
+  if (!ctx) {
+    push(findings, "error", mode, "geo-start", "falta escena site_context");
+    return;
+  }
+  const exit = ctx.exits?.[0];
+  if (exit?.when?.type !== "puzzle_solved" || exit.when.puzzleId !== "site_local_curiosity") {
+    push(findings, "error", mode, "geo-gate", "salida de site_context debe exigir site_local_curiosity");
+  } else {
+    push(findings, "ok", mode, "geo-gate", "entrada al recinto tras curiosidad local");
+  }
+  if (hasGeoAnchor(geo)) {
+    if (!room.puzzles.site_area_geo) {
+      push(findings, "error", mode, "geo-puzzles", "ancla GPS pero falta site_area_geo");
+    } else {
+      push(findings, "ok", mode, "geo-puzzles", "quiz de área con ancla");
+    }
+  } else if (!room.puzzles.site_text_geo) {
+    push(findings, "error", mode, "geo-puzzles", "sin ancla y falta site_text_geo");
+  } else {
+    push(findings, "ok", mode, "geo-puzzles", "quiz textual de ciudad/barrio");
+  }
+  if (!/GPS|ciudad|barrio|entorno/i.test(ctx.description ?? "")) {
+    push(findings, "warning", mode, "geo-copy", "site_context poco claro sobre uso del GPS");
+  }
+}
+
+function runSiteExteriorGeoWin(
+  room: RoomDefinition,
+  site: ScannedSite,
+  proposal: SpatialAdventureProposal,
+  indoor: ScannedEnvironment,
+  outdoor: ScannedEnvironment,
+): { ok: boolean; step?: string } {
+  const geo = site.geoContext;
+  if (!geo) return { ok: false, step: "geo missing" };
+  const session = createSession(room);
+  const p = room.puzzles;
+  const geoEntry = hasGeoAnchor(geo) ? "site_area_geo" : "site_text_geo";
+  const geoPuzzle = p[geoEntry];
+  if (!geoPuzzle?.answer) return { ok: false, step: geoEntry };
+
+  if (geoEntry === "site_text_geo") {
+    if (
+      !applyAction(session, {
+        type: "submit_answer",
+        puzzleId: geoEntry,
+        value: deriveNeighborhoodQuizAnswer(geo),
+      }).ok
+    ) {
+      return { ok: false, step: geoEntry };
+    }
+  } else {
+    const loc = applyAction(session, {
+      type: "submit_location",
+      puzzleId: geoEntry,
+      lat: geo.anchorLat!,
+      lon: geo.anchorLon!,
+      accuracyMeters: 20,
+    });
+    if (!loc.ok) return { ok: false, step: `${geoEntry} arrive` };
+    if (
+      !applyAction(session, {
+        type: "submit_answer",
+        puzzleId: geoEntry,
+        value: deriveNeighborhoodQuizAnswer(geo),
+      }).ok
+    ) {
+      return { ok: false, step: `${geoEntry} quiz` };
+    }
+  }
+
+  const nearby = deriveNearbyKeyword(geo, proposal.id);
+  if (
+    !applyAction(session, {
+      type: "submit_answer",
+      puzzleId: "site_local_curiosity",
+      value: nearby,
+    }).ok
+  ) {
+    return { ok: false, step: "site_local_curiosity" };
+  }
+
+  const sidIn = sceneIdForInventoryRoom(indoor.id);
+  const sidOut = sceneIdForInventoryRoom(outdoor.id);
+  if (!applyAction(session, { type: "move", sceneId: sidIn }).ok) {
+    return { ok: false, step: `move ${sidIn}` };
+  }
+  if (!applyAction(session, { type: "submit_answer", puzzleId: "site_indoor_bridge", value: p.site_indoor_bridge!.answer! }).ok) {
+    return { ok: false, step: "site_indoor_bridge" };
+  }
+  if (!applyAction(session, { type: "move", sceneId: sidOut }).ok) {
+    return { ok: false, step: `move ${sidOut}` };
+  }
+  applyAction(session, { type: "complete_interaction", puzzleId: "site_outdoor_cam", step: "capture" });
+  if (!applyAction(session, { type: "submit_answer", puzzleId: "site_outdoor_cam", value: p.site_outdoor_cam!.answer! }).ok) {
+    return { ok: false, step: "site_outdoor_cam" };
+  }
+  if (!applyAction(session, { type: "move", sceneId: "site_finale_scene" }).ok) {
+    return { ok: false, step: "move site_finale_scene" };
+  }
+  const final = applyAction(session, {
+    type: "submit_answer",
+    puzzleId: "site_finale",
+    value: p.site_finale!.answer!,
+  });
+  if (!final.ok) return { ok: false, step: "site_finale" };
+  if (final.state.status !== "won") return { ok: false, step: "won status" };
+  return { ok: true };
 }
 
 function runSiteRecorridoLinearWin(
