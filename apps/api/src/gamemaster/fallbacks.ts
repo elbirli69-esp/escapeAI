@@ -29,6 +29,18 @@ export function staticInterventionText(
       const sceneId = String(trigger.payload?.sceneId ?? "");
       const scene = session.room.scenes[sceneId];
       const title = scene?.title ?? "nueva zona";
+      const siteMap = session.room.spatialSiteMap;
+      const spatialRoom = siteMap?.rooms.find((r) => r.sceneId === sceneId);
+      if (spatialRoom && siteMap) {
+        const visit = siteMap.suggestedVisit.find((v) => v.sceneId === sceneId);
+        const kind =
+          visit?.kind === "outdoor" ? "exterior real" : visit ? "interior del recinto" : "estancia";
+        return {
+          text: `Estáis en «${spatialRoom.label}» (${kind}) dentro de ${siteMap.siteName}. Explorad con calma antes de forzar cerraduras.`,
+          kind: "narration",
+          meta: STATIC_META,
+        };
+      }
       return {
         text: `Entráis en ${title}. El ambiente sugiere que algo aguarda atención aquí.`,
         kind: "narration",

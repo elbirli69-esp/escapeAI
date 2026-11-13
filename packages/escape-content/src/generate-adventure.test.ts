@@ -17,6 +17,13 @@ describe("generateAdventureRoom", () => {
     expect(a).toEqual(b);
   });
 
+  it("registra beats y grantClue en sound y entry_lock", () => {
+    const room = generateAdventureRoom(baseInput, "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+    expect(room.beats?.length).toBeGreaterThanOrEqual(3);
+    expect(room.puzzles.sound_intro?.onSolve?.grantClue?.id).toBe("numeric_prefix");
+    expect(room.puzzles.entry_lock?.onSolve?.grantClue).toBeTruthy();
+  });
+
   it("genera códigos coherentes con edad y nombre", () => {
     const room = generateAdventureRoom(baseInput, "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
     expect(room.puzzles.entry_lock.answer).toBe("1815");

@@ -17,6 +17,8 @@ export type SerializedSession = {
   narrative: string[];
   startedAtMs: number;
   status: SessionRecord["status"];
+  grantedClues: Record<string, string>;
+  firedBeats: string[];
 };
 
 export function serializeSession(session: SessionRecord): SerializedSession {
@@ -41,6 +43,8 @@ export function serializeSession(session: SessionRecord): SerializedSession {
     narrative: [...session.narrative],
     startedAtMs: session.startedAtMs,
     status: session.status,
+    grantedClues: Object.fromEntries(session.grantedClues),
+    firedBeats: [...session.firedBeats],
   };
 }
 
@@ -66,5 +70,7 @@ export function deserializeSession(data: SerializedSession): SessionRecord {
     narrative: [...data.narrative],
     startedAtMs: data.startedAtMs,
     status: data.status,
+    grantedClues: new Map(Object.entries(data.grantedClues ?? {})),
+    firedBeats: new Set(data.firedBeats ?? []),
   };
 }

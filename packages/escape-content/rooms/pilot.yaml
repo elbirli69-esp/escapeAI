@@ -13,6 +13,18 @@ items:
 winCondition:
   type: puzzle_solved
   puzzleId: panel_final
+beats:
+  - id: pilot_open
+    after: session_started
+    text: "La humedad del post-it insiste: algo escrito en otro siglo abre el camino al sótano."
+  - id: pilot_lock
+    after: puzzle_solved
+    puzzleId: lockbox
+    text: "La puerta del conserje cede; el ascensor sigue muerto, pero el sótano zumba."
+  - id: pilot_basement
+    after: scene_entered
+    sceneId: basement
+    text: "Falta el fusible: sin él el edificio entero permanecerá a oscuras."
 scenes:
   entrance:
     id: entrance
@@ -83,6 +95,10 @@ puzzles:
     label: Candado del conserje
     prompt: Introduce el código del candado (4 dígitos).
     answer: "1984"
+    onSolve:
+      grantClue:
+        id: postit_distopia
+        text: "El post-it mencionaba un año distópico muy citado; el candado del sótano reconoce ese hilo."
     maxHints: 3
     hints:
       - level: 1

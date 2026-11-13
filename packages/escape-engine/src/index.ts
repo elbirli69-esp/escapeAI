@@ -1,5 +1,6 @@
 export type {
   Condition,
+  RoomBeat,
   RoomCharacter,
   RoomDefinition,
   RoomPuzzle,
@@ -10,6 +11,7 @@ export {
   applyAction,
   createSession,
   getExitAvailability,
+  sessionHasClue,
   toAiContext,
   toPublicState,
   type SessionRecord,

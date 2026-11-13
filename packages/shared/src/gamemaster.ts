@@ -71,6 +71,15 @@ export type GmViewContext = {
   pacingMode?: GmPacingMode;
   progressRatio?: number;
   tempoDirective?: string;
+  /** Recinto multi-habitación: progreso visitado (sin secretos). */
+  spatialSiteSummary?: {
+    siteName: string;
+    mapLayout: string;
+    visitedRoomLabels: string[];
+    nextSuggestedRoomLabel?: string;
+    currentVisitOrder?: number;
+    totalRooms: number;
+  };
 };
 
 export type GmPacingMode = "ahead" | "steady" | "behind" | "critical";
