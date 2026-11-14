@@ -21,7 +21,17 @@ export async function startClassicRoom(page: Page, roomId: string): Promise<void
   await page.getByTestId(/escape-puzzle-tab-/).first().waitFor({ timeout: 30_000 });
 }
 
+/** Modo foco de retos oculta pestañas; los flujos e2e necesitan la barra completa. */
+export async function showAllPuzzleTabs(page: Page): Promise<void> {
+  const focusBtn = page.getByTestId("escape-puzzle-focus");
+  if (!(await focusBtn.isVisible().catch(() => false))) return;
+  if ((await focusBtn.getAttribute("aria-pressed")) === "true") {
+    await focusBtn.click();
+  }
+}
+
 export async function selectPuzzle(page: Page, puzzleId: string): Promise<void> {
+  await showAllPuzzleTabs(page);
   await page.getByTestId(`escape-puzzle-tab-${puzzleId}`).click();
 }
 
