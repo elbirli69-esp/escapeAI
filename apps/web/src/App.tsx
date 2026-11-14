@@ -283,7 +283,10 @@ export function App() {
   const activePuzzleId = useMemo(() => {
     if (!state) return null;
     const open = state.puzzles.find((p) => !p.solved);
-    return selectedPuzzle ?? open?.id ?? null;
+    const selectedInScene =
+      selectedPuzzle &&
+      state.puzzles.find((p) => p.id === selectedPuzzle && !p.solved);
+    return selectedInScene?.id ?? open?.id ?? null;
   }, [state, selectedPuzzle]);
 
   if (!sessionId) {

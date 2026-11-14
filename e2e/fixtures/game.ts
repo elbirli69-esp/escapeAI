@@ -27,12 +27,15 @@ export async function showAllPuzzleTabs(page: Page): Promise<void> {
   if (!(await focusBtn.isVisible().catch(() => false))) return;
   if ((await focusBtn.getAttribute("aria-pressed")) === "true") {
     await focusBtn.click();
+    await expect(focusBtn).toHaveAttribute("aria-pressed", "false");
   }
 }
 
 export async function selectPuzzle(page: Page, puzzleId: string): Promise<void> {
   await showAllPuzzleTabs(page);
-  await page.getByTestId(`escape-puzzle-tab-${puzzleId}`).click();
+  const tab = page.getByTestId(`escape-puzzle-tab-${puzzleId}`);
+  await expect(tab).toBeVisible({ timeout: 15_000 });
+  await tab.click();
 }
 
 export async function submitAnswer(page: Page, value: string): Promise<void> {
