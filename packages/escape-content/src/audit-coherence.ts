@@ -172,6 +172,36 @@ function coastalKeywords(text: string): boolean {
   return /costa|orilla|faro|marea|niebla|mar|tormenta|olas/i.test(text);
 }
 
+/** Métrica entretenimiento: acto 1 entrega pista y acto 2 la nombra en hints. */
+export function auditGeneratedClueLedger(room: RoomDefinition): { ok: boolean; detail: string } {
+  const grant = room.puzzles.sound_intro?.onSolve?.grantClue;
+  if (!grant?.id) {
+    return { ok: false, detail: "sound_intro sin grantClue" };
+  }
+  const act2 = room.scenes.middle?.puzzles ?? [];
+  if (act2.length === 0) {
+    return { ok: false, detail: "escena middle sin puzzles" };
+  }
+  for (const pid of act2) {
+    const puzzle = room.puzzles[pid];
+    if (!puzzle) {
+      return { ok: false, detail: `puzzle '${pid}' ausente` };
+    }
+    const blob = [puzzle.prompt, ...(puzzle.interactionHints ?? [])].join(" ");
+    const referencesAct1 =
+      blob.includes(grant.id) ||
+      /prefijo|dígito|candado|pista|anot/i.test(blob) ||
+      Boolean(puzzle.onSolve?.grantClue);
+    if (!referencesAct1) {
+      return { ok: false, detail: `${pid} no enlaza pista del acto 1` };
+    }
+  }
+  if (!room.beats?.length) {
+    return { ok: false, detail: "sin beats en sala generada" };
+  }
+  return { ok: true, detail: "grantClue, acto 2 y beats presentes" };
+}
+
 function mkSiteRoomEnv(
   id: string,
   name: string,
@@ -788,6 +818,13 @@ export function auditCoherence(): Finding[] {
       push(findings, "error", mode, "win-path", `recorrido hasta victoria falló en: ${path.step}`);
     } else {
       push(findings, "ok", mode, "win-path", "recorrido completo hasta victoria");
+    }
+
+    const clueLedger = auditGeneratedClueLedger(room);
+    if (!clueLedger.ok) {
+      push(findings, "warning", mode, "clue-ledger", clueLedger.detail);
+    } else {
+      push(findings, "ok", mode, "clue-ledger", clueLedger.detail);
     }
   }
 

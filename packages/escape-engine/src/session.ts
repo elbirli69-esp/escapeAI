@@ -654,6 +654,8 @@ export function toPublicState(session: SessionRecord, nowMs = Date.now()): Publi
     sceneOrder,
     roomTheme: session.room.theme,
     roomCoverImage: session.room.coverImage,
+    roomTagline: session.room.tagline,
+    adventureType: session.playerContext?.adventureType,
     narrative: [...session.narrative],
     puzzles: (scene.puzzles ?? []).map((id) => {
       const puzzle = session.room.puzzles[id];

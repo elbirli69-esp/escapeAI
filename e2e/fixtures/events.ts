@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { showAllPuzzleTabs } from "./game.js";
 
 export const SARA_EVENT = {
   adventureType: "birthday" as const,
@@ -43,5 +44,7 @@ export async function joinEventAsTeam(
   await page.getByTestId("escape-join-code-input").fill(joinCode);
   await page.getByLabel("Nombre del equipo").fill(teamName);
   await page.getByRole("button", { name: /Empezar partida del equipo/ }).click();
+  await page.getByTestId(/escape-puzzle-tab-/).first().waitFor({ timeout: 30_000 });
+  await showAllPuzzleTabs(page);
   await expect(page.getByTestId("escape-puzzle-tab-entry_lock")).toBeVisible({ timeout: 30_000 });
 }
