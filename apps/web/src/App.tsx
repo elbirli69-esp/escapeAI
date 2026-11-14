@@ -283,9 +283,9 @@ export function App() {
   const activePuzzleId = useMemo(() => {
     if (!state) return null;
     const open = state.puzzles.find((p) => !p.solved);
-    const selectedInScene =
-      selectedPuzzle &&
-      state.puzzles.find((p) => p.id === selectedPuzzle && !p.solved);
+    const selectedInScene = selectedPuzzle
+      ? state.puzzles.find((p) => p.id === selectedPuzzle && !p.solved)
+      : undefined;
     return selectedInScene?.id ?? open?.id ?? null;
   }, [state, selectedPuzzle]);
 
