@@ -181,6 +181,8 @@ export type PublicState = {
   sceneOrder?: string[];
   roomTheme?: string;
   roomCoverImage?: string;
+  roomTagline?: string;
+  adventureType?: import("./events.js").AdventureType;
   narrative: string[];
   puzzles: PublicPuzzle[];
   exits: PublicExit[];

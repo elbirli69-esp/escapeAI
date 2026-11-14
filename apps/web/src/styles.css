@@ -339,11 +339,29 @@ body {
   opacity: 0.8;
 }
 
+.puzzle-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.puzzle-panel-head h2 {
+  margin: 0;
+}
+
 .puzzle-tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
   margin-bottom: 0.65rem;
+}
+
+.end-meta {
+  font-size: 0.9rem;
+  opacity: 0.85;
+  margin: 0.25rem 0 0.65rem;
 }
 
 .puzzle-prompt {

@@ -76,14 +76,51 @@ function ProgressRail(props: { order: string[]; current: string; theme?: string 
   );
 }
 
-function endGameMessage(state: PublicState): { title: string; body: string } {
-  const coastal = state.roomTheme === "coastal";
-  if (state.status === "won") {
-    return {
-      title: "¡Escapaste!",
-      body: coastal
+function formatElapsed(sec: number): string {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function victoryEpilogueByAdventure(
+  adventureType: PublicState["adventureType"],
+  coastal: boolean,
+): string {
+  switch (adventureType) {
+    case "mystery":
+      return "El hilo del misterio queda anudado: costa, niebla y una última pista cumplida.";
+    case "team":
+      return "Habéis cruzado la meta del briefing; el ranking recordará este equipo.";
+    case "celebration":
+      return "La celebración estalla con el candado final; el grupo tiene historia que contar.";
+    case "birthday":
+      return "El homenaje cierra con la cerradura que nadie pudo forzar en solitario.";
+    default:
+      return coastal
         ? "El faro vuelve a encender su mensaje. La tormenta cede el paso."
-        : "Las luces del edificio obedecen otra vez. El candado guarda tu victoria.",
+        : "Las luces del edificio obedecen otra vez. El candado guarda tu victoria.";
+  }
+}
+
+function endGameMessage(state: PublicState): { title: string; body: string; meta: string } {
+  const coastal = state.roomTheme === "coastal";
+  const time = formatElapsed(state.elapsedSec);
+  const who = state.playerDisplayName?.trim();
+  const event = state.eventJoinCode ? `Evento ${state.eventJoinCode}` : undefined;
+  const metaParts = [who ? `${who} · ${time}` : `Tiempo ${time}`, event].filter(Boolean);
+
+  if (state.status === "won") {
+    let body = victoryEpilogueByAdventure(state.adventureType, coastal);
+    if (state.roomTagline) {
+      body = `${body} «${state.roomTagline}»`;
+    }
+    if (state.roomName) {
+      body = `${body} — ${state.roomName}`;
+    }
+    return {
+      title: state.adventureType === "team" ? "¡Equipo escapado!" : "¡Escapaste!",
+      body,
+      meta: metaParts.join(" · "),
     };
   }
   return {
@@ -91,6 +128,7 @@ function endGameMessage(state: PublicState): { title: string; body: string } {
     body: coastal
       ? "La marea se lleva la última chispa del faro. Mañana habrá otra señal."
       : "El conserje sigue dormido y el panel maestro en silencio. Reinténtalo.",
+    meta: metaParts.join(" · "),
   };
 }
 
@@ -463,6 +501,10 @@ function GameView(props: {
   const inventoryItems = state.inventoryItems ?? [];
   const sceneItemItems = state.sceneItemItems ?? [];
   const activePuzzle = state.puzzles.find((p) => p.id === props.activePuzzleId);
+  const [puzzleFocus, setPuzzleFocus] = useState(true);
+  const puzzlesInView = puzzleFocus
+    ? state.puzzles.filter((p) => p.id === props.activePuzzleId)
+    : state.puzzles;
   const sceneIdx = sceneOrder.indexOf(state.currentSceneId);
   const progress = Math.round(
     (Math.max(0, sceneIdx) / Math.max(1, sceneOrder.length - 1)) * 100,
@@ -670,9 +712,22 @@ function GameView(props: {
 
       {state.puzzles.length > 0 && (
         <section className="panel glass panel-puzzle">
-          <h2>Retos</h2>
+          <div className="puzzle-panel-head">
+            <h2>Retos</h2>
+            {state.puzzles.length > 1 && (
+              <button
+                type="button"
+                className={puzzleFocus ? "ghost sm" : "chip sm"}
+                aria-pressed={puzzleFocus}
+                data-testid="escape-puzzle-focus"
+                onClick={() => setPuzzleFocus((v) => !v)}
+              >
+                {puzzleFocus ? "Ver todos" : "Modo foco"}
+              </button>
+            )}
+          </div>
           <div className="puzzle-tabs">
-            {state.puzzles.map((p) => (
+            {puzzlesInView.map((p) => (
               <button
                 key={p.id}
                 type="button"
@@ -721,6 +776,9 @@ function GameView(props: {
             </figure>
           )}
           <h2 className="display-sm">{endGameMessage(state).title}</h2>
+          <p className="end-meta" data-testid="escape-end-meta">
+            {endGameMessage(state).meta}
+          </p>
           <p>{endGameMessage(state).body}</p>
           <button type="button" className="primary wide" onClick={props.onNewGame}>
             Nueva partida
