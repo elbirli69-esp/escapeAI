@@ -207,6 +207,13 @@ Arquitectura: `apps/api/src/flavor/` + tests de validación.
 - [x] `teamVariable` opcional por evento.
 - [x] Variantes catálogo / daily seed espacial.
 
+### P4 — GM adaptativo (eventos primero)
+
+- [x] **Fase A — Director:** fallbacks estáticos por `adventureType` + ritmo (`PACE_NUDGE`, `TIME_WARNING`, `SESSION_STARTED`, `PUZZLE_SOLVED` en evento).
+- [x] **Fase A — Stuck:** 2.º `TEAM_STUCK` ambient (pista de ambiente + cuaderno) por puzzle en eventos.
+- [ ] **Fase B — Motor:** hint extra / fail-forward en salas generadas.
+- [ ] **Fase C — Generador:** ramas de beats precocinadas.
+
 ---
 
 ## Métricas de aceptación (entretenimiento)

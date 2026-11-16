@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { generateAdventureRoom } from "@escapeai/escape-content";
-import { createSession } from "@escapeai/escape-engine";
+import { createSession, type PlayerContext } from "@escapeai/escape-engine";
 import type { GmSessionMeta } from "./persistence.js";
 import {
   detectTeamStuckTrigger,
@@ -20,6 +20,8 @@ function metaBase(overrides: Partial<GmSessionMeta> = {}): GmSessionMeta {
     characterTurnCount: 0,
     lastCharacterTurnMs: 0,
     paceNudgeIssued: false,
+    stuckAmbientIssuedPuzzleIds: [],
+    aheadFlavorIssued: false,
     ...overrides,
   };
 }
@@ -101,6 +103,30 @@ describe("stuck-detection", () => {
       3000,
     );
     expect(cleared.stuckNotifiedPuzzleIds).not.toContain("entry_lock");
+  });
+
+  it("evento: segundo TEAM_STUCK ambient tras primer aviso", () => {
+    const room = loadRoom();
+    const ctx: PlayerContext = {
+      displayName: "Eq",
+      eventId: "e",
+      playerId: "p",
+      joinCode: "CODE12",
+      slot: 1,
+      adventureType: "birthday",
+    };
+    const session = createSession(room, ctx);
+    const puzzleId = "entry_lock";
+    session.puzzleAttempts.set(puzzleId, 7);
+
+    const meta = metaBase({
+      focusedPuzzleId: puzzleId,
+      lastProgressMs: 0,
+      stuckNotifiedPuzzleIds: [puzzleId],
+    });
+
+    const trigger = detectTeamStuckTrigger(session, meta, Date.now());
+    expect(trigger?.payload?.assistTier).toBe("ambient");
   });
 
   it("markStuckNotified es idempotente", () => {

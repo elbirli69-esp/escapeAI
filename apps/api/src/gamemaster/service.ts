@@ -16,8 +16,10 @@ import {
   markPaceNudgeIssued,
   resolveAdaptivePolicy,
 } from "./pacing.js";
+import { isEventSession } from "./event-session.js";
 import {
   detectTeamStuckTrigger,
+  markStuckAmbientIssued,
   markStuckNotified,
   updateProgressMeta,
 } from "./stuck-detection.js";
@@ -135,6 +137,16 @@ export class GameMasterService {
       recordGmIntervention(trigger.type, intervention.meta, rendered.llmAttempted);
       created.push(intervention);
 
+      if (
+        trigger.type === "PUZZLE_SOLVED" &&
+        isEventSession(session) &&
+        !meta.aheadFlavorIssued &&
+        pacing.mode === "ahead"
+      ) {
+        meta.aheadFlavorIssued = true;
+        await this.store.saveMeta(session.sessionId, meta);
+      }
+
       if (trigger.type === "SCENE_ENTERED" && trigger.payload?.sceneId) {
         const sceneId = String(trigger.payload.sceneId);
         meta.visitedSceneIds = [...new Set([...meta.visitedSceneIds, sceneId])];
@@ -142,7 +154,11 @@ export class GameMasterService {
       }
       if (trigger.type === "TEAM_STUCK" && trigger.payload?.puzzleId) {
         const puzzleId = String(trigger.payload.puzzleId);
-        meta = markStuckNotified(meta, puzzleId);
+        if (trigger.payload.assistTier === "ambient") {
+          meta = markStuckAmbientIssued(meta, puzzleId);
+        } else {
+          meta = markStuckNotified(meta, puzzleId);
+        }
         await this.store.saveMeta(session.sessionId, meta);
       }
       if (trigger.type === "CHARACTER_TURN") {
@@ -175,12 +191,21 @@ export class GameMasterService {
       trigger.payload?.itemId ??
       trigger.payload?.characterId ??
       trigger.sourceEventId
-    }`;
+    }${trigger.payload?.assistTier ? `:${trigger.payload.assistTier}` : ""}`;
     if (recentInterventions.some((i) => i.meta.trigger === dedupe)) {
       return { intervention: null, llmAttempted: false };
     }
 
-    const staticPack = staticInterventionText(session, trigger);
+    const pacingNow = computeGmPacing(session);
+    const useAheadFlavor =
+      trigger.type === "PUZZLE_SOLVED" &&
+      isEventSession(session) &&
+      !meta.aheadFlavorIssued &&
+      pacingNow.mode === "ahead";
+    const staticPack = staticInterventionText(session, trigger, {
+      pacingMode: pacingNow.mode,
+      useAheadFlavor,
+    });
     let text = staticPack.text;
     let metaOut = { ...staticPack.meta, trigger: dedupe };
     let spoilerLevel =
@@ -278,7 +303,10 @@ export class GameMasterService {
 
     const finalCheck = validateIntervention({ text, spoilerLevel, clueRefs }, forbidden);
     if (!finalCheck.ok) {
-      const fallback = staticInterventionText(session, trigger);
+      const fallback = staticInterventionText(session, trigger, {
+        pacingMode: pacingNow.mode,
+        useAheadFlavor,
+      });
       text = fallback.text;
       metaOut = { ...fallback.meta, trigger: dedupe };
     }

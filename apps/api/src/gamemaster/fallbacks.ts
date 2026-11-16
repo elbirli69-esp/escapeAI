@@ -1,12 +1,24 @@
 import type { SessionRecord } from "@escapeai/escape-engine";
-import type { GmProcessTrigger, NarrativeInterventionMeta } from "@escapeai/shared";
+import type { GmPacingMode, GmProcessTrigger, NarrativeInterventionMeta } from "@escapeai/shared";
 import { getRoomCharacter, pickCharacterFallback } from "./characters.js";
+import {
+  clueNotebookHint,
+  eventAdventureType,
+  eventAheadPuzzleSolvedCopy,
+  eventPaceNudgeCopy,
+  eventSessionStartedCopy,
+  eventTeamStuckCopy,
+  eventTimeWarningCopy,
+  isEventSession,
+} from "./event-session.js";
+import { computeGmPacing } from "./pacing.js";
 
 const STATIC_META: NarrativeInterventionMeta = { provider: "static", fallback: true };
 
 export function staticInterventionText(
   session: SessionRecord,
   trigger: GmProcessTrigger,
+  options?: { pacingMode?: GmPacingMode; useAheadFlavor?: boolean },
 ): {
   text: string;
   kind: "narration" | "notification" | "hint" | "character";
@@ -19,9 +31,11 @@ export function staticInterventionText(
   switch (type) {
     case "SESSION_STARTED":
       return {
-        text: team
-          ? `${team}, el misterio «${name}» os espera. Probad el primer reto cuando estéis listos.`
-          : `El misterio «${name}» comienza. Explora con calma cada escena.`,
+        text: isEventSession(session)
+          ? eventSessionStartedCopy(session)
+          : team
+            ? `${team}, el misterio «${name}» os espera. Probad el primer reto cuando estéis listos.`
+            : `El misterio «${name}» comienza. Explora con calma cada escena.`,
         kind: "narration",
         meta: STATIC_META,
       };
@@ -51,10 +65,29 @@ export function staticInterventionText(
       const puzzleId = String(trigger.payload?.puzzleId ?? "");
       const puzzle = session.room.puzzles[puzzleId];
       const label = puzzle?.label ?? puzzleId;
-      return {
-        text: team
+      const pacing = options?.pacingMode ?? computeGmPacing(session).mode;
+      let text: string;
+      if (
+        isEventSession(session) &&
+        options?.useAheadFlavor &&
+        pacing === "ahead"
+      ) {
+        text =
+          eventAheadPuzzleSolvedCopy(label, eventAdventureType(session)) ??
+          (team
+            ? `${team} habéis descifrado «${label}». El hilo se tensa, seguid.`
+            : `Avance logrado en «${label}». El camino continúa.`);
+      } else if (isEventSession(session)) {
+        text = team
+          ? `${team} habéis cerrado «${label}». Actualizad el cuaderno y seguid el hilo.`
+          : `Avance en «${label}». El cuaderno de pistas es vuestra brújula.`;
+      } else {
+        text = team
           ? `${team} habéis descifrado «${label}». El hilo se tensa, seguid.`
-          : `Avance logrado en «${label}». El camino continúa.`,
+          : `Avance logrado en «${label}». El camino continúa.`;
+      }
+      return {
+        text,
         kind: "notification",
         meta: STATIC_META,
       };
@@ -115,16 +148,22 @@ export function staticInterventionText(
       };
     case "TIME_WARNING": {
       const label = String(trigger.payload?.label ?? "el tiempo");
+      const text = isEventSession(session)
+        ? eventTimeWarningCopy(label, eventAdventureType(session))
+        : `Recordad: queda ${label}. Priorizad lo que aún no resolvisteis.`;
       return {
-        text: `Recordad: queda ${label}. Priorizad lo que aún no resolvisteis.`,
+        text,
         kind: "notification",
         meta: STATIC_META,
       };
     }
     case "PACE_NUDGE": {
-      const mode = String(trigger.payload?.pacingMode ?? "behind");
-      const text =
-        mode === "critical"
+      const mode = (String(trigger.payload?.pacingMode ?? "behind") === "critical"
+        ? "critical"
+        : "behind") as GmPacingMode;
+      const text = isEventSession(session)
+        ? eventPaceNudgeCopy(mode, eventAdventureType(session))
+        : mode === "critical"
           ? "El reloj apremia: concentrad energía en el reto que tenéis delante antes de explorar más."
           : "El director nota que el tiempo corre más rápido que los avances. Priorizad un puzzle abierto.";
       return {
@@ -134,10 +173,20 @@ export function staticInterventionText(
       };
     }
     case "TEAM_STUCK": {
-      const label =
-        session.room.puzzles[String(trigger.payload?.puzzleId ?? "")]?.label ?? "este reto";
+      const puzzleId = String(trigger.payload?.puzzleId ?? "");
+      const label = session.room.puzzles[puzzleId]?.label ?? "este reto";
+      const assistTier =
+        trigger.payload?.assistTier === "ambient" ? ("ambient" as const) : ("standard" as const);
+      const text = isEventSession(session)
+        ? eventTeamStuckCopy(
+            label,
+            eventAdventureType(session),
+            assistTier,
+            clueNotebookHint(session),
+          )
+        : `Lleváis un rato en «${label}». Si necesitáis ayuda, usad «Pedir pista» — el conserje no revelará más de lo autorizado.`;
       return {
-        text: `Lleváis un rato en «${label}». Si necesitáis ayuda, usad «Pedir pista» — el conserje no revelará más de lo autorizado.`,
+        text,
         kind: "notification",
         meta: STATIC_META,
       };

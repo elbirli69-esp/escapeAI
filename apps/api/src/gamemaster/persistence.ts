@@ -21,6 +21,10 @@ export type GmSessionMeta = {
   lastCharacterTurnMs: number;
   /** Un aviso PACE_NUDGE por partida como máximo. */
   paceNudgeIssued: boolean;
+  /** TEAM_STUCK ambiental (2.º empujón sin hint YAML) por puzzle en eventos. */
+  stuckAmbientIssuedPuzzleIds: string[];
+  /** Copy de director en evento cuando el equipo va ahead (una vez). */
+  aheadFlavorIssued: boolean;
 };
 
 const defaultMeta = (): GmSessionMeta => ({
@@ -34,6 +38,8 @@ const defaultMeta = (): GmSessionMeta => ({
   characterTurnCount: 0,
   lastCharacterTurnMs: 0,
   paceNudgeIssued: false,
+  stuckAmbientIssuedPuzzleIds: [],
+  aheadFlavorIssued: false,
 });
 
 export interface GmInterventionStore {
