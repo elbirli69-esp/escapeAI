@@ -27,7 +27,7 @@ Si un cambio solo mejora métricas técnicas pero no estos cinco puntos, es secu
 | Modo | Fortalezas ER | Gaps de diversión |
 | ---- | ------------- | ----------------- |
 | **Catálogo** (`pilot`, `lighthouse`) | Arco lineal, objetos, personaje en pilot | Pocas variaciones en rejuego; GM aún no es director de giros |
-| **Eventos generados** | Personalización social, sensorial, leaderboard | Misma estructura 3 escenas × 4 tipos; misterio casi solo copy+costa; finale con muchos puzzles paralelos |
+| **Eventos generados** | Personalización social, sensorial, leaderboard | Misma estructura 3 escenas × 4 tipos; **poco híbrido sala↔móvil** (token sin verificación); finale con muchos puzzles paralelos |
 | **Espacial 1 hab.** | Innovación físico-digital | Premisa corta; bridge/finale a veces repetitivos |
 | **Site multi-habitación** | Exploración real, mapa | Geo y puzzles interiores poco narrados como “misión”; GM sin mapa visitado |
 | **interactive-lab** | Demostración OSS | Rompe inmersión; no es producto de ocio |
@@ -45,6 +45,7 @@ Usar `pnpm audit-coherence` para **coherencia mecánica** antes de tocar entrete
 4. **Fail-forward suave** — tras N fallos, degradar pista en cliente/motor sin regalar solución (ya hay hints; falta **progreso dramático**, p. ej. desbloquear audio extra).
 5. **Cierre con payoff** — victoria nombra el nombre central, el lugar o el objeto escaneado; no terminar en “código correcto” sin epílogo.
 6. **Modo-aware** — cumpleaños ≠ team building ≠ misterio en **arco**, no solo en `toneForType` de 3 párrafos.
+7. **Estación híbrida** — donde aplique, **dos fases explícitas**: algo en sala (objeto, cartel, QR, lugar) → **clue o item** → validación en móvil (cámara, código, sonido). Evitar dos canales con el mismo contenido (póster = pantalla).
 
 ---
 
@@ -66,6 +67,7 @@ Usar `pnpm audit-coherence` para **coherencia mecánica** antes de tocar entrete
 | **Finale lineal** | Ordenar puzzles finale: `visual` → `final_code` → `voice_seal`; salida bloqueada por `final_code` solo (voice como sello opcional con copy) |
 | **Mystery real** | Plantilla con **falso culpable** en flavor + código que no sea solo iniciales del nombre (p. ej. mezcla año en facts + apodo) |
 | **`occasionLabel` libre** | Texto en convocatoria y en victoria (ver product doc) |
+| **Estaciones híbridas (P5)** | ≥1 cadena físico→digital por acto en generados; ver roadmap P5 |
 
 ### Espacial / site
 
@@ -214,6 +216,31 @@ Arquitectura: `apps/api/src/flavor/` + tests de validación.
 - [x] **Fase B — Motor:** hint extra / fail-forward en salas generadas (`bonusHintLevels`, `sound_intro` listen).
 - [x] **Fase C — Generador:** ramas de beats precocinadas (`branch: compress` + activación tras `PACE_NUDGE` rezagado).
 
+### P5 — Estaciones híbridas (físico + móvil)
+
+**Objetivo:** el jugador siente **sala de verdad**: el móvil no sustituye el prop, lo **confirma** o **consume** lo encontrado en el entorno. Espacial/site son referencia; eventos generados y catálogo deben tener cadenas explícitas, no solo sensorial en pantalla.
+
+**Arquetipos** (reutilizar tipos de puzzle actuales; sin IoT en v1):
+
+| Id | Sala | Móvil | Ejemplo motor |
+| -- | ---- | ----- | ------------- |
+| `observe-type` | Reloj / cartel con dígito | `camera` o `ocr_hint` → `code` | Espacial temporal, acto 1 generado (opcional OCR) |
+| `take-use` | Prop etiquetado | `take_item` → `use_item` + `inventory` | Pilot/faro; token en acto 2 |
+| `scan-unlock` | QR o etiqueta pegada | `camera:qr_scan` → `grantClue` | `visual_trace`, site |
+| `place-colors` | Stickers / cinta | `code` con orden | `COLOR_SEQUENCE` |
+| `go-ask` | Pasaje / exterior | `location` + `quiz` | Site, geo-lab |
+| `hear-order` | Audio en altavoz (organizer) | `sound` + candado | `AUDIO_LOCATION` (prep) |
+
+**Validación suave v1:** encadenar puzzles (`grantClue`, `requiresItem`, resolver cámara **antes** de `take_item`); no exigir BLE/NFC.
+
+- [ ] **Fase A — Contrato contenido:** en YAML/generador, `interactionHints` con bloques **«En la sala»** / **«En el móvil»**; cada híbrido publica `grantClue` entre fases; documentar en [authoring-rooms.md](./authoring-rooms.md).
+- [ ] **Fase B — Eventos generados:** acto 2 = **cámara → clue → token_slot** (foto/keyword antes de `take_item`); acto 3 opcional **cartel A5 + `ocr_hint`** con modo organizador *sala ligera* vs *solo móvil*; tests en `generate-adventure.test.ts` + win-path.
+- [ ] **Fase C — Producto organizador:** ficha «Qué preparar» (PDF/pantalla) desde `prepChecklist` + QR/carteles derivados de `joinCode` ([prompt-inventario-fisico.md](./prompt-inventario-fisico.md), `pnpm audit-fisico`).
+- [ ] **Fase D — PWA:** UI **estación 2 pasos** (no avanzar paso móvil hasta `complete_interaction` / `take_item` de la fase sala); copy diegético en `PuzzleInstructionCard`.
+- [ ] **Fase E — Auditoría:** extender `audit-coherence` o `audit-fisico` con **cadenas híbridas** por modo (mínimo N estaciones de 2 fases en generados + 1 en catálogo).
+
+**Fuera de P5 (roadmap posterior):** categoría `mirror`, NFC, validación servidor de imagen.
+
 ---
 
 ## Métricas de aceptación (entretenimiento)
@@ -227,12 +254,13 @@ Cualquier PR bajo este prompt debería declarar cómo valida:
 | **Finale sin saturación** | ≤ 2 puzzles activos simultáneos en última escena (generado) |
 | **Victoria con epílogo** | `GAME_WON` o pantalla final incluye subject/site name |
 | **Rejuego sonoro** | Misma semilla evento = misma sala; distinta semilla = patrón sonoro distinto (ya); añadir variación en **texto** de beats |
+| **Híbrido sala↔móvil (P5)** | Por acto en generados: existe par puzzle A→B con tipos distintos y `grantClue` o `requiresItem` entre ellos; `pnpm audit-fisico` lista ≥1 cadena; playtest con kit mínimo (QR + 1 cartel) |
 
 ---
 
 ## Procedimiento para agente / desarrollo
 
-1. Leer modo afectado (tabla diagnóstico) y elegir **una palanca** (P0–P3).
+1. Leer modo afectado (tabla diagnóstico) y elegir **una palanca** (P0–P5).
 2. Si toca motor: esquema en `room-definition.ts` + tests `applyAction` + migración gradual en YAML.
 3. Si toca generador: fixture fijo en `generate-adventure.test.ts` + playtest mental del clue ledger.
 4. Si toca GM: solo datos en `GmViewContext`; nunca mutar sesión desde LLM.
@@ -266,4 +294,5 @@ Cualquier PR bajo este prompt debería declarar cómo valida:
 - [gamemaster-ai-gm5.md](./gamemaster-ai-gm5.md) — ritmo
 - [prompt-ux-ui-temas-visuales.md](./prompt-ux-ui-temas-visuales.md)
 - [prompt-custom-events.md](./prompt-custom-events.md)
+- [prompt-inventario-fisico.md](./prompt-inventario-fisico.md) — montaje + P5 Fase C/E
 - [scanner-phase-4d-ar-3d.md](./scanner-phase-4d-ar-3d.md) — mapa 2D site

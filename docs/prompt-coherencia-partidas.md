@@ -102,4 +102,5 @@ Arquetipos espaciales: entorno `sampleEnv` de `generate-spatial.test.ts`.
 - [authoring-rooms.md](./authoring-rooms.md)
 - [prompt-custom-events.md](./prompt-custom-events.md)
 - [prompt-sensory-escape-room-v3.md](./prompt-sensory-escape-room-v3.md)
+- [prompt-inventario-fisico.md](./prompt-inventario-fisico.md) · `pnpm audit-fisico`
 - [prompt-ux-ui-temas-visuales.md](./prompt-ux-ui-temas-visuales.md)
