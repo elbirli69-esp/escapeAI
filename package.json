@@ -12,6 +12,7 @@
     "experience-eval": "pnpm experience-eval:signals && pnpm test:e2e && pnpm experience-eval:report",
     "validate-rooms": "pnpm --filter @escapeai/escape-content run validate-rooms",
     "audit-coherence": "pnpm --filter @escapeai/escape-content run audit-coherence",
+    "audit-fisico": "pnpm --filter @escapeai/escape-content run audit-fisico",
     "dev": "pnpm --parallel --filter @escapeai/api --filter @escapeai/web run dev",
     "dev:api": "pnpm --filter @escapeai/api run dev",
     "dev:web": "pnpm --filter @escapeai/web run dev",
