@@ -4,7 +4,7 @@
 
 Ver specs en `e2e/specs/` y helpers en `e2e/fixtures/`.
 
-**Relacionado:** [QA manual](./qa-mobile-puzzles.md) · [Arquitectura](./architecture.md)
+**Relacionado:** [QA manual](./qa-mobile-puzzles.md) · [Arquitectura](./architecture.md) · [Experiencia jugable E2E](./prompt-e2e-experiencia-jugable.md) (gancho, diversión, notas)
 
 ## Ejecutar
 

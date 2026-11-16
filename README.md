@@ -36,6 +36,7 @@ pnpm dev
 | `pnpm build` | Build de todos los paquetes    |
 | `pnpm test`  | Tests (motor + sala piloto)    |
 | `pnpm test:e2e` | Playwright (API + PWA)      |
+| `pnpm experience-eval` | E2E + señales + informe de notas (ver [docs/prompt-e2e-experiencia-jugable.md](./docs/prompt-e2e-experiencia-jugable.md)) |
 
 ## Documentación
 
