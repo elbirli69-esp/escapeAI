@@ -53,6 +53,12 @@ No inventario aquí: candados Bluetooth, actuadores IoT, **espejos** (no hay cat
 5. **Modos digital-first:** catálogo `interactive-lab`, eventos generados, `geo-lab` (GPS) → sin checklist obligatoria; marcar props narrativos (token, fusible) como *recomendados, no validados*.
 6. **QR de lobby de evento:** siempre generable en pantalla (`EventJoinQr`); imprimir es comodidad del organizador.
 
+### G. Estaciones híbridas (roadmap P5)
+
+1. Detectar **cadenas de 2+ fases** en la misma escena o acto: tipos de puzzle distintos unidos por `grantClue`, `requiresItem` o orden documentado en `interactionHints`.
+2. Marcar modos **digital-first** vs **híbrido obligatorio** (espacial `visual_trace`, site con QR).
+3. Cuando [prompt-entretenimiento-er.md](./prompt-entretenimiento-er.md) P5 Fase E esté implementada, el informe debe listar cadenas por `generated:*` y fallar si acto 2 del generado no tiene al menos una cadena sala→móvil.
+
 ---
 
 ## Procedimiento
@@ -70,3 +76,4 @@ No inventario aquí: candados Bluetooth, actuadores IoT, **espejos** (no hay cat
 - [qa-mobile-puzzles.md](./qa-mobile-puzzles.md)
 - [scanner-phase-4d-ar-3d.md](./scanner-phase-4d-ar-3d.md)
 - [authoring-rooms.md](./authoring-rooms.md)
+- [prompt-entretenimiento-er.md](./prompt-entretenimiento-er.md) — roadmap **P5**
