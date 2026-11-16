@@ -19,6 +19,8 @@ export type SerializedSession = {
   status: SessionRecord["status"];
   grantedClues: Record<string, string>;
   firedBeats: string[];
+  bonusHintLevels?: Record<string, number>;
+  failForwardSoundIntro?: boolean;
 };
 
 export function serializeSession(session: SessionRecord): SerializedSession {
@@ -45,6 +47,8 @@ export function serializeSession(session: SessionRecord): SerializedSession {
     status: session.status,
     grantedClues: Object.fromEntries(session.grantedClues),
     firedBeats: [...session.firedBeats],
+    bonusHintLevels: Object.fromEntries(session.bonusHintLevels),
+    failForwardSoundIntro: session.failForwardSoundIntro,
   };
 }
 
@@ -72,5 +76,7 @@ export function deserializeSession(data: SerializedSession): SessionRecord {
     status: data.status,
     grantedClues: new Map(Object.entries(data.grantedClues ?? {})),
     firedBeats: new Set(data.firedBeats ?? []),
+    bonusHintLevels: new Map(Object.entries(data.bonusHintLevels ?? {})),
+    failForwardSoundIntro: data.failForwardSoundIntro,
   };
 }

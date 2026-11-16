@@ -10,6 +10,10 @@ import type {
 } from "@escapeai/shared";
 import { matchPlayerAnswer, sanitizePlayerUtterance, validatePlayerAtTarget } from "@escapeai/shared";
 import type { PlayerContext } from "./player-context.js";
+import {
+  effectiveHintCap,
+  maybeGeneratedFailForward,
+} from "./adaptive-assist.js";
 import type { Condition, RoomBeat, RoomDefinition, RoomPuzzle } from "./room-definition.js";
 
 export type SessionRecord = {
@@ -32,6 +36,10 @@ export type SessionRecord = {
   firedBeats: Set<string>;
   /** Copia servidor del progreso comunitario (evento multiequipo). */
   teamProgress?: { label: string; value: number; goal: number };
+  /** Pistas extra permitidas por GM adaptativo (evento generado). */
+  bonusHintLevels: Map<string, number>;
+  /** Fail-forward acto 1: listen forzado en sound_intro. */
+  failForwardSoundIntro?: boolean;
 };
 
 export function createSession(room: RoomDefinition, playerContext?: PlayerContext): SessionRecord {
@@ -60,6 +68,7 @@ export function createSession(room: RoomDefinition, playerContext?: PlayerContex
     status: "playing",
     grantedClues: new Map(),
     firedBeats: new Set(),
+    bonusHintLevels: new Map(),
   };
 
   const start = room.scenes[room.startSceneId];
@@ -284,6 +293,7 @@ function submitAnswer(
     })
   ) {
     session.narrative.push("Respuesta incorrecta.");
+    maybeGeneratedFailForward(session, puzzleId);
     return { event: { type: "puzzle_failed", puzzleId, attempts } };
   }
 
@@ -436,7 +446,7 @@ function requestHint(
   const hints = puzzle.hints ?? [];
   const used = session.puzzleHintsUsed.get(puzzleId) ?? 0;
   if (used >= hints.length) return { error: "No quedan pistas." };
-  const max = puzzle.maxHints ?? hints.length;
+  const max = effectiveHintCap(session, puzzleId, hints.length, puzzle.maxHints);
   if (used >= max) return { error: "Límite de pistas alcanzado." };
 
   const next = hints[used];
