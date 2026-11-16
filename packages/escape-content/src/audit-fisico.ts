@@ -271,7 +271,10 @@ function collectStats(snapshots: RoomSnapshot[]) {
   const proposals = proposeSpatialAdventures(sampleEnv);
   for (const p of proposals) {
     for (const m of p.sensoryMechanics) mechanicsUsed.add(m);
-    for (const o of p.objectsUsed) categoriesUsed.add(o.category);
+    for (const label of p.objectsUsed) {
+      const hit = sampleEnv.objects.find((obj) => obj.label === label || obj.category === label);
+      categoriesUsed.add(hit?.category ?? "unknown");
+    }
   }
 
   return { byMode, globalTypes, cameraModes, locationModes, items, categoriesUsed, mechanicsUsed };
