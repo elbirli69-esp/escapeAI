@@ -14,7 +14,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "validate-rooms": "tsx src/validate-rooms.ts",
-    "audit-coherence": "tsx src/audit-coherence.ts"
+    "audit-coherence": "tsx src/audit-coherence.ts",
+    "audit-fisico": "tsx src/audit-fisico.ts"
   },
   "dependencies": {
     "@escapeai/escape-engine": "workspace:*",
