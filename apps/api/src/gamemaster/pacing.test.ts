@@ -20,6 +20,8 @@ function metaBase(overrides: Partial<GmSessionMeta> = {}): GmSessionMeta {
     characterTurnCount: 0,
     lastCharacterTurnMs: 0,
     paceNudgeIssued: false,
+    stuckAmbientIssuedPuzzleIds: [],
+    aheadFlavorIssued: false,
     ...overrides,
   };
 }

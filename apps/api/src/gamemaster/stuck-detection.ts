@@ -2,6 +2,7 @@ import type { SessionRecord } from "@escapeai/escape-engine";
 import type { GameAction, GameEvent, GmProcessTrigger } from "@escapeai/shared";
 import { randomUUID } from "node:crypto";
 import type { GmSessionMeta } from "./persistence.js";
+import { isEventSession } from "./event-session.js";
 import { hasProgressEvent, isPuzzleActiveInScene, primaryOpenPuzzleId } from "./hints.js";
 
 const STUCK_MIN_ATTEMPTS = Number(process.env.GM_STUCK_MIN_ATTEMPTS ?? 3);
@@ -56,7 +57,6 @@ export function detectTeamStuckTrigger(
   if (!puzzleId) return undefined;
   if (!isPuzzleActiveInScene(session, puzzleId)) return undefined;
   if (session.solvedPuzzles.has(puzzleId)) return undefined;
-  if (meta.stuckNotifiedPuzzleIds.includes(puzzleId)) return undefined;
 
   const puzzle = session.room.puzzles[puzzleId];
   const attempts = session.puzzleAttempts.get(puzzleId) ?? 0;
@@ -68,6 +68,27 @@ export function detectTeamStuckTrigger(
   const stuckByAttempts = attempts >= STUCK_FAST_ATTEMPTS;
   const stuckByIdle = attempts >= STUCK_MIN_ATTEMPTS && idleMs >= STUCK_IDLE_MS;
   if (!stuckByAttempts && !stuckByIdle) return undefined;
+
+  const alreadyNotified = meta.stuckNotifiedPuzzleIds.includes(puzzleId);
+  if (alreadyNotified) {
+    if (
+      !isEventSession(session) ||
+      meta.stuckAmbientIssuedPuzzleIds.includes(puzzleId) ||
+      attempts < STUCK_FAST_ATTEMPTS + 2
+    ) {
+      return undefined;
+    }
+    return {
+      type: "TEAM_STUCK",
+      sourceEventId: randomUUID(),
+      payload: {
+        puzzleId,
+        attempts,
+        idleSec: Math.floor(idleMs / 1000),
+        assistTier: "ambient",
+      },
+    };
+  }
 
   return {
     type: "TEAM_STUCK",
@@ -81,5 +102,13 @@ export function markStuckNotified(meta: GmSessionMeta, puzzleId: string): GmSess
   return {
     ...meta,
     stuckNotifiedPuzzleIds: [...meta.stuckNotifiedPuzzleIds, puzzleId],
+  };
+}
+
+export function markStuckAmbientIssued(meta: GmSessionMeta, puzzleId: string): GmSessionMeta {
+  if (meta.stuckAmbientIssuedPuzzleIds.includes(puzzleId)) return meta;
+  return {
+    ...meta,
+    stuckAmbientIssuedPuzzleIds: [...meta.stuckAmbientIssuedPuzzleIds, puzzleId],
   };
 }
