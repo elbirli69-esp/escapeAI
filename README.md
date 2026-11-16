@@ -42,6 +42,7 @@ pnpm dev
 - [Arquitectura](./docs/architecture.md)
 - [GameMasterAI — GM-0](./docs/gamemaster-ai-gm0.md)
 - [GameMasterAI — GM-1](./docs/gamemaster-ai-gm1.md)
+- [Tester E2E de experiencia (visual, puzzles, diversión)](./docs/prompt-e2e-tester-experiencia.md)
 - [Plan UX/UI visual por tema](./docs/prompt-ux-ui-temas-visuales.md)
 - [Sensory escape room v3 (pistas hiladas)](./docs/prompt-sensory-escape-room-v3.md)
 - [Entretenimiento ER (narrativa, ritmo, arquitectura)](./docs/prompt-entretenimiento-er.md)

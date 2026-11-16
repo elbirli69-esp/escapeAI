@@ -4,7 +4,7 @@
 
 Ver specs en `e2e/specs/` y helpers en `e2e/fixtures/`.
 
-**Relacionado:** [QA manual](./qa-mobile-puzzles.md) · [Arquitectura](./architecture.md)
+**Relacionado:** [Tester E2E experiencia](./prompt-e2e-tester-experiencia.md) · [QA manual](./qa-mobile-puzzles.md) · [Arquitectura](./architecture.md)
 
 ## Ejecutar
 
