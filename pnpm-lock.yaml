@@ -136,9 +136,18 @@ importers:
 
   e2e:
     devDependencies:
+      '@escapeai/escape-content':
+        specifier: workspace:*
+        version: link:../packages/escape-content
+      '@escapeai/escape-engine':
+        specifier: workspace:*
+        version: link:../packages/escape-engine
       '@playwright/test':
         specifier: ^1.49.1
         version: 1.65.0
+      tsx:
+        specifier: ^4.19.2
+        version: 4.23.15
 
   packages/escape-content:
     dependencies:
