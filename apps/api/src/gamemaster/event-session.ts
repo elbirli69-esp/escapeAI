@@ -1,9 +1,29 @@
-import type { SessionRecord } from "@escapeai/escape-engine";
+import {
+  grantBonusHintLevel,
+  isGeneratedEventSession,
+  type SessionRecord,
+} from "@escapeai/escape-engine";
 import type { AdventureType, GmPacingMode } from "@escapeai/shared";
+import type { GmSessionMeta } from "./persistence.js";
 
 /** Partida ligada a evento multiequipo (código de acceso). */
 export function isEventSession(session: SessionRecord): boolean {
   return Boolean(session.playerContext?.joinCode);
+}
+
+/** Fase B: una pista YAML extra en el puzzle abierto tras nudge/stuck del director. */
+export function maybeGrantBonusHintFromGm(
+  session: SessionRecord,
+  meta: GmSessionMeta,
+  puzzleId: string | undefined,
+): GmSessionMeta {
+  if (!puzzleId || !isGeneratedEventSession(session)) return meta;
+  if (meta.bonusHintGrantedPuzzleIds.includes(puzzleId)) return meta;
+  if (!grantBonusHintLevel(session, puzzleId, 1)) return meta;
+  return {
+    ...meta,
+    bonusHintGrantedPuzzleIds: [...meta.bonusHintGrantedPuzzleIds, puzzleId],
+  };
 }
 
 export function eventAdventureType(session: SessionRecord): AdventureType | undefined {

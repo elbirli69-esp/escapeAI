@@ -9,14 +9,14 @@ import { randomUUID } from "node:crypto";
 import { buildGmViewContextForCharacter, characterUsesSpokenPresentation, getRoomCharacter } from "./characters.js";
 import { buildGmViewContext, buildGmViewContextForHint, collectForbiddenAnswerTokens } from "./context.js";
 import { staticInterventionText } from "./fallbacks.js";
-import { hintSpoilerLevel } from "./hints.js";
+import { hintSpoilerLevel, primaryOpenPuzzleId } from "./hints.js";
 import {
   computeGmPacing,
   detectPaceNudgeTrigger,
   markPaceNudgeIssued,
   resolveAdaptivePolicy,
 } from "./pacing.js";
-import { isEventSession } from "./event-session.js";
+import { isEventSession, maybeGrantBonusHintFromGm } from "./event-session.js";
 import {
   detectTeamStuckTrigger,
   markStuckAmbientIssued,
@@ -158,6 +158,7 @@ export class GameMasterService {
           meta = markStuckAmbientIssued(meta, puzzleId);
         } else {
           meta = markStuckNotified(meta, puzzleId);
+          meta = maybeGrantBonusHintFromGm(session, meta, puzzleId);
         }
         await this.store.saveMeta(session.sessionId, meta);
       }
@@ -168,6 +169,7 @@ export class GameMasterService {
       }
       if (trigger.type === "PACE_NUDGE") {
         meta = markPaceNudgeIssued(meta);
+        meta = maybeGrantBonusHintFromGm(session, meta, primaryOpenPuzzleId(session));
         await this.store.saveMeta(session.sessionId, meta);
       }
     }

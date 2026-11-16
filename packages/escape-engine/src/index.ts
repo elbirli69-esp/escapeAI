@@ -17,6 +17,12 @@ export {
   type SessionRecord,
 } from "./session.js";
 export {
+  grantBonusHintLevel,
+  isGeneratedEventSession,
+  maybeGeneratedFailForward,
+  effectiveHintCap,
+} from "./adaptive-assist.js";
+export {
   deserializeSession,
   serializeSession,
   type SerializedSession,

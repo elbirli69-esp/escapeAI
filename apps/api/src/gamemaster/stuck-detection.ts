@@ -1,4 +1,4 @@
-import type { SessionRecord } from "@escapeai/escape-engine";
+import { effectiveHintCap, type SessionRecord } from "@escapeai/escape-engine";
 import type { GameAction, GameEvent, GmProcessTrigger } from "@escapeai/shared";
 import { randomUUID } from "node:crypto";
 import type { GmSessionMeta } from "./persistence.js";
@@ -61,7 +61,10 @@ export function detectTeamStuckTrigger(
   const puzzle = session.room.puzzles[puzzleId];
   const attempts = session.puzzleAttempts.get(puzzleId) ?? 0;
   const hintsUsed = session.puzzleHintsUsed.get(puzzleId) ?? 0;
-  const maxHints = puzzle?.maxHints ?? puzzle?.hints?.length ?? 0;
+  const hintCount = puzzle?.hints?.length ?? 0;
+  const maxHints = puzzle
+    ? effectiveHintCap(session, puzzleId, hintCount, puzzle.maxHints)
+    : 0;
   if (hintsUsed >= maxHints) return undefined;
 
   const idleMs = nowMs - meta.lastProgressMs;

@@ -5,7 +5,9 @@ import {
   eventPaceNudgeCopy,
   eventTeamStuckCopy,
   isEventSession,
+  maybeGrantBonusHintFromGm,
 } from "./event-session.js";
+import type { GmSessionMeta } from "./persistence.js";
 import { staticInterventionText } from "./fallbacks.js";
 
 const miniRoom = parseRoomDefinition(`
@@ -81,5 +83,28 @@ describe("event adaptive fallbacks", () => {
 
   it("eventPaceNudgeCopy critical team", () => {
     expect(eventPaceNudgeCopy("critical", "team")).toMatch(/equipos|ranking|puzzle/i);
+  });
+
+  it("maybeGrantBonusHintFromGm solo en sala generated con join", () => {
+    const session = createSession(miniRoom, eventCtx);
+    session.room = { ...session.room, id: "generated-abc12345" };
+    const meta: GmSessionMeta = {
+      sequence: 0,
+      dedupeKeys: [],
+      llmCallCount: 0,
+      lastLlmCallMs: 0,
+      visitedSceneIds: [],
+      lastProgressMs: 0,
+      stuckNotifiedPuzzleIds: [],
+      characterTurnCount: 0,
+      lastCharacterTurnMs: 0,
+      paceNudgeIssued: false,
+      stuckAmbientIssuedPuzzleIds: [],
+      aheadFlavorIssued: false,
+      bonusHintGrantedPuzzleIds: [],
+    };
+    const next = maybeGrantBonusHintFromGm(session, meta, "p1");
+    expect(next.bonusHintGrantedPuzzleIds).toContain("p1");
+    expect(session.bonusHintLevels.get("p1")).toBe(1);
   });
 });

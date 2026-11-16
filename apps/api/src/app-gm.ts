@@ -50,6 +50,8 @@ export async function runGameplayAction(deps: {
     void gmWork.catch(() => undefined);
   }
 
+  await sessionStore.set(session);
+
   const gmInterventions = await gm.listInterventions(session.sessionId);
   const latest = interventions[interventions.length - 1] ?? gmInterventions[gmInterventions.length - 1];
 

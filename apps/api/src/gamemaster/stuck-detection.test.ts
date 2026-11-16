@@ -22,6 +22,7 @@ function metaBase(overrides: Partial<GmSessionMeta> = {}): GmSessionMeta {
     paceNudgeIssued: false,
     stuckAmbientIssuedPuzzleIds: [],
     aheadFlavorIssued: false,
+    bonusHintGrantedPuzzleIds: [],
     ...overrides,
   };
 }
