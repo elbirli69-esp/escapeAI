@@ -19,7 +19,9 @@ describe("generateAdventureRoom", () => {
 
   it("registra beats y grantClue en sound y entry_lock", () => {
     const room = generateAdventureRoom(baseInput, "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
-    expect(room.beats?.length).toBeGreaterThanOrEqual(3);
+    expect(room.beats?.length).toBeGreaterThanOrEqual(6);
+    expect(room.beats?.some((b) => b.id === "gen-compress-middle" && b.branch === "compress")).toBe(true);
+    expect(room.beats?.find((b) => b.id === "gen-finale")?.branch).toBe("default");
     expect(room.puzzles.sound_intro?.onSolve?.grantClue?.id).toBe("numeric_prefix");
     expect(room.puzzles.entry_lock?.onSolve?.grantClue).toBeTruthy();
   });

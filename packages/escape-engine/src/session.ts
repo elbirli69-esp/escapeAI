@@ -40,6 +40,8 @@ export type SessionRecord = {
   bonusHintLevels: Map<string, number>;
   /** Fail-forward acto 1: listen forzado en sound_intro. */
   failForwardSoundIntro?: boolean;
+  /** Rama narrativa precocinada (beats `branch: compress`) en salas generadas. */
+  assistNarrativeMode?: "compress";
 };
 
 export function createSession(room: RoomDefinition, playerContext?: PlayerContext): SessionRecord {
@@ -236,7 +238,7 @@ function fireMatchingBeats(session: SessionRecord, hooks: BeatHook[]): void {
   if (!beats?.length) return;
   for (const hook of hooks) {
     for (const beat of beats) {
-      if (!beatMatches(beat, hook)) continue;
+      if (!beatMatches(beat, hook, session)) continue;
       if (session.firedBeats.has(beat.id)) continue;
       session.firedBeats.add(beat.id);
       session.narrative.push(beat.text);
@@ -244,8 +246,11 @@ function fireMatchingBeats(session: SessionRecord, hooks: BeatHook[]): void {
   }
 }
 
-function beatMatches(beat: RoomBeat, hook: BeatHook): boolean {
+function beatMatches(beat: RoomBeat, hook: BeatHook, session: SessionRecord): boolean {
   if (beat.after !== hook.kind) return false;
+  const mode = session.assistNarrativeMode ?? "default";
+  if (beat.branch === "compress" && mode !== "compress") return false;
+  if (beat.branch === "default" && mode === "compress") return false;
   if (beat.after === "puzzle_solved" && hook.kind === "puzzle_solved") {
     return beat.puzzleId === hook.puzzleId;
   }

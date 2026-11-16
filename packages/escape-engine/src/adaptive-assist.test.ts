@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  activateCompressNarrative,
   applyAction,
   createSession,
   effectiveHintCap,
@@ -83,5 +84,12 @@ describe("adaptive-assist", () => {
     const session = createSession(generatedMini);
     session.puzzleAttempts.set("entry_lock", 10);
     expect(maybeGeneratedFailForward(session, "entry_lock")).toBe(false);
+  });
+
+  it("activateCompressNarrative es idempotente en eventos generados", () => {
+    const session = createSession(generatedMini, eventCtx);
+    expect(activateCompressNarrative(session, "birthday")).toBe(true);
+    expect(session.assistNarrativeMode).toBe("compress");
+    expect(activateCompressNarrative(session, "birthday")).toBe(false);
   });
 });
