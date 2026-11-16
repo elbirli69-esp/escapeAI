@@ -168,6 +168,7 @@ export function generateAdventureRoom(
       token: {
         name: `Recuerdo de ${nickname}`,
         description: factB,
+        takeRequiresPuzzleSolved: "camera_hunt",
       },
     },
     scenes: {
@@ -263,9 +264,16 @@ export function generateAdventureRoom(
         type: "camera",
         label: "Prueba en el salón",
         cameraPrompt: `Haz una foto relacionada con: ${factA.slice(0, 60)}.`,
+        onSolve: {
+          grantClue: {
+            id: "salon_photo_ok",
+            text: `Foto validada: ya puedes coger el recuerdo físico de ${nickname} en la sala.`,
+          },
+        },
         interactionHints: [
-          "Esta prueba no cambia el candado numérico: prueba que estuviste en el sitio del evento.",
-          `La respuesta enlaza con el token y con la sala final (${nickname}).`,
+          "En la sala: prepara el recuerdo/token en la mesa antes de empezar (el organizador lo indica).",
+          "En el móvil: captura la foto del entorno y escribe el apodo; sin eso no podrás coger el objeto.",
+          `La pista del cuaderno «salon_photo_ok» autoriza a recoger el token.`,
         ],
         prompt: `Tras la foto, escribe en MAYÚSCULAS el apodo «${nickname}».`,
         answer: nickname.toUpperCase().replace(/[^A-ZÁÉÍÓÚÑ]/gi, "X").slice(0, 12) || "EQUIPO",
@@ -279,9 +287,14 @@ export function generateAdventureRoom(
         label: "Ranura del recuerdo",
         prompt: `Coloca el recuerdo vinculado a ${nickname}.`,
         requiresItem: "token",
+        interactionHints: [
+          "En la sala: usa el mismo objeto que dejaste al lado del grupo tras la foto.",
+          "En el móvil: usa el objeto del inventario cuando la ranura esté activa.",
+          "Revisa en Notas la pista salon_photo_ok y el candado numérico del acto 1 si dudas.",
+        ],
         maxHints: 2,
         hints: [
-          { level: 1, text: `Coge el objeto que nombra a ${nickname}.` },
+          { level: 1, text: `Coge el objeto que nombra a ${nickname} (tras la prueba de cámara).` },
           { level: 2, text: factB },
         ],
       },

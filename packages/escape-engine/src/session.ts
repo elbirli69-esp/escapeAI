@@ -424,6 +424,10 @@ function takeItem(session: SessionRecord, itemId: string): string | undefined {
   if (!inScene?.has(itemId)) {
     return "No hay ese objeto en esta escena.";
   }
+  const gate = session.room.items?.[itemId]?.takeRequiresPuzzleSolved;
+  if (gate && !session.solvedPuzzles.has(gate)) {
+    return "Primero completa la prueba del móvil en esta sala.";
+  }
   inScene.delete(itemId);
   session.inventory.add(itemId);
   return undefined;

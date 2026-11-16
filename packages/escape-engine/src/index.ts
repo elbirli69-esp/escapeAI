@@ -1,5 +1,6 @@
 export type {
   Condition,
+  PuzzleType,
   RoomBeat,
   RoomCharacter,
   RoomDefinition,

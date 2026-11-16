@@ -107,7 +107,7 @@ Sala de referencia: `packages/escape-content/rooms/geo-lab.yaml`.
 | ---------- | ------ |
 | `submit_answer` | Puzzles `code`, sensoriales y `location` en modo `quiz` |
 | `submit_location` | Puzzles `location` (`reach` o paso `arrive` del `quiz`) |
-| `take_item` | Objeto listado en `sceneItems` |
+| `take_item` | Objeto listado en `sceneItems` (puede exigir puzzle previo con `items.<id>.takeRequiresPuzzleSolved`) |
 | `use_item` + `puzzleId` | Puzzles `inventory` |
 | `move` | Cuando la salida está `available` |
 | `request_hint` | Consume siguiente pista del YAML |

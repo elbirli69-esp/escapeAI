@@ -271,7 +271,9 @@ function collectStats(snapshots: RoomSnapshot[]) {
   const proposals = proposeSpatialAdventures(sampleEnv);
   for (const p of proposals) {
     for (const m of p.sensoryMechanics) mechanicsUsed.add(m);
-    for (const o of p.objectsUsed) categoriesUsed.add(o.category);
+    for (const plan of p.puzzles) {
+      for (const cat of plan.objectCategories) categoriesUsed.add(cat);
+    }
   }
 
   return { byMode, globalTypes, cameraModes, locationModes, items, categoriesUsed, mechanicsUsed };

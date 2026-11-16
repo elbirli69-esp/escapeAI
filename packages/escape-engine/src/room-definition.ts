@@ -120,6 +120,8 @@ export type RoomItem = {
   name: string;
   description: string;
   image?: string;
+  /** P5 híbrido: no permite `take_item` hasta resolver este puzzle en la escena. */
+  takeRequiresPuzzleSolved?: string;
 };
 
 export type RoomDefinition = {
