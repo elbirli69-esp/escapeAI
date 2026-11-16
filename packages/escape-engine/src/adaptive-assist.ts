@@ -1,4 +1,4 @@
-import type { InteractionStep } from "@escapeai/shared";
+import type { AdventureType, InteractionStep } from "@escapeai/shared";
 import type { SessionRecord } from "./session.js";
 
 const FAIL_FORWARD_ENTRY_ATTEMPTS = 4;
@@ -58,5 +58,31 @@ export function maybeGeneratedFailForward(session: SessionRecord, failedPuzzleId
   session.narrative.push(
     "📻 El mensaje sonoro se afina solo — el director os deja escucharlo para anotar el prefijo.",
   );
+  return true;
+}
+
+const COMPRESS_KICKOFF: Record<AdventureType, string> = {
+  birthday:
+    "El director acorta el viaje: en el acto central, cámara y token son la salida; lo demás es ambientación.",
+  celebration:
+    "Modo compresión: el grupo va al grano — prueba de cámara y ranura del recuerdo desbloquean el cierre.",
+  mystery:
+    "Compresión de investigación: en la escena central priorizad la prueba física y el hueco del token.",
+  team: "Sprint de equipo: solo cuentan cámara + token en el acto 2; el ranking no perdona vueltas en vacío.",
+};
+
+/** Activa beats `branch: compress` (una vez) en eventos generados rezagados. */
+export function activateCompressNarrative(
+  session: SessionRecord,
+  adventureType?: AdventureType,
+): boolean {
+  if (!isGeneratedEventSession(session)) return false;
+  if (session.assistNarrativeMode === "compress") return false;
+  session.assistNarrativeMode = "compress";
+  const line =
+    adventureType && COMPRESS_KICKOFF[adventureType]
+      ? COMPRESS_KICKOFF[adventureType]
+      : "El director comprime el arco: priorizad los retos que abren la salida.";
+  session.narrative.push(`🎬 ${line}`);
   return true;
 }

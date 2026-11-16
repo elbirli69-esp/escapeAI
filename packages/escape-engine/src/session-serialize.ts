@@ -21,6 +21,7 @@ export type SerializedSession = {
   firedBeats: string[];
   bonusHintLevels?: Record<string, number>;
   failForwardSoundIntro?: boolean;
+  assistNarrativeMode?: SessionRecord["assistNarrativeMode"];
 };
 
 export function serializeSession(session: SessionRecord): SerializedSession {
@@ -49,6 +50,7 @@ export function serializeSession(session: SessionRecord): SerializedSession {
     firedBeats: [...session.firedBeats],
     bonusHintLevels: Object.fromEntries(session.bonusHintLevels),
     failForwardSoundIntro: session.failForwardSoundIntro,
+    assistNarrativeMode: session.assistNarrativeMode,
   };
 }
 
@@ -78,5 +80,6 @@ export function deserializeSession(data: SerializedSession): SessionRecord {
     firedBeats: new Set(data.firedBeats ?? []),
     bonusHintLevels: new Map(Object.entries(data.bonusHintLevels ?? {})),
     failForwardSoundIntro: data.failForwardSoundIntro,
+    assistNarrativeMode: data.assistNarrativeMode,
   };
 }

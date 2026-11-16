@@ -72,12 +72,16 @@ export type RoomPuzzle = {
 
 export type RoomBeatAfter = "session_started" | "puzzle_solved" | "scene_entered";
 
+/** `compress` solo en eventos generados cuando el director activa ritmo de compresión (Fase C). */
+export type RoomBeatBranch = "default" | "compress";
+
 export type RoomBeat = {
   id: string;
   after: RoomBeatAfter;
   puzzleId?: string;
   sceneId?: string;
   text: string;
+  branch?: RoomBeatBranch;
 };
 
 export type RoomCharacter = {

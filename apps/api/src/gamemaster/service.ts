@@ -1,4 +1,9 @@
-import { getExitAvailability, toPublicState, type SessionRecord } from "@escapeai/escape-engine";
+import {
+  activateCompressNarrative,
+  getExitAvailability,
+  toPublicState,
+  type SessionRecord,
+} from "@escapeai/escape-engine";
 import type {
   GameAction,
   GameEvent,
@@ -170,6 +175,9 @@ export class GameMasterService {
       if (trigger.type === "PACE_NUDGE") {
         meta = markPaceNudgeIssued(meta);
         meta = maybeGrantBonusHintFromGm(session, meta, primaryOpenPuzzleId(session));
+        if (pacing.mode === "behind" || pacing.mode === "critical") {
+          activateCompressNarrative(session, session.playerContext?.adventureType);
+        }
         await this.store.saveMeta(session.sessionId, meta);
       }
     }

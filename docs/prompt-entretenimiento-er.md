@@ -212,7 +212,7 @@ Arquitectura: `apps/api/src/flavor/` + tests de validación.
 - [x] **Fase A — Director:** fallbacks estáticos por `adventureType` + ritmo (`PACE_NUDGE`, `TIME_WARNING`, `SESSION_STARTED`, `PUZZLE_SOLVED` en evento).
 - [x] **Fase A — Stuck:** 2.º `TEAM_STUCK` ambient (pista de ambiente + cuaderno) por puzzle en eventos.
 - [x] **Fase B — Motor:** hint extra / fail-forward en salas generadas (`bonusHintLevels`, `sound_intro` listen).
-- [ ] **Fase C — Generador:** ramas de beats precocinadas.
+- [x] **Fase C — Generador:** ramas de beats precocinadas (`branch: compress` + activación tras `PACE_NUDGE` rezagado).
 
 ---
 

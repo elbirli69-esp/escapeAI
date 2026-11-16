@@ -17,6 +17,7 @@ export {
   type SessionRecord,
 } from "./session.js";
 export {
+  activateCompressNarrative,
   grantBonusHintLevel,
   isGeneratedEventSession,
   maybeGeneratedFailForward,

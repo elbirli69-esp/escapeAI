@@ -163,7 +163,7 @@ export function generateAdventureRoom(
     timeLimitSec: durationMinToSec(resolveDurationMin(input)),
     startSceneId: "start",
     winCondition: { type: "puzzle_solved", puzzleId: "final_code" },
-    beats: buildGeneratedBeats(introTone, nickname),
+    beats: buildGeneratedBeats(introTone, nickname, input.adventureType),
     items: {
       token: {
         name: `Recuerdo de ${nickname}`,
@@ -418,7 +418,10 @@ function sanitizeFact(fact: string | undefined, name: string): string {
 function buildGeneratedBeats(
   introTone: ReturnType<typeof toneForType>,
   nickname: string,
+  adventureType: AdventureType,
 ): RoomBeat[] {
+  const compressMiddle = compressMiddleBeat(adventureType, nickname);
+  const compressFinale = compressFinaleBeat(adventureType);
   return [
     { id: "gen-open", after: "session_started", text: introTone.tagline },
     {
@@ -438,8 +441,51 @@ function buildGeneratedBeats(
       after: "scene_entered",
       sceneId: "finale",
       text: introTone.scene3Body,
+      branch: "default",
+    },
+    {
+      id: "gen-compress-middle",
+      after: "scene_entered",
+      sceneId: "middle",
+      text: compressMiddle,
+      branch: "compress",
+    },
+    {
+      id: "gen-compress-finale",
+      after: "scene_entered",
+      sceneId: "finale",
+      text: compressFinale,
+      branch: "compress",
     },
   ];
+}
+
+function compressMiddleBeat(adventureType: AdventureType, nickname: string): string {
+  switch (adventureType) {
+    case "mystery":
+      return "Evidencia central: foto del entorno y ranura del token. El resto de pistas del cuaderno apuntan ahí.";
+    case "team":
+      return "Checkpoint: cámara + token. Ganas tiempo al ranking si no os dispersáis.";
+    case "celebration":
+      return `Fiesta en marcha: coged el recuerdo de ${nickname}, resolved la cámara y el hueco mecánico.`;
+    case "birthday":
+    default:
+      return `Homenaje comprimido: recuerdo de ${nickname}, prueba con cámara y ranura del token.`;
+  }
+}
+
+function compressFinaleBeat(adventureType: AdventureType): string {
+  switch (adventureType) {
+    case "mystery":
+      return "Informe final: galería visual y código de letras; el sello de voz no bloquea el cierre.";
+    case "team":
+      return "Meta sprint: visual, luego código de letras. Marca el tiempo en el ranking.";
+    case "celebration":
+      return "Brindis cercano: imagen comparativa y código final; voz opcional.";
+    case "birthday":
+    default:
+      return "Cierre íntimo: primero la imagen, luego el código de cuatro letras.";
+  }
 }
 
 function toneForType(type: AdventureType, name: string, nickname: string) {
