@@ -16,8 +16,9 @@
 | **Entorno escaneado** | Categorías COCO → inventario semántico (reloj, libro, planta…) | `@escapeai/shared` `OBJECT_CATEGORIES`, `ScannedEnvironment` |
 | **Mecánicas espaciales** | Acciones declaradas en propuestas (`CLOCK_OBSERVATION`, `QR_CHECKIN`, …) | `SpatialMechanicId` en propuestas + puzzles derivados en `buildSpatialRoom` |
 | **Preparación organizador** | Restricciones del entorno (`constraints`, props `organizer_setup`) | Scanner + copy `SpatialPrepItem` |
+| **Material imprimible** | QR, cartel, etiqueta, secuencia de colores, ficha local | `prepChecklist` en propuestas + `MECHANIC_CATALOG` (`needsPrepByDefault`) |
 
-No inventario aquí: candados Bluetooth, actuadores IoT, ni mobiliario genérico fuera del taxonomía del scanner (roadmap aparte).
+No inventario aquí: candados Bluetooth, actuadores IoT, **espejos** (no hay categoría `mirror`; solo `painting`/`decoration` en foto o pantalla), ni mobiliario fuera del taxonomía scanner (roadmap aparte).
 
 ---
 
@@ -39,6 +40,18 @@ No inventario aquí: candados Bluetooth, actuadores IoT, ni mobiliario genérico
 3. **Mecánicas huérfanas:** `SpatialMechanicId` declarada en tipos pero ausente en propuestas generadas del fixture audit → warning.
 4. **Lab vs producción:** `interactive-lab` es referencia de sensores; `pilot`/`lighthouse` son salas «físicas clásicas» (inventory + code).
 5. **Recomendaciones:** máx. 5 acciones (comprar/preparar prop, probar en dispositivo, documentar en QA).
+
+### F. Material imprimible y montaje (`SpatialPrepKind`)
+
+1. **Listar** todas las entradas `prepChecklist` / `prep` de propuestas **espacial 1 hab.** y **site** (fixture audit).
+2. Clasificar cada ítem:
+   - `organizer_setup` → montaje físico (puede incluir imprimir QR, cartel, stickers).
+   - `digital_only` → opcional en sala; el jugador puede resolver solo con móvil.
+   - `existing_object` → usar objeto ya escaneado (sin imprimir).
+3. **Impresión explícita** si el texto menciona: imprimir, QR, cartel, etiqueta, sticker, cinta/colores.
+4. **Puzzles `qr_scan` / `ocr_hint`:** listar por modo aunque no haya prep en YAML (motor sí exige soporte físico u objeto con texto).
+5. **Modos digital-first:** catálogo `interactive-lab`, eventos generados, `geo-lab` (GPS) → sin checklist obligatoria; marcar props narrativos (token, fusible) como *recomendados, no validados*.
+6. **QR de lobby de evento:** siempre generable en pantalla (`EventJoinQr`); imprimir es comodidad del organizador.
 
 ---
 

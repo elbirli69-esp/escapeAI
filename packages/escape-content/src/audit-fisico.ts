@@ -1,7 +1,14 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { AdventureType, CreateEventRequest, ScannedEnvironment, SpatialMechanicId } from "@escapeai/shared";
+import type {
+  AdventureType,
+  CreateEventRequest,
+  ScannedEnvironment,
+  ScannedSite,
+  SpatialMechanicId,
+  SpatialPrepKind,
+} from "@escapeai/shared";
 import {
   ENVIRONMENT_TYPES,
   OBJECT_CATEGORIES,
@@ -17,7 +24,9 @@ import {
 import { generateAdventureRoom } from "./generate-adventure.js";
 import { ROOM_FILES } from "./rooms.js";
 import { buildSpatialRoom } from "./spatial/build-room.js";
+import { proposeSiteAdventures } from "./spatial/generate-site-proposals.js";
 import { proposeSpatialAdventures } from "./spatial/generate-proposals.js";
+import { MECHANIC_CATALOG } from "./spatial/mechanics.js";
 
 const rootDir = dirname(fileURLToPath(import.meta.url));
 const roomsDir = join(rootDir, "..", "rooms");
@@ -126,6 +135,86 @@ type RoomSnapshot = {
   itemIds: string[];
 };
 
+type PrepRow = {
+  mode: string;
+  kind: SpatialPrepKind;
+  text: string;
+  printRelated: boolean;
+};
+
+const PRINT_HINT = /imprim|qr|cartel|etiqueta|sticker|cinta|colore/i;
+
+function tagsPrintRelated(text: string): boolean {
+  return PRINT_HINT.test(text);
+}
+
+function collectPrepRows(): PrepRow[] {
+  const rows: PrepRow[] = [];
+  for (const p of proposeSpatialAdventures(sampleEnv)) {
+    const mode = `spatial:${p.archetype}`;
+    for (const item of p.prepChecklist) {
+      rows.push({ mode, kind: item.kind, text: item.text, printRelated: tagsPrintRelated(item.text) });
+    }
+  }
+
+  const salon = mkSiteRoom("aaaa-1111-1111-1111-111111111111", "Salón", sampleEnv.objects.slice(0, 2));
+  const cocina = mkSiteRoom("bbbb-2222-2222-2222-222222222222", "Cocina", sampleEnv.objects);
+  const site: ScannedSite = {
+    id: "site-audit-fisico",
+    name: "Piso audit",
+    roomIds: [salon.id, cocina.id],
+    links: [
+      {
+        id: "lnk-fisico",
+        fromRoomId: salon.id,
+        toRoomId: cocina.id,
+        label: "Puerta",
+        transitionKind: "door",
+        confirmed: true,
+      },
+    ],
+    mapLayout: "linear",
+    version: 1,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  for (const p of proposeSiteAdventures(site, [salon, cocina])) {
+    const mode = `site:${p.id}`;
+    for (const item of p.prepChecklist) {
+      rows.push({ mode, kind: item.kind, text: item.text, printRelated: tagsPrintRelated(item.text) });
+    }
+  }
+  return rows;
+}
+
+function mkSiteRoom(id: string, name: string, objects: ScannedEnvironment["objects"]): ScannedEnvironment {
+  return {
+    id,
+    name,
+    environmentType: "living_room",
+    version: 1,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    constraints: defaultEnvironmentConstraints(),
+    objects,
+  };
+}
+
+function puzzlesNeedingPhysicalSupport(snapshots: RoomSnapshot[]): Array<{ mode: string; puzzleId: string; reason: string }> {
+  const out: Array<{ mode: string; puzzleId: string; reason: string }> = [];
+  for (const snap of snapshots) {
+    for (const p of snap.puzzles) {
+      if (p.cameraMode === "qr_scan") {
+        out.push({ mode: snap.mode, puzzleId: p.id, reason: "QR físico escaneable (qr_scan)" });
+      }
+      if (p.cameraMode === "ocr_hint") {
+        out.push({ mode: snap.mode, puzzleId: p.id, reason: "Texto visible en sala (ocr_hint)" });
+      }
+    }
+  }
+  return out;
+}
+
 function loadCatalogRooms(): RoomSnapshot[] {
   return Object.entries(ROOM_FILES).map(([id, file]) => {
     const yaml = readFileSync(join(roomsDir, file), "utf8");
@@ -188,10 +277,19 @@ function collectStats(snapshots: RoomSnapshot[]) {
   return { byMode, globalTypes, cameraModes, locationModes, items, categoriesUsed, mechanicsUsed };
 }
 
-function formatMd(date: string, stats: ReturnType<typeof collectStats>, snapshots: RoomSnapshot[]): string {
+function formatMd(
+  date: string,
+  stats: ReturnType<typeof collectStats>,
+  snapshots: RoomSnapshot[],
+  prepRows: PrepRow[],
+  physicalPuzzles: ReturnType<typeof puzzlesNeedingPhysicalSupport>,
+): string {
   const { byMode, globalTypes, cameraModes, locationModes, items, categoriesUsed, mechanicsUsed } = stats;
   const unusedCategories = OBJECT_CATEGORIES.filter((c) => !categoriesUsed.has(c) && c !== "unknown");
   const unusedMechanics = ALL_MECHANICS.filter((m) => !mechanicsUsed.has(m));
+  const prepSetup = prepRows.filter((r) => r.kind === "organizer_setup");
+  const prepDigital = prepRows.filter((r) => r.kind === "digital_only");
+  const prepPrint = prepRows.filter((r) => r.printRelated);
 
   const lines: string[] = [
     `# Informe inventario físico — ${date}`,
@@ -203,12 +301,70 @@ function formatMd(date: string, stats: ReturnType<typeof collectStats>, snapshot
     `- **Categorías scanner usadas en propuestas (fixture):** ${categoriesUsed.size} / ${OBJECT_CATEGORIES.length}`,
     `- **Mecánicas espaciales declaradas:** ${mechanicsUsed.size} / ${ALL_MECHANICS.length}`,
     `- **Warnings:** ${unusedCategories.length} categorías sin uso · ${unusedMechanics.length} mecánicas sin propuesta`,
+    `- **Preparación organizador (fixture):** ${prepSetup.length} \`organizer_setup\` · ${prepDigital.length} \`digital_only\` · ${prepPrint.length} con impresión/montaje explícito`,
     "",
+    "## Modos digital-first (sin checklist obligatoria)",
+    "",
+    "Catálogo sensorial, eventos generados y geo: el motor no exige imprimir. Props narrativos (token, fusible, aceite) son recomendables para inmersión, no validados.",
+    "",
+    "| Modo | Impresión obligatoria en código |",
+    "| ---- | -------------------------------- |",
+    "| Eventos generados (4 tipos) | No (imágenes y sonido en pantalla/dispositivo) |",
+    "| `interactive-lab` / `geo-lab` | No |",
+    "| `pilot` / `lighthouse` | No (códigos en móvil; props opcionales) |",
+    "| QR unirse al evento (`EventJoinQr`) | No (pantalla del organizador vale) |",
+    "| Espacial `visual_trace` / site | **Sí** en checklist (QR, cartel, colores…) |",
+    "",
+    "### Espejo y piezas no modeladas",
+    "",
+    "- **Espejo:** no existe categoría `mirror` en el scanner; un espejo solo contaría como decoración si lo escaneáis como `decoration`/`painting`.",
+    "- **Cuadros / póster:** puzzles `visual` usan imagen en **pantalla** (Pexels/API); cartel impreso en pared es montaje opcional del organizador, no requisito del motor en eventos generados.",
+    "",
+    "## Material imprimible y montaje (organizer)",
+    "",
+    "### Mecánicas que piden preparación por defecto (`MECHANIC_CATALOG`)",
+    "",
+    ...MECHANIC_CATALOG.filter((m) => m.needsPrepByDefault).map(
+      (m) => `- \`${m.id}\` — ${m.label}`,
+    ),
+    "",
+    "### Checklist por propuesta (fixture audit)",
+    "",
+  ];
+
+  const prepByMode = new Map<string, PrepRow[]>();
+  for (const row of prepRows) {
+    const list = prepByMode.get(row.mode) ?? [];
+    list.push(row);
+    prepByMode.set(row.mode, list);
+  }
+  for (const [mode, items] of [...prepByMode.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+    lines.push(`#### ${mode}`);
+    if (items.length === 0) {
+      lines.push("- _Sin ítems en prepChecklist._");
+    } else {
+      for (const item of items) {
+        const flag = item.printRelated ? " 🖨" : "";
+        lines.push(`- **${item.kind}**${flag}: ${item.text}`);
+      }
+    }
+    lines.push("");
+  }
+
+  if (physicalPuzzles.length) {
+    lines.push("### Puzzles en sala que exigen soporte físico (motor)", "");
+    for (const row of physicalPuzzles) {
+      lines.push(`- \`${row.mode}\` · \`${row.puzzleId}\` — ${row.reason}`);
+    }
+    lines.push("");
+  }
+
+  lines.push(
     "## Hardware del móvil (por tipo de puzzle)",
     "",
     "| Tipo | Hardware | Paso previo |",
     "| ---- | -------- | ----------- |",
-  ];
+  );
 
   const ordered: PuzzleType[] = ["code", "inventory", "sound", "voice", "camera", "visual", "location"];
   for (const t of ordered) {
@@ -268,14 +424,20 @@ function formatMd(date: string, stats: ReturnType<typeof collectStats>, snapshot
   lines.push(
     "1. **Móvil de prueba** con cámara, micrófono, GPS y altavoz (iOS + Android si podéis).",
   );
-  lines.push("2. **Props código/inventory:** candados o códigos impresos alineados con `pilot` / `lighthouse` / token en eventos.");
+  lines.push("2. **Props código/inventory:** candados o códigos impresos alineados con `pilot` / `lighthouse` / token en eventos (opcional en software).");
   lines.push("3. **Objetos escaneables:** reloj, libros, planta, sillas (fixture); ampliar según categorías ⚠.");
-  lines.push("4. **QR impreso** si usáis puzzles `cameraMode: qr_scan` o mecánica `QR_CHECKIN`.");
+  lines.push("4. **Kit impresión espacial:** QR, cartel numérico (OCR), cinta/stickers de colores, etiquetas en pasajes (site).");
   lines.push("5. **Exterior/GPS:** dispositivo con buena señal para `geo-lab` y site exterior.");
+  if (prepPrint.length) {
+    lines.push("", "**Ítems con mención explícita de impresión/montaje en fixture:**");
+    for (const row of prepPrint) lines.push(`- [${row.mode}] ${row.text}`);
+  }
 
   lines.push("", "## Recomendaciones priorizadas", "");
   const recs: string[] = [];
-  if (!globalTypes.has("voice")) recs.push("Voice no aparece en generados; solo lab/evento parcial — validar mic en playtest.");
+  if (prepSetup.some((r) => r.mode === "spatial:visual_trace")) {
+    recs.push("Antes de un evento espacial `visual_trace`, preparar cartel + colores + QR según prepChecklist (no basta el móvil).");
+  }
   if (unusedMechanics.includes("AUDIO_LOCATION"))
     recs.push("Preparar fuente de audio en sala si queréis explotar `AUDIO_LOCATION` en propuestas.");
   if (unusedMechanics.includes("OCR_CLUE"))
@@ -292,8 +454,10 @@ function formatMd(date: string, stats: ReturnType<typeof collectStats>, snapshot
 function main(): void {
   const snapshots = [...loadCatalogRooms(), ...loadGeneratedRooms(), ...loadSpatialRooms()];
   const stats = collectStats(snapshots);
+  const prepRows = collectPrepRows();
+  const physicalPuzzles = puzzlesNeedingPhysicalSupport(snapshots);
   const date = new Date().toISOString().slice(0, 10);
-  const md = formatMd(date, stats, snapshots);
+  const md = formatMd(date, stats, snapshots, prepRows, physicalPuzzles);
   const outPath = join(repoRoot, "docs", "inventario-fisico-informe.md");
   writeFileSync(outPath, md, "utf8");
   console.log(md);
