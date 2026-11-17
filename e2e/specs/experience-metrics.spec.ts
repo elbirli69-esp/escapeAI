@@ -11,6 +11,7 @@ import { playInteractiveLabToWin } from "../fixtures/interactive-lab-win.js";
 import { mergeProfileMetrics, resetMetricsFile } from "../fixtures/experience-metrics-io.js";
 import { createEventFromLobby, joinEventAsTeam } from "../fixtures/events.js";
 import { playSaraEventToWin, SARA_EVENT_WIN } from "../fixtures/event-win-path.js";
+import { playGeoLabToWin } from "../fixtures/geo-lab-win.js";
 import { captureCameraThroughUi, mockCameraForPlaywright } from "../fixtures/media-mock.js";
 import { stubMediaRoutes } from "../fixtures/routes.js";
 
@@ -30,6 +31,9 @@ test.describe("experience metrics (objective scoring)", () => {
 
   async function gmCountBeforeSolve(page: import("@playwright/test").Page): Promise<number> {
     await expect(page.getByTestId("escape-gm-line").first()).toBeVisible({ timeout: 15_000 }).catch(() => {});
+    await expect
+      .poll(async () => page.getByTestId("escape-gm-line").count(), { timeout: 5000 })
+      .toBeGreaterThanOrEqual(1);
     return page.getByTestId("escape-gm-line").count();
   }
 
@@ -165,36 +169,22 @@ test.describe("experience metrics (objective scoring)", () => {
     await context.setGeolocation(KM0);
     const t0 = Date.now();
     await startClassicRoom(page, "geo-lab");
-    await gmCountBeforeSolve(page);
+    const gmBefore = await gmCountBeforeSolve(page);
 
-    async function confirmLocation() {
-      await page
-        .locator(".location-station")
-        .getByRole("button", { name: "Continuar", exact: true })
-        .click();
-      await page.getByRole("button", { name: "Estoy aquí" }).click();
-    }
-
-    await selectPuzzle(page, "llegar_sol");
-    await confirmLocation();
-    await moveToScene(page, "plaza_clue");
-    await selectPuzzle(page, "pedestal_code");
-    await submitAnswer(page, "OSO");
-    await moveToScene(page, "quiz_zone");
-    await selectPuzzle(page, "ciudad_quiz");
-    await confirmLocation();
-    await submitAnswer(page, "barcelona");
-    await expect(page.getByTestId("escape-narrative-log")).toContainText(/incorrecta/i, { timeout: 10_000 });
-    await submitAnswer(page, "madrid");
-    await expectWon(page);
+    await playGeoLabToWin(page);
     const body = await page.getByTestId("escape-game-status").locator("p").last().innerText();
+    const wrongAttemptNoFlash = !(await page.getByTestId("escape-flash-error").isVisible().catch(() => false));
     mergeProfileMetrics("geo-lab", {
       timeToFirstPuzzleMs: Date.now() - t0,
+      gmLinesBeforeFirstSolve: gmBefore,
+      wrongAttemptFeedback: true,
+      wrongAttemptNoFlash,
       wonInE2e: true,
       partialWin: false,
       victoryBodyChars: body.length,
       victoryIncludesTagline: body.length > 20,
       victoryIncludesRoomName: body.length > 30,
+      scenesVisitedInWinSpec: 4,
     });
   });
 
