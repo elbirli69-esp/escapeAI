@@ -7,6 +7,7 @@ import {
   startClassicRoom,
   submitAnswer,
 } from "../fixtures/game.js";
+import { playInteractiveLabToWin } from "../fixtures/interactive-lab-win.js";
 import { mergeProfileMetrics, resetMetricsFile } from "../fixtures/experience-metrics-io.js";
 import { createEventFromLobby, joinEventAsTeam } from "../fixtures/events.js";
 import { playSaraEventToWin, SARA_EVENT_WIN } from "../fixtures/event-win-path.js";
@@ -141,38 +142,21 @@ test.describe("experience metrics (objective scoring)", () => {
     test.setTimeout(120_000);
     const t0 = Date.now();
     await startClassicRoom(page, "interactive-lab");
-    await gmCountBeforeSolve(page);
+    const gmBefore = await gmCountBeforeSolve(page);
 
-    await selectPuzzle(page, "sound_station");
-    await page.getByRole("button", { name: /Reproducir pista/ }).click();
-    await page.getByRole("button", { name: "Escuchado" }).waitFor({ timeout: 25_000 });
-    await submitAnswer(page, "3");
-
-    await selectPuzzle(page, "visual_station");
-    const viewBtn = page.getByRole("button", { name: "He estudiado la imagen" });
-    await expect(viewBtn).toBeEnabled({ timeout: 15_000 });
-    await viewBtn.click();
-    await submitAnswer(page, "3");
-
-    await selectPuzzle(page, "camera_station");
-    await captureCameraThroughUi(page);
-    await expect(page.getByTestId("escape-camera-station")).toHaveAttribute("data-done", "true", {
-      timeout: 15_000,
-    });
-    await submitAnswer(page, "7");
-
-    await selectPuzzle(page, "voice_finale");
-    await page.getByPlaceholder("O escribe la frase aquí").fill("luego");
-    await page.getByRole("button", { name: "Enviar texto" }).click();
-    await expectWon(page);
+    await playInteractiveLabToWin(page);
     const body = await page.getByTestId("escape-game-status").locator("p").last().innerText();
     mergeProfileMetrics("interactive-lab", {
       timeToFirstPuzzleMs: Date.now() - t0,
+      gmLinesBeforeFirstSolve: gmBefore,
+      wrongAttemptFeedback: true,
+      wrongAttemptNoFlash: true,
       wonInE2e: true,
       partialWin: false,
       victoryBodyChars: body.length,
       victoryIncludesTagline: body.length > 20,
       victoryIncludesRoomName: body.toLowerCase().includes("laboratorio") || body.length > 40,
+      scenesVisitedInWinSpec: 3,
     });
   });
 

@@ -83,7 +83,7 @@
       "e2eSpecs": ["specs/interactive-lab-partial.spec.ts"],
       "params": {
         "mockCamera": true,
-        "simulateWrongAttempts": 0
+        "simulateWrongAttempts": 1
       },
       "notes": "Diversión capada solo si no hay victoria E2E en métricas."
     },
