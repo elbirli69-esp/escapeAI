@@ -24,7 +24,7 @@ export async function startClassicRoom(page: Page, roomId: string): Promise<void
 /** Modo foco de retos oculta pestañas; los flujos e2e necesitan la barra completa. */
 export async function showAllPuzzleTabs(page: Page): Promise<void> {
   const focusBtn = page.getByTestId("escape-puzzle-focus");
-  if (!(await focusBtn.isVisible().catch(() => false))) return;
+  if (!(await focusBtn.isVisible({ timeout: 15_000 }).catch(() => false))) return;
   if ((await focusBtn.getAttribute("aria-pressed")) === "true") {
     await focusBtn.click();
     await expect(focusBtn).toHaveAttribute("aria-pressed", "false");
@@ -43,6 +43,16 @@ export async function submitAnswer(page: Page, value: string): Promise<void> {
   await page.getByTestId("escape-submit-answer").click();
 }
 
+/** Cumple el paso «listen» en retos de sonido (beeps, TTS o URL). */
+export async function completeSoundListen(page: Page): Promise<void> {
+  const play = page.getByRole("button", {
+    name: /^(Reproducir pista|Escuchar mensaje|Reproducir audio)$/,
+  });
+  await expect(play).toBeVisible({ timeout: 15_000 });
+  await play.click();
+  await page.getByRole("button", { name: "Escuchado" }).waitFor({ timeout: 25_000 });
+}
+
 export async function expectNoFlashError(page: Page): Promise<void> {
   await expect(page.getByTestId("escape-flash-error")).not.toBeVisible({ timeout: 1500 });
 }
@@ -50,7 +60,15 @@ export async function expectNoFlashError(page: Page): Promise<void> {
 export async function moveToScene(page: Page, sceneId: string): Promise<void> {
   const exit = page.getByTestId(`escape-exit-${sceneId}`);
   await expect(exit).toBeEnabled({ timeout: 15_000 });
+  const actionDone = page.waitForResponse(
+    (resp) =>
+      resp.request().method() === "POST" &&
+      resp.url().includes("/actions") &&
+      resp.ok(),
+  );
   await exit.click();
+  await actionDone;
+  await expect(exit).toBeHidden({ timeout: 15_000 });
 }
 
 export async function expectWon(page: Page): Promise<void> {

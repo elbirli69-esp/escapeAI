@@ -193,9 +193,14 @@ test.describe("experience metrics (objective scoring)", () => {
 
     await selectPuzzle(page, "llegar_sol");
     await confirmLocation();
+    await moveToScene(page, "plaza_clue");
+    await selectPuzzle(page, "pedestal_code");
+    await submitAnswer(page, "OSO");
     await moveToScene(page, "quiz_zone");
     await selectPuzzle(page, "ciudad_quiz");
     await confirmLocation();
+    await submitAnswer(page, "barcelona");
+    await expect(page.getByTestId("escape-narrative-log")).toContainText(/incorrecta/i, { timeout: 10_000 });
     await submitAnswer(page, "madrid");
     await expectWon(page);
     const body = await page.getByTestId("escape-game-status").locator("p").last().innerText();
