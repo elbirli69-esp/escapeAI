@@ -8,6 +8,14 @@ startSceneId: waypoint
 winCondition:
   type: puzzle_solved
   puzzleId: ciudad_quiz
+beats:
+  - id: geo_open
+    after: session_started
+    text: "El rally arranca en el kilómetro cero: primero llega, luego responde."
+  - id: geo_reach
+    after: puzzle_solved
+    puzzleId: llegar_sol
+    text: "Posición confirmada; el quiz del entorno te nombra la ciudad."
 items: {}
 scenes:
   waypoint:

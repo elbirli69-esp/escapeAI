@@ -25,6 +25,10 @@ beats:
     after: scene_entered
     sceneId: basement
     text: "Falta el fusible: sin él el edificio entero permanecerá a oscuras."
+  - id: pilot_power
+    after: puzzle_solved
+    puzzleId: fuse_slot
+    text: "Un zumbido recorre el cableado; la sala de control espera la palabra final."
 scenes:
   entrance:
     id: entrance
@@ -35,7 +39,7 @@ scenes:
       El ascensor lleva horas averiado. La puerta del conserje luce un candado
       numérico recién pasado a moderno; junto a ella, un post-it con tinta
       borrada por la humedad insiste en recordar algo importante.
-    puzzles: [lockbox]
+    puzzles: [lockbox, intercom_tone]
     characters: [night_concierge]
     exits:
       - toSceneId: basement
@@ -52,7 +56,7 @@ scenes:
       Tuberías sudan condensación. El cuadro de fusibles está abierto y falta
       el último módulo: sin él, el edificio seguirá a oscuras.
     items: [fuse]
-    puzzles: [fuse_slot]
+    puzzles: [fuse_slot, mural_glance]
     exits:
       - toSceneId: control
         label: Ir a la sala de control
@@ -89,6 +93,35 @@ characters:
       - Mirad el post-it; yo no guardo cifras en la cabeza.
       - El ascensor lleva muerto todo el día, no me preguntes por eso.
 puzzles:
+  intercom_tone:
+    id: intercom_tone
+    type: sound
+    label: Timbre del portal
+    cardImage: /media/pilot-entrance.jpg
+    prompt: Escucha el timbre del intercomunicador (1 pitido = cifra 1). Opcional, no bloquea la salida.
+    soundMode: beeps
+    beepPattern: [200]
+    minListenSec: 1
+    answer: "1"
+    normalize: trim
+    maxHints: 1
+    hints:
+      - level: 1
+        text: Un solo pitido corto.
+  mural_glance:
+    id: mural_glance
+    type: visual
+    label: Mural del sótano
+    cardImage: /media/pilot-basement.jpg
+    visualLayout: single
+    prompt: "Foto de referencia: ¿cuántas tuberías horizontales ves? (demo: 2)"
+    pexelsQuery: basement pipes industrial
+    answer: "2"
+    normalize: trim
+    maxHints: 1
+    hints:
+      - level: 1
+        text: En demo, responde 2.
   lockbox:
     id: lockbox
     type: code

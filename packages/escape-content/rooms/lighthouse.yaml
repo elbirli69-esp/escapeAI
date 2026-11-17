@@ -13,6 +13,22 @@ items:
 winCondition:
   type: puzzle_solved
   puzzleId: beacon_sequence
+beats:
+  - id: lh_open
+    after: session_started
+    text: "El faro parpadea débil: sin señal clara, el muelle queda a oscuras esta noche."
+  - id: lh_tide
+    after: puzzle_solved
+    puzzleId: tide_lock
+    text: "La compuerta del almacén cede con la marea; huele a sal y aceite viejo."
+  - id: lh_supply
+    after: scene_entered
+    sceneId: supply
+    text: "El bidón pesa más de lo que aparenta—sin él la linterna no volverá a hablar."
+  - id: lh_beacon
+    after: puzzle_solved
+    puzzleId: refill_lamp
+    text: "El mecanismo trepida; falta el patrón de socorro que el mar entiende."
 scenes:
   dock:
     id: dock
