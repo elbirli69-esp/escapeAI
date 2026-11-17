@@ -49,16 +49,19 @@ Cada **perfil de juego** en la matriz recibe una nota por dimensión y una **not
 | 3–4 | Fallos UX o poca diversión; bloquea recomendación |
 | 0–2 | Roto, engañoso o frustrante (o e2e rojo) |
 
-### Reglas de scoring automatizable (señales)
+### Scoring objetivo (v1, sin juicio manual)
 
-El script `experience-signals.ts` aporta **sugerencias** (no sustituyen criterio del agente):
+| Artefacto | Rol |
+| --------- | --- |
+| `e2e/rubric-components.json` | Fórmulas por componente + textos de mejora |
+| `e2e/scripts/experience-rubric.ts` | Cálculo determinista 0–10 por dimensión |
+| `e2e/specs/experience-metrics.spec.ts` | Métricas runtime → `.cache/experience-metrics.json` |
+| `e2e/.cache/playwright-results.json` | Pass/fail por spec |
+| `pnpm experience-eval:score` | `.cache/experience-scores.json` + `docs/experiencia-mejora-plan.md` |
 
-- `varietySuggestion`: función de `puzzleTypesDistinct / puzzleCount` y presencia de sensory/geo.
-- `challengeSuggestion`: escenas, puzzles obligatorios en win-path, `timeLimitSec` si existe.
-- Cap **4.0** si `e2eStatus === "failed"` para ese perfil.
-- Bonus **+0.5** (máx 10) si aparece ≥1 línea `escape-gm-line` antes del primer acierto en evento/catalog con GM.
+Cada dimensión = `(suma points componentes / suma maxPoints) × 10`. Cap **4.0** en perfil **P0** si algún spec del perfil falla.
 
-El agente **debe** ajustar ±2 puntos por dimensión con evidencia (texto citado, captura, tiempo).
+**Plan de implementación:** cada componente con `points < maxPoints` genera un ítem en `experiencia-mejora-plan.md` con `improvementHint` y evidencia numérica.
 
 ---
 
