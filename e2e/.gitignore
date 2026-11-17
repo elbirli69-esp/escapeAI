@@ -1,4 +1,5 @@
 /test-results/
+/.cache/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
