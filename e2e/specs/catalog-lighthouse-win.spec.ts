@@ -1,13 +1,6 @@
 import { test } from "@playwright/test";
-import {
-  clearGameStorage,
-  expectNoFlashError,
-  expectWon,
-  moveToScene,
-  selectPuzzle,
-  startClassicRoom,
-  submitAnswer,
-} from "../fixtures/game.js";
+import { clearGameStorage, expectNoFlashError, startClassicRoom } from "../fixtures/game.js";
+import { playLighthouseToWin } from "../fixtures/lighthouse-win.js";
 import { stubMediaRoutes } from "../fixtures/routes.js";
 
 test.describe("lighthouse victory", () => {
@@ -17,23 +10,9 @@ test.describe("lighthouse victory", () => {
   });
 
   test("recorrido completo hasta victoria", async ({ page }) => {
+    test.setTimeout(120_000);
     await startClassicRoom(page, "lighthouse");
-
-    await selectPuzzle(page, "tide_lock");
-    await submitAnswer(page, "HIGH");
+    await playLighthouseToWin(page, { withWrongTide: false });
     await expectNoFlashError(page);
-
-    await moveToScene(page, "supply");
-    await page.getByRole("button", { name: "Coger" }).click();
-    await selectPuzzle(page, "refill_lamp");
-    await page.getByRole("button", { name: "Usar" }).click();
-    await expectNoFlashError(page);
-
-    await moveToScene(page, "lantern_room");
-    await selectPuzzle(page, "beacon_sequence");
-    await submitAnswer(page, "SOS");
-    await expectNoFlashError(page);
-
-    await expectWon(page);
   });
 });

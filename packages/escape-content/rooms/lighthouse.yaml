@@ -1,6 +1,6 @@
 id: lighthouse
 name: El faro de Punta Norte
-tagline: Marea alta, aceite escaso y un faro que debe volver a hablar con el mar.
+tagline: Marea alta, niebla baja y un faro que debe volver a hablar con el mar.
 theme: coastal
 coverImage: /media/lighthouse-cover.jpg
 timeLimitSec: 2700
@@ -17,6 +17,10 @@ beats:
   - id: lh_open
     after: session_started
     text: "El faro parpadea débil: sin señal clara, el muelle queda a oscuras esta noche."
+  - id: lh_fog
+    after: puzzle_solved
+    puzzleId: fog_horn
+    text: "Dos bocinas confirman la marea alta; la compuerta del almacén no tardará en ceder."
   - id: lh_tide
     after: puzzle_solved
     puzzleId: tide_lock
@@ -25,10 +29,18 @@ beats:
     after: scene_entered
     sceneId: supply
     text: "El bidón pesa más de lo que aparenta—sin él la linterna no volverá a hablar."
+  - id: lh_lookout
+    after: scene_entered
+    sceneId: lookout
+    text: "Desde el mirador la tormenta dibuja olas; las cifras en la foto abren la linterna."
+  - id: lh_hail
+    after: puzzle_solved
+    puzzleId: keeper_hail
+    text: "Un grito en la tormenta vibra en el prisma; falta el patrón de socorro en el panel."
   - id: lh_beacon
     after: puzzle_solved
     puzzleId: refill_lamp
-    text: "El mecanismo trepida; falta el patrón de socorro que el mar entiende."
+    text: "El mecanismo trepida; el haz aguarda el código final del guardián."
 scenes:
   dock:
     id: dock
@@ -36,10 +48,10 @@ scenes:
     image: /media/lighthouse-dock.jpg
     mood: Viento horizontal, cuerdas que crujen, faro cortado por la espuma.
     description: >
-      Las olas golpean los pilotes como tambores. En el poste de marea una placa
-      oxidadíssima advierte: «Solo con la marea alta se abre el almacén».
-      La aguja trepa al tramo marcado en inglés en el borde superior de la escala.
-    puzzles: [tide_lock]
+      Las olas golpean los pilotes como tambores. La sirena de niebla suena dos
+      veces seguidas cuando la marea trepa. En el poste una placa oxidadísima
+      advierte: «Solo con la marea alta se abre el almacén» — la aguja en HIGH.
+    puzzles: [fog_horn, tide_lock]
     exits:
       - toSceneId: supply
         label: Entrar al almacén
@@ -53,26 +65,56 @@ scenes:
     mood: Salitre en el aire, sacos mojados, un bidón que aún pesa.
     description: >
       Cajas con herrajes viejos y una linterna auxiliar con el cristal opaco.
-      Sin combustible no podrás subir a ajustar el mecanismo superior.
+      Sin combustible no podrás subir al mirador ni al mecanismo superior.
     items: [oil_can]
     puzzles: [refill_lamp]
     exits:
-      - toSceneId: lantern_room
-        label: Subir a la linterna
+      - toSceneId: lookout
+        label: Subir al mirador exterior
         when:
           type: puzzle_solved
           puzzleId: refill_lamp
+  lookout:
+    id: lookout
+    title: Mirador contra la tormenta
+    image: /media/lighthouse-cover.jpg
+    mood: Salpicadura en el visor; el horizonte es una trenza gris de olas.
+    description: >
+      Una foto de la tormenta colgó en la baranda — cuenta los picos blancos
+      antes de entrar a la linterna.
+    puzzles: [storm_photo]
+    exits:
+      - toSceneId: lantern_room
+        label: Entrar a la linterna
+        when:
+          type: puzzle_solved
+          puzzleId: storm_photo
   lantern_room:
     id: lantern_room
     title: Sala de la linterna
     image: /media/lighthouse-lantern.svg
     mood: El haz gira débil; el mar exige una señal clara esta noche.
     description: >
-      El prisma late con un ritmo errático. Sobre la barandilla, una nota del
-      guardián: «Tres letras, el patrón clásico de socorro».
-    puzzles: [beacon_sequence]
+      El prisma late con un ritmo errático. Grita el patrón de socorro antes
+      de grabarlo en el panel maestro.
+    puzzles: [keeper_hail, beacon_sequence]
     exits: []
 puzzles:
+  fog_horn:
+    id: fog_horn
+    type: sound
+    label: Sirena de niebla
+    cardImage: /media/lighthouse-dock.jpg
+    prompt: Escucha la sirena en el muelle (dos pitidos = cifra 2).
+    soundMode: beeps
+    beepPattern: [200, 80, 200]
+    minListenSec: 1
+    answer: "2"
+    normalize: trim
+    maxHints: 1
+    hints:
+      - level: 1
+        text: Dos tonos iguales seguidos.
   tide_lock:
     id: tide_lock
     type: code
@@ -100,6 +142,36 @@ puzzles:
         text: Necesitas el líquido del almacén.
       - level: 2
         text: Usa el bidón de aceite en este puzzle.
+  storm_photo:
+    id: storm_photo
+    type: visual
+    label: Foto de la marejada
+    cardImage: /media/lighthouse-cover.jpg
+    visualLayout: single
+    prompt: ¿Cuántas crestas blancas principales cuenta la imagen? (número)
+    pexelsQuery: storm waves lighthouse coast
+    answer: "3"
+    normalize: trim
+    maxHints: 1
+    hints:
+      - level: 1
+        text: En demo, la respuesta es 3.
+  keeper_hail:
+    id: keeper_hail
+    type: voice
+    label: Grito del guardián
+    cardImage: /media/lighthouse-lantern.svg
+    prompt: Repite el patrón de socorro a voz en alta (demo en texto).
+    answer: sos
+    normalize: lowercase
+    voiceMatchMode: fuzzy
+    allowTextFallback: true
+    voiceOffline: true
+    voiceLocale: es-ES
+    maxHints: 1
+    hints:
+      - level: 1
+        text: Tres letras de emergencia; escribe sos en demo.
   beacon_sequence:
     id: beacon_sequence
     type: code
