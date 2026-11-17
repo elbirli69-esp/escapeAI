@@ -29,6 +29,10 @@ export async function playGeoLabToWin(page: Page, opts?: { quizWrongCity?: boole
   await viewBtn.click();
   await submitAnswer(page, "5");
 
+  await page.getByRole("button", { name: "Coger" }).click();
+  await selectPuzzle(page, "pin_board");
+  await page.getByRole("button", { name: "Usar" }).click();
+
   await moveToScene(page, "quiz_zone");
   await selectPuzzle(page, "ciudad_quiz");
   await confirmGeoLocation(page);
