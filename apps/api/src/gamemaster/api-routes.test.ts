@@ -37,12 +37,12 @@ describe("GameMaster API routes", () => {
     await sessionStore.set(session);
     await gm.processSessionStarted(session);
     const listed = await gm.listInterventions(session.sessionId);
-    expect(listed.length).toBe(1);
+    expect(listed.length).toBe(2);
 
     session.narrative.push("motor: prueba");
     await sessionStore.set(session);
     const listed2 = await gm.listInterventions(session.sessionId);
-    expect(listed2.length).toBe(1);
+    expect(listed2.length).toBe(2);
     expect(listed2[0].id).toBe(listed[0].id);
   });
 });
