@@ -22,6 +22,18 @@ describe("lighthouse room", () => {
     const session = createSession(room);
 
     expect(
+      applyAction(session, { type: "complete_interaction", puzzleId: "fog_horn", step: "listen" })
+        .ok,
+    ).toBe(true);
+    expect(
+      applyAction(session, {
+        type: "submit_answer",
+        puzzleId: "fog_horn",
+        value: "2",
+      }).ok,
+    ).toBe(true);
+
+    expect(
       applyAction(session, {
         type: "submit_answer",
         puzzleId: "tide_lock",
@@ -40,7 +52,32 @@ describe("lighthouse room", () => {
       }).ok,
     ).toBe(true);
 
+    expect(applyAction(session, { type: "move", sceneId: "lookout" }).ok).toBe(true);
+    expect(
+      applyAction(session, { type: "complete_interaction", puzzleId: "storm_photo", step: "view" })
+        .ok,
+    ).toBe(true);
+    expect(
+      applyAction(session, {
+        type: "submit_answer",
+        puzzleId: "storm_photo",
+        value: "3",
+      }).ok,
+    ).toBe(true);
+
     expect(applyAction(session, { type: "move", sceneId: "lantern_room" }).ok).toBe(true);
+
+    expect(
+      applyAction(session, { type: "complete_interaction", puzzleId: "keeper_hail", step: "speak" })
+        .ok,
+    ).toBe(true);
+    expect(
+      applyAction(session, {
+        type: "submit_answer",
+        puzzleId: "keeper_hail",
+        value: "sos",
+      }).ok,
+    ).toBe(true);
 
     const final = applyAction(session, {
       type: "submit_answer",
