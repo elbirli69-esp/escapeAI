@@ -32,6 +32,11 @@ test.describe("geo-lab mock GPS", () => {
     await selectPuzzle(page, "llegar_sol");
     await confirmLocation(page);
 
+    await moveToScene(page, "plaza_clue");
+    await selectPuzzle(page, "pedestal_code");
+    await submitAnswer(page, "OSO");
+    await expectNoFlashError(page);
+
     await moveToScene(page, "quiz_zone");
     await selectPuzzle(page, "ciudad_quiz");
     await confirmLocation(page);

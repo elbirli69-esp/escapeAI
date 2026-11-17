@@ -15,7 +15,15 @@ beats:
   - id: geo_reach
     after: puzzle_solved
     puzzleId: llegar_sol
-    text: "Posición confirmada; el quiz del entorno te nombra la ciudad."
+    text: "Posición confirmada; la placa del oso guarda otra pista antes del quiz."
+  - id: geo_plaza
+    after: scene_entered
+    sceneId: plaza_clue
+    text: "El Kilómetro Cero susurra un código en bronce y un tono en la entrada del metro."
+  - id: geo_quiz
+    after: puzzle_solved
+    puzzleId: pedestal_code
+    text: "Listo para el quiz final: confirma otra vez el GPS y nombra la ciudad."
 items: {}
 scenes:
   waypoint:
@@ -24,15 +32,30 @@ scenes:
     image: /media/lighthouse-dock.jpg
     mood: El móvil es tu brújula; el motor valida el GPS en servidor.
     description: >
-      Demo en Madrid (Km 0, Puerta del Sol). En producción defines lat/lon y radio
-      en el YAML de cada evento o sala generada.
+      Demo en Madrid (Km 0, Puerta del Sol). Acércate al punto, confirma posición
+      y sigue la cadena hasta el quiz del entorno.
     puzzles: [llegar_sol]
     exits:
-      - toSceneId: quiz_zone
-        label: Continuar al quiz del entorno
+      - toSceneId: plaza_clue
+        label: Ir a la placa del Oso y el Madroño
         when:
           type: puzzle_solved
           puzzleId: llegar_sol
+  plaza_clue:
+    id: plaza_clue
+    title: Placa del Kilómetro Cero
+    image: /media/pilot-entrance.jpg
+    mood: Turistas pasan; bajo tus pies brilla la referencia oficial de España.
+    description: >
+      El oso y el madroño del escudo cuidan el punto cero. Un panel sugiere dos pistas:
+      un código de tres letras en la placa y un pitido desde la boca del metro.
+    puzzles: [metro_ping, pedestal_code]
+    exits:
+      - toSceneId: quiz_zone
+        label: Ir al quiz del entorno
+        when:
+          type: puzzle_solved
+          puzzleId: pedestal_code
   quiz_zone:
     id: quiz_zone
     title: Quiz en el sitio
@@ -59,6 +82,34 @@ puzzles:
     hints:
       - level: 1
         text: Si estás en escritorio sin GPS, prueba en un móvil real al aire libre.
+  metro_ping:
+    id: metro_ping
+    type: sound
+    label: Eco del metro
+    cardImage: /media/pilot-basement.jpg
+    prompt: Escucha un pitido desde la entrada del metro (opcional, refuerza el rally).
+    soundMode: beeps
+    beepPattern: [120]
+    minListenSec: 1
+    answer: "1"
+    normalize: trim
+    maxHints: 1
+    hints:
+      - level: 1
+        text: Un solo tono corto.
+  pedestal_code:
+    id: pedestal_code
+    type: code
+    label: Placa del escudo
+    prompt: Tres letras del animal del escudo de Madrid (mayúsculas).
+    answer: OSO
+    normalize: uppercase
+    maxHints: 2
+    hints:
+      - level: 1
+        text: No es el árbol, sino el mamífero del símbolo.
+      - level: 2
+        text: OSO.
   ciudad_quiz:
     id: ciudad_quiz
     type: location
