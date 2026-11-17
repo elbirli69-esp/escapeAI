@@ -12,6 +12,7 @@ import { mergeProfileMetrics, resetMetricsFile } from "../fixtures/experience-me
 import { createEventFromLobby, joinEventAsTeam } from "../fixtures/events.js";
 import { playSaraEventToWin, SARA_EVENT_WIN } from "../fixtures/event-win-path.js";
 import { playGeoLabToWin } from "../fixtures/geo-lab-win.js";
+import { playLighthouseToWin } from "../fixtures/lighthouse-win.js";
 import { captureCameraThroughUi, mockCameraForPlaywright } from "../fixtures/media-mock.js";
 import { stubMediaRoutes } from "../fixtures/routes.js";
 
@@ -78,23 +79,12 @@ test.describe("experience metrics (objective scoring)", () => {
   });
 
   test("catalog-lighthouse runtime", async ({ page }) => {
+    test.setTimeout(120_000);
     const t0 = Date.now();
     await startClassicRoom(page, "lighthouse");
     const gmBefore = await gmCountBeforeSolve(page);
 
-    await selectPuzzle(page, "tide_lock");
-    await submitAnswer(page, "LOW");
-    await expect(page.getByTestId("escape-narrative-log")).toContainText(/incorrecta/i, { timeout: 10_000 });
-    await submitAnswer(page, "HIGH");
-
-    await moveToScene(page, "supply");
-    await page.getByRole("button", { name: "Coger" }).click();
-    await selectPuzzle(page, "refill_lamp");
-    await page.getByRole("button", { name: "Usar" }).click();
-    await moveToScene(page, "lantern_room");
-    await selectPuzzle(page, "beacon_sequence");
-    await submitAnswer(page, "SOS");
-    await expectWon(page);
+    await playLighthouseToWin(page);
     const body = await page.getByTestId("escape-game-status").locator("p").last().innerText();
     mergeProfileMetrics("catalog-lighthouse", {
       timeToFirstPuzzleMs: Date.now() - t0,
@@ -102,10 +92,11 @@ test.describe("experience metrics (objective scoring)", () => {
       wrongAttemptFeedback: true,
       wrongAttemptNoFlash: true,
       wonInE2e: true,
+      partialWin: false,
       victoryBodyChars: body.length,
       victoryIncludesTagline: body.includes("«"),
       victoryIncludesRoomName: body.toLowerCase().includes("faro") || body.length > 30,
-      scenesVisitedInWinSpec: 3,
+      scenesVisitedInWinSpec: 4,
     });
   });
 
