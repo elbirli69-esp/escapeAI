@@ -56,7 +56,15 @@ export class GameMasterService {
     const meta = await this.store.loadMeta(session.sessionId);
     meta.visitedSceneIds = [...new Set([...meta.visitedSceneIds, session.room.startSceneId])];
     await this.store.saveMeta(session.sessionId, meta);
-    return this.processTriggers(session, [sessionStartedTrigger()], ["SESSION_STARTED"]);
+    const triggers: GmProcessTrigger[] = [
+      sessionStartedTrigger(),
+      {
+        type: "SCENE_ENTERED",
+        sourceEventId: randomUUID(),
+        payload: { sceneId: session.room.startSceneId },
+      },
+    ];
+    return this.processTriggers(session, triggers, ["SESSION_STARTED", "SCENE_ENTERED"]);
   }
 
   async processAfterAction(input: {

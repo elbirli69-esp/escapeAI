@@ -1,6 +1,6 @@
 id: geo-lab
 name: Rally GPS (demo)
-tagline: Llega al punto y responde preguntas del entorno.
+tagline: Llega al kilómetro cero, sigue las pistas urbanas y cierra el rally con el quiz GPS.
 theme: urban
 coverImage: /media/lighthouse-dock.jpg
 timeLimitSec: 2400
@@ -24,6 +24,10 @@ beats:
     after: puzzle_solved
     puzzleId: pedestal_code
     text: "Listo para el quiz final: confirma otra vez el GPS y nombra la ciudad."
+  - id: geo_galeria
+    after: scene_entered
+    sceneId: galeria_rally
+    text: "Los carteles del rally cuentan letras ocultas; el quiz GPS exige la ciudad correcta."
 items: {}
 scenes:
   waypoint:
@@ -51,11 +55,26 @@ scenes:
       un código de tres letras en la placa y un pitido desde la boca del metro.
     puzzles: [metro_ping, pedestal_code]
     exits:
+      - toSceneId: galeria_rally
+        label: Pasar por la galería de carteles
+        when:
+          type: puzzle_solved
+          puzzleId: pedestal_code
+  galeria_rally:
+    id: galeria_rally
+    title: Galería del rally
+    image: /media/pilot-entrance.jpg
+    mood: Carteles vintage, graffiti discreto y luces de feria urbana.
+    description: >
+      Antes del quiz final, un cartel comparativo cuelga de la farola: cuenta
+      elementos visibles para validar que el GPS no es lo único que prueba el móvil.
+    puzzles: [cartel_visual]
+    exits:
       - toSceneId: quiz_zone
         label: Ir al quiz del entorno
         when:
           type: puzzle_solved
-          puzzleId: pedestal_code
+          puzzleId: cartel_visual
   quiz_zone:
     id: quiz_zone
     title: Quiz en el sitio
@@ -97,6 +116,20 @@ puzzles:
     hints:
       - level: 1
         text: Un solo tono corto.
+  cartel_visual:
+    id: cartel_visual
+    type: visual
+    label: Cartel del rally
+    cardImage: /media/pilot-control.jpg
+    visualLayout: single
+    prompt: Observa la foto unos segundos. ¿Cuántas letras tiene la palabra «RALLY» en el cartel? (número)
+    pexelsQuery: urban poster letters
+    answer: "5"
+    normalize: trim
+    maxHints: 1
+    hints:
+      - level: 1
+        text: R-A-L-L-Y son cinco letras.
   pedestal_code:
     id: pedestal_code
     type: code
