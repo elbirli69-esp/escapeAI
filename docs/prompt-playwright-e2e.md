@@ -31,6 +31,7 @@ Variables: API en memoria (sin Redis). Los `webServer` de Playwright levantan AP
 | `smoke.spec.ts` | Health, catálogo, validación UI |
 | `catalog-pilot-win.spec.ts` | Victoria pilot completa |
 | `events-mvp.spec.ts` | Crear evento, 2 sesiones, candado 1995 |
+| `events-full-win.spec.ts` | Victoria completa evento fixture Sara |
 | `interactive-lab-partial.spec.ts` | Sensoriales (cámara vía API) |
 | `geo-lab-mocked.spec.ts` | GPS mock + quiz |
 | `catalog-lighthouse-win.spec.ts` | Victoria faro (`HIGH` → aceite → `SOS`) |

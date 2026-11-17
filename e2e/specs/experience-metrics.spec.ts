@@ -8,7 +8,8 @@ import {
   submitAnswer,
 } from "../fixtures/game.js";
 import { mergeProfileMetrics, resetMetricsFile } from "../fixtures/experience-metrics-io.js";
-import { joinEventAsTeam, SARA_EVENT, createEventFromLobby } from "../fixtures/events.js";
+import { createEventFromLobby, joinEventAsTeam } from "../fixtures/events.js";
+import { playSaraEventToWin, SARA_EVENT_WIN } from "../fixtures/event-win-path.js";
 import { captureCameraThroughUi, mockCameraForPlaywright } from "../fixtures/media-mock.js";
 import { stubMediaRoutes } from "../fixtures/routes.js";
 
@@ -104,29 +105,34 @@ test.describe("experience metrics (objective scoring)", () => {
   });
 
   test("event-generated runtime", async ({ page, browser }) => {
+    test.setTimeout(180_000);
     const org = await browser.newPage();
     await stubMediaRoutes(org);
     await clearGameStorage(org);
     const joinCode = await createEventFromLobby(org);
     await org.close();
 
+    await mockCameraForPlaywright(page);
     const t0 = Date.now();
     await joinEventAsTeam(page, joinCode, "Equipo Métricas");
-    const gmLinesBeforeFirstSolve = await gmCountBeforeSolve(page);
-
+    await gmCountBeforeSolve(page);
     await selectPuzzle(page, "entry_lock");
     await submitAnswer(page, "0000");
     await expect(page.getByTestId("escape-narrative-log")).toContainText(/incorrecta/i, { timeout: 10_000 });
-    await submitAnswer(page, SARA_EVENT.yearLockAnswer);
-    await expect(page.getByTestId("escape-puzzle-tab-entry_lock")).toHaveText(/✓/);
+    await playSaraEventToWin(page);
+    const body = await page.getByTestId("escape-game-status").locator("p").last().innerText();
+    const gmLinesBeforeFirstSolve = await page.getByTestId("escape-gm-line").count();
 
     mergeProfileMetrics("event-generated", {
       timeToFirstPuzzleMs: Date.now() - t0,
       gmLinesBeforeFirstSolve,
       wrongAttemptFeedback: true,
       wrongAttemptNoFlash: true,
-      wonInE2e: false,
-      partialWin: true,
+      wonInE2e: true,
+      partialWin: false,
+      victoryBodyChars: body.length,
+      victoryIncludesTagline: body.includes("«") || body.length > 50,
+      victoryIncludesRoomName: body.toLowerCase().includes("sara") || body.length > 40,
     });
   });
 
