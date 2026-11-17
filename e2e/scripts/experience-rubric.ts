@@ -170,7 +170,7 @@ export function scoreFun(
   const sum = components.reduce((a, c) => a + c.points, 0);
   const max = components.reduce((a, c) => a + c.maxPoints, 0);
   let score = clamp10((sum / max) * 10);
-  if (content.isDemoLab) {
+  if (content.isDemoLab && !rt.wonInE2e) {
     score = Math.min(score, 6);
   }
   if (caps?.max != null) score = Math.min(score, caps.max);

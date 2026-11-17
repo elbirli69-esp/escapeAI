@@ -116,7 +116,17 @@ const results = matrix.profiles.map((profile) => {
     closure: scoreClosure(rt),
   };
 
-  let total = profileTotal(dimensions, weights);
+  const dimIds =
+    evaluateDimensions?.length ?
+      evaluateDimensions
+    : (Object.keys(weights) as Array<keyof typeof weights>);
+  const weightsSub: Record<string, number> = {};
+  const dimsSub: Record<string, DimensionScore> = {};
+  for (const id of dimIds) {
+    if (dimensions[id]) dimsSub[id] = dimensions[id];
+    if (weights[id as string]) weightsSub[id as string] = weights[id as string];
+  }
+  let total = profileTotal(dimsSub, weightsSub);
   if (!allPass && existsSync(playwrightJson) && profile.priority === "P0") {
     total = Math.min(total, matrix.rubric.e2eFailCap);
   }

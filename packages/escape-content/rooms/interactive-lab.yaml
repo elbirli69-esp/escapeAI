@@ -8,6 +8,14 @@ startSceneId: hub
 winCondition:
   type: puzzle_solved
   puzzleId: voice_finale
+beats:
+  - id: lab_open
+    after: session_started
+    text: "Cuatro estaciones parpadean: demuestra vista, tacto, oído y voz antes de sellar el laboratorio."
+  - id: lab_sound
+    after: puzzle_solved
+    puzzleId: sound_station
+    text: "El morse quedó grabado; la voz será el sello final."
 items: {}
 scenes:
   hub:

@@ -85,7 +85,7 @@
         "mockCamera": true,
         "simulateWrongAttempts": 0
       },
-      "notes": "Demo técnica; diversión capada en informe si copy de laboratorio rompe inmersión."
+      "notes": "Diversión capada solo si no hay victoria E2E en métricas."
     },
     {
       "id": "geo-lab",
