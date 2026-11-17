@@ -106,7 +106,11 @@
       "eventPreset": "SARA_EVENT",
       "priority": "P0",
       "weight": 1.1,
-      "e2eSpecs": ["specs/events-mvp.spec.ts", "specs/organizer-panel.spec.ts"],
+      "e2eSpecs": [
+        "specs/events-mvp.spec.ts",
+        "specs/events-full-win.spec.ts",
+        "specs/organizer-panel.spec.ts"
+      ],
       "params": {
         "captureGmLines": true,
         "simulateWrongAttempts": 1
