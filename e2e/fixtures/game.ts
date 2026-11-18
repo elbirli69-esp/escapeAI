@@ -43,6 +43,16 @@ export async function submitAnswer(page: Page, value: string): Promise<void> {
   await page.getByTestId("escape-submit-answer").click();
 }
 
+export async function requestHint(page: Page): Promise<void> {
+  const btn = page.getByRole("button", { name: /Pedir pista/ });
+  await expect(btn).toBeEnabled({ timeout: 10_000 });
+  await btn.click();
+}
+
+export async function getSessionId(page: Page): Promise<string | null> {
+  return page.evaluate(() => localStorage.getItem("escapeai.sessionId"));
+}
+
 /** Cumple el paso «listen» en retos de sonido (beeps, TTS o URL). */
 export async function completeSoundListen(page: Page): Promise<void> {
   const play = page.getByRole("button", {
