@@ -105,6 +105,18 @@ body {
   margin: -0.35rem 0 0.25rem;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .lobby-hero {
   margin-bottom: 1.25rem;
 }
@@ -211,7 +223,149 @@ body {
 
 .progress-label {
   font-size: 0.72rem;
-  opacity: 0.65;
+  color: var(--text-muted);
+}
+
+.shell.game button:focus-visible,
+.shell.game input:focus-visible,
+.shell.game select:focus-visible,
+.shell.game textarea:focus-visible,
+.shell.game .tab:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.shell.game.theme-coastal button:focus-visible,
+.shell.game.theme-coastal input:focus-visible,
+.shell.game.theme-coastal .tab:focus-visible {
+  outline-color: #818cf8;
+}
+
+@media (max-width: 480px) {
+  .game-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .timer-stack {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+  }
+
+  .timer-stack .time {
+    order: -1;
+  }
+}
+
+.game-busy-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.game-busy-spinner {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--text-muted) 35%, transparent);
+  border-top-color: var(--accent);
+  animation: wizard-create-spin 0.85s linear infinite;
+  flex-shrink: 0;
+}
+
+.panel-puzzle.is-busy {
+  opacity: 0.88;
+}
+
+.game-skeleton-head .game-skeleton-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  flex: 1;
+}
+
+.game-skeleton-head .game-skeleton-block.align-end {
+  align-items: flex-end;
+  max-width: 6.5rem;
+}
+
+.game-skeleton-line {
+  border-radius: 0.4rem;
+  background: linear-gradient(110deg, #1e293b 0%, #0f172a 45%, #1e293b 90%);
+  background-size: 200% 100%;
+  animation: room-card-shimmer 1.4s ease-in-out infinite;
+}
+
+.game-skeleton-line.sm {
+  height: 0.65rem;
+  width: 4.5rem;
+}
+
+.game-skeleton-line.md {
+  height: 0.55rem;
+  width: 7rem;
+}
+
+.game-skeleton-line.lg {
+  height: 1.35rem;
+  width: min(100%, 14rem);
+}
+
+.game-skeleton-line.prose {
+  height: 3.5rem;
+  width: 100%;
+  margin: 0 0 1rem;
+}
+
+.game-skeleton-rail {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.15rem;
+}
+
+.game-skeleton-rail::before,
+.game-skeleton-rail::after {
+  content: "";
+  display: block;
+  width: 1.5rem;
+  height: 0.28rem;
+  border-radius: 999px;
+  background: #334155;
+}
+
+.game-skeleton-timer {
+  width: 4.25rem;
+  height: 2.1rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--panel-border);
+  background: linear-gradient(110deg, #1e293b 0%, #0f172a 45%, #1e293b 90%);
+  background-size: 200% 100%;
+  animation: room-card-shimmer 1.4s ease-in-out infinite;
+}
+
+.game-session-hero-skeleton {
+  aspect-ratio: 16 / 9;
+  max-height: 14rem;
+  width: 100%;
+  border-radius: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--panel-border);
+  background: linear-gradient(110deg, #1e293b 0%, #0f172a 45%, #1e293b 90%);
+  background-size: 200% 100%;
+  animation: room-card-shimmer 1.4s ease-in-out infinite;
+}
+
+.game-skeleton-panel {
+  min-height: 6.5rem;
+  border-radius: 1rem;
+  border: 1px solid var(--panel-border);
+  background: linear-gradient(110deg, #1e293b 0%, #0f172a 45%, #1e293b 90%);
+  background-size: 200% 100%;
+  animation: room-card-shimmer 1.4s ease-in-out infinite;
 }
 
 .time {
