@@ -3,10 +3,12 @@ import { createSession, parseRoomDefinition } from "@escapeai/escape-engine";
 import type { PlayerContext } from "@escapeai/escape-engine";
 import {
   eventPaceNudgeCopy,
+  eventPuzzleFailedCopy,
   eventTeamStuckCopy,
   isEventSession,
   maybeGrantBonusHintFromGm,
 } from "./event-session.js";
+import { isPuzzleFailNudgeEligible } from "./catalog-session.js";
 import type { GmSessionMeta } from "./persistence.js";
 import { staticInterventionText } from "./fallbacks.js";
 
@@ -131,5 +133,37 @@ describe("event adaptive fallbacks", () => {
     const next = maybeGrantBonusHintFromGm(session, meta, "p1");
     expect(next.bonusHintGrantedPuzzleIds).toContain("p1");
     expect(session.bonusHintLevels.get("p1")).toBe(1);
+  });
+
+  it("eventPuzzleFailedCopy sugiere audio en entry_lock", () => {
+    expect(eventPuzzleFailedCopy("entry_lock", "Candado", "birthday")).toMatch(/sonoro/i);
+  });
+
+  it("isPuzzleFailNudgeEligible en evento generado", () => {
+    const session = createSession(miniRoom, eventCtx);
+    session.room = { ...session.room, id: "generated-abc12345" };
+    const trigger = {
+      type: "PUZZLE_FAILED" as const,
+      sourceEventId: "x",
+      payload: { puzzleId: "entry_lock", attempts: 2 },
+    };
+    expect(
+      isPuzzleFailNudgeEligible(session, trigger, {
+        sequence: 0,
+        dedupeKeys: [],
+        llmCallCount: 0,
+        lastLlmCallMs: 0,
+        visitedSceneIds: [],
+        lastProgressMs: 0,
+        stuckNotifiedPuzzleIds: [],
+        characterTurnCount: 0,
+        lastCharacterTurnMs: 0,
+        paceNudgeIssued: false,
+        stuckAmbientIssuedPuzzleIds: [],
+        aheadFlavorIssued: false,
+        bonusHintGrantedPuzzleIds: [],
+        catalogFailNudgePuzzleIds: [],
+      }),
+    ).toBe(true);
   });
 });

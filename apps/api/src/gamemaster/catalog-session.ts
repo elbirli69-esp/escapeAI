@@ -1,9 +1,9 @@
-import type { SessionRecord } from "@escapeai/escape-engine";
+import { isGeneratedEventSession, type SessionRecord } from "@escapeai/escape-engine";
 import type { GmPacingMode } from "@escapeai/shared";
 import type { GmSessionMeta } from "./persistence.js";
 import type { GmProcessTrigger } from "@escapeai/shared";
 
-const CATALOG_FAIL_NUDGE_MIN_ATTEMPTS = 2;
+const FAIL_NUDGE_MIN_ATTEMPTS = 2;
 const CATALOG_ROOM_IDS = new Set(["pilot", "lighthouse"]);
 
 /** Partida en sala de catálogo (pilot / lighthouse), sin código de evento. */
@@ -12,25 +12,32 @@ export function isCatalogSession(session: SessionRecord): boolean {
   return CATALOG_ROOM_IDS.has(session.room.id);
 }
 
-export function isCatalogFailNudgeEligible(
+export function isPuzzleFailNudgeEligible(
   session: SessionRecord,
   trigger: GmProcessTrigger,
   meta: GmSessionMeta,
 ): boolean {
-  if (!isCatalogSession(session) || trigger.type !== "PUZZLE_FAILED") return false;
+  if (trigger.type !== "PUZZLE_FAILED") return false;
+  if (!isCatalogSession(session) && !isGeneratedEventSession(session)) return false;
   const puzzleId = String(trigger.payload?.puzzleId ?? "");
   if (!puzzleId || meta.catalogFailNudgePuzzleIds.includes(puzzleId)) return false;
   const attempts = Number(trigger.payload?.attempts ?? 0);
-  return attempts >= CATALOG_FAIL_NUDGE_MIN_ATTEMPTS;
+  return attempts >= FAIL_NUDGE_MIN_ATTEMPTS;
 }
 
-export function markCatalogFailNudged(meta: GmSessionMeta, puzzleId: string): GmSessionMeta {
+/** @deprecated usa isPuzzleFailNudgeEligible */
+export const isCatalogFailNudgeEligible = isPuzzleFailNudgeEligible;
+
+export function markPuzzleFailNudged(meta: GmSessionMeta, puzzleId: string): GmSessionMeta {
   if (meta.catalogFailNudgePuzzleIds.includes(puzzleId)) return meta;
   return {
     ...meta,
     catalogFailNudgePuzzleIds: [...meta.catalogFailNudgePuzzleIds, puzzleId],
   };
 }
+
+/** @deprecated usa markPuzzleFailNudged */
+export const markCatalogFailNudged = markPuzzleFailNudged;
 
 export function catalogPaceNudgeCopy(mode: GmPacingMode, roomId: string): string {
   if (mode === "critical") {
