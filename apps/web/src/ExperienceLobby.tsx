@@ -21,6 +21,12 @@ import { AdventureTemplateCard } from "./AdventureTemplateCard";
 import { formatRoomDuration, VisualCard } from "./VisualCard";
 import { readJoinCodeFromLocation, stripJoinParamFromUrl } from "./lib/event-join-url";
 import { isJoinCodeValid, normalizeJoinCodeInput } from "./lib/join-code";
+import { roomThemeLabel } from "./lib/room-theme-label";
+import {
+  clampTeamCount,
+  parsePlayableFacts,
+  validateCreateEventClient,
+} from "./lib/validate-create-event";
 const ScannerFlow = lazy(() =>
   import("./scanner/ScannerFlow").then((m) => ({ default: m.ScannerFlow })),
 );
@@ -167,6 +173,20 @@ export function ExperienceLobby(props: {
   const teamNameReady = displayName.trim().length >= 2;
   const canSubmitJoin = joinCodeReady && teamNameReady;
 
+  const createDraftError = useMemo(
+    () =>
+      validateCreateEventClient({
+        adventureType,
+        teamCount,
+        durationMin,
+        subjectName,
+        facts,
+      }),
+    [adventureType, teamCount, durationMin, subjectName, facts],
+  );
+  const canSubmitCreate = createDraftError === undefined;
+  const factLines = useMemo(() => parsePlayableFacts(facts), [facts]);
+
   function applyTemplate(t: AdventureTemplateInfo) {
     setAdventureType(t.id);
     if (!facts.trim()) {
@@ -272,19 +292,22 @@ export function ExperienceLobby(props: {
         <header className="lobby-hero">
           <p className="eyebrow">Evento a medida</p>
           <h1 className="display">Configurar aventura</h1>
-          <p className="lede muted">Elige el tono visual; los datos del grupo se convierten en pistas.</p>
+          <p className="lede muted">
+            Elige el estilo de la fiesta; con nombre y anécdotas generamos pistas personalizadas.
+          </p>
         </header>
         {formError && <p className="error">{formError}</p>}
 
         {!created ? (
           <form
-            className="wizard wizard-wide"
+            className="wizard wizard-wide wizard-create"
             onSubmit={(e) => {
               e.preventDefault();
-              const factLines = facts
-                .split("\n")
-                .map((l) => l.trim())
-                .filter(Boolean);
+              if (!canSubmitCreate) {
+                setFormError(createDraftError ?? "Revisa el formulario.");
+                return;
+              }
+              setFormError(null);
               createMutation.mutate({
                 adventureType,
                 teamCount,
@@ -299,6 +322,7 @@ export function ExperienceLobby(props: {
               });
             }}
           >
+            <div className="wizard-create-body">
             <fieldset className="template-picker">
               <legend className="picker-legend">Tipo de aventura</legend>
               {props.adventureTemplatesLoading ? (
@@ -318,12 +342,13 @@ export function ExperienceLobby(props: {
               )}
             </fieldset>
             {selectedTemplate && (
-              <p className="template-detail muted">
-                {selectedTemplate.description}{" "}
+              <details className="template-detail-collapsible">
+                <summary>{selectedTemplate.tagline ?? "Más sobre esta plantilla"}</summary>
+                <p className="muted">{selectedTemplate.description}</p>
                 <button type="button" className="ghost sm" onClick={() => applyTemplate(selectedTemplate)}>
                   Usar datos sugeridos
                 </button>
-              </p>
+              </details>
             )}
 
             <label>
@@ -333,7 +358,7 @@ export function ExperienceLobby(props: {
                 min={2}
                 max={5}
                 value={teamCount}
-                onChange={(e) => setTeamCount(Number(e.target.value))}
+                onChange={(e) => setTeamCount(clampTeamCount(Number(e.target.value)))}
               />
             </label>
             <label>
@@ -349,8 +374,19 @@ export function ExperienceLobby(props: {
             </label>
             <label>
               Nombre central (persona, pareja o nombre del evento)
-              <input value={subjectName} onChange={(e) => setSubjectName(e.target.value)} required />
+              <input
+                value={subjectName}
+                onChange={(e) => setSubjectName(e.target.value)}
+                placeholder="Ej: Laura y Miguel"
+                aria-invalid={subjectName.length > 0 && subjectName.trim().length < 2}
+                required
+              />
             </label>
+            {subjectName.length > 0 && subjectName.trim().length < 2 && (
+              <p className="field-hint error sm" role="alert">
+                El nombre central necesita al menos 2 caracteres.
+              </p>
+            )}
             <label>
               Apodo o forma corta (opcional)
               <input value={nickname} onChange={(e) => setNickname(e.target.value)} />
@@ -361,20 +397,39 @@ export function ExperienceLobby(props: {
             </label>
             <label>
               Datos jugables (fechas, lugares, frases — uno por línea)
-              <textarea rows={4} value={facts} onChange={(e) => setFacts(e.target.value)} required />
+              <textarea
+                rows={4}
+                value={facts}
+                onChange={(e) => setFacts(e.target.value)}
+                placeholder={"Ej: Nos conocimos en 2018\nFrase: «¡A por el récord!»"}
+                aria-invalid={facts.length > 0 && factLines.length < 1}
+                required
+              />
             </label>
+            {facts.length > 0 && factLines.length < 1 && (
+              <p className="field-hint error sm" role="alert">
+                Escribe al menos una línea con contenido (sin espacios vacíos).
+              </p>
+            )}
             <label>
               Título del evento (opcional)
-              <input value={eventTitle} onChange={(e) => setEventTitle(e.target.value)} />
+              <input
+                value={eventTitle}
+                onChange={(e) => setEventTitle(e.target.value)}
+                placeholder="Ej: Misterio de cumpleaños"
+              />
             </label>
-            <button
-              type="submit"
-              className="primary wide"
-              data-testid="escape-event-create-submit"
-              disabled={createMutation.isPending}
-            >
-              {createMutation.isPending ? "Generando sala…" : "Generar y obtener código"}
-            </button>
+            </div>
+            <div className="wizard-create-dock">
+              <button
+                type="submit"
+                className="primary wide"
+                data-testid="escape-event-create-submit"
+                disabled={!canSubmitCreate || createMutation.isPending}
+              >
+                {createMutation.isPending ? "Generando sala…" : "Generar y obtener código"}
+              </button>
+            </div>
           </form>
         ) : (
           <>
@@ -564,8 +619,9 @@ export function ExperienceLobby(props: {
       <ul className="room-grid room-grid-visual">
         {props.rooms.map((room) => {
           const metaParts = [
+            roomThemeLabel(room.theme),
             formatRoomDuration(room.timeLimitSec),
-            room.sceneCount != null ? `${room.sceneCount} esc.` : null,
+            room.sceneCount != null ? `${room.sceneCount} escenas` : null,
           ].filter(Boolean);
           return (
             <li key={room.id}>

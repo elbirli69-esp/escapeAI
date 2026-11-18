@@ -303,7 +303,7 @@ export function App() {
         classicBusy={startGame.isPending}
         classicError={
           startGame.isError || roomsQuery.isError
-            ? "No se pudo conectar con la API o crear la partida."
+            ? "No se pudo conectar con el servidor o crear la partida."
             : null
         }
         onClassicStart={() => startGame.mutate(selectedRoomId)}

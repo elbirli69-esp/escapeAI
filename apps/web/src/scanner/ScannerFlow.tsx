@@ -283,9 +283,11 @@ export function ScannerFlow(props: { onBack: () => void }) {
         ← Volver
       </button>
       <header className="lobby-hero">
-        <p className="eyebrow">ScannerAI</p>
+        <p className="eyebrow">Inventario del espacio</p>
         <h1 className="display">Escanear espacio</h1>
-        <p className="lede muted">Las fotos se procesan solo en tu móvil. Al guardar, el servidor recibe únicamente el inventario.</p>
+        <p className="lede muted">
+          La cámara analiza objetos en tu móvil; no subimos fotos, solo la lista de cosas detectadas.
+        </p>
       </header>
       {error && <p className="error">{error}</p>}
 
