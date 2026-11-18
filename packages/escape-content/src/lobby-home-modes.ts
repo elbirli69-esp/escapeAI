@@ -16,10 +16,10 @@ export function listLobbyHomeModes(): LobbyHomeModeInfo[] {
     {
       mode: "scan",
       title: "Escanear espacio",
-      description: "ScannerAI: inventario local sin subir fotos",
+      description: "Escanea la habitación y arma pistas sin subir fotos",
       imageAlt: "Habitación con objetos para escanear",
       coverImage: "/media/pilot-basement.jpg",
-      pexelsQuery: "room interior objects mystery clues",
+      pexelsQuery: "bright living room interior daylight decor",
       pexelsPage: 2,
     },
     {
@@ -37,7 +37,7 @@ export function listLobbyHomeModes(): LobbyHomeModeInfo[] {
       description: "Código del organizador + nombre del equipo",
       imageAlt: "Entrada de edificio con luces de neón",
       coverImage: "/media/pilot-entrance.jpg",
-      pexelsQuery: "neon city entrance doorway night",
+      pexelsQuery: "neon city entrance doorway lights urban",
       pexelsPage: 3,
     },
     {
@@ -52,10 +52,10 @@ export function listLobbyHomeModes(): LobbyHomeModeInfo[] {
     {
       mode: "catalog",
       title: "Catálogo clásico",
-      description: "Pilot, Faro y demás salas YAML",
+      description: "Conserje, faro y salas de demostración",
       imageAlt: "Faro en la costa, tormenta inminente",
       coverImage: "/media/lighthouse-cover.jpg",
-      pexelsQuery: "escape room door padlock dark hallway",
+      pexelsQuery: "escape room colorful puzzle lights interior",
       pexelsPage: 4,
     },
   ];

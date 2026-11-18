@@ -54,14 +54,17 @@ export function VisualCard(props: VisualCardProps) {
     <div className="room-card-media">
       {showFallback && <div className="room-card-fallback" aria-hidden />}
       {visibleSrc ? (
-        <img
-          src={visibleSrc}
-          alt={imageAlt ?? ""}
-          className="room-card-img-ready"
-          loading={imagePriority ? "eager" : "lazy"}
-          decoding="async"
-          fetchPriority={imagePriority ? "high" : "auto"}
-        />
+        <>
+          <img
+            src={visibleSrc}
+            alt={imageAlt ?? ""}
+            className="room-card-img-ready"
+            loading={imagePriority ? "eager" : "lazy"}
+            decoding="async"
+            fetchPriority={imagePriority ? "high" : "auto"}
+          />
+          <span className="room-card-media-scrim" aria-hidden />
+        </>
       ) : null}
     </div>
   );

@@ -20,6 +20,7 @@ import { EventOrganizerBoard } from "./EventOrganizerBoard";
 import { AdventureTemplateCard } from "./AdventureTemplateCard";
 import { formatRoomDuration, VisualCard } from "./VisualCard";
 import { readJoinCodeFromLocation, stripJoinParamFromUrl } from "./lib/event-join-url";
+import { isJoinCodeValid, normalizeJoinCodeInput } from "./lib/join-code";
 const ScannerFlow = lazy(() =>
   import("./scanner/ScannerFlow").then((m) => ({ default: m.ScannerFlow })),
 );
@@ -36,7 +37,7 @@ const HOME_MODES: Array<{
   {
     mode: "scan",
     title: "Escanear espacio",
-    description: "ScannerAI: inventario local sin subir fotos",
+    description: "Escanea la habitación y arma pistas sin subir fotos",
     image: "/media/pilot-basement.jpg",
     imageAlt: "Habitación con objetos para escanear",
   },
@@ -64,7 +65,7 @@ const HOME_MODES: Array<{
   {
     mode: "catalog",
     title: "Catálogo clásico",
-    description: "Pilot, Faro y demás salas YAML",
+    description: "Conserje, faro y salas de demostración",
     image: "/media/lighthouse-cover.jpg",
     imageAlt: "Faro en la costa, tormenta inminente",
   },
@@ -161,6 +162,10 @@ export function ExperienceLobby(props: {
   });
 
   const templates = props.adventureTemplates ?? [];
+  const joinCodeValue = joinCode || created?.joinCode || "";
+  const joinCodeReady = isJoinCodeValid(joinCodeValue);
+  const teamNameReady = displayName.trim().length >= 2;
+  const canSubmitJoin = joinCodeReady && teamNameReady;
 
   function applyTemplate(t: AdventureTemplateInfo) {
     setAdventureType(t.id);
@@ -493,20 +498,42 @@ export function ExperienceLobby(props: {
             Código del evento
             <input
               data-testid="escape-join-code-input"
-              value={joinCode || created?.joinCode || ""}
-              onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-              placeholder="ABCDEF"
+              value={joinCodeValue}
+              onChange={(e) => setJoinCode(normalizeJoinCodeInput(e.target.value))}
+              placeholder="Ej: X7K2M9"
+              inputMode="text"
+              autoComplete="off"
+              autoCapitalize="characters"
+              spellCheck={false}
+              maxLength={6}
+              aria-invalid={joinCodeValue.length > 0 && !joinCodeReady}
               required
             />
           </label>
+          {joinCodeValue.length > 0 && !joinCodeReady && (
+            <p className="field-hint error sm" role="alert">
+              El código tiene 6 caracteres (letras A–F y números).
+            </p>
+          )}
           <label>
             Nombre del equipo
-            <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
+            <input
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Ej: Los detectives"
+              minLength={2}
+              required
+            />
           </label>
+          {displayName.length > 0 && !teamNameReady && (
+            <p className="field-hint error sm" role="alert">
+              El nombre del equipo necesita al menos 2 caracteres.
+            </p>
+          )}
           <button
             type="submit"
             className="primary wide"
-            disabled={joinMutation.isPending || startMutation.isPending}
+            disabled={!canSubmitJoin || joinMutation.isPending || startMutation.isPending}
           >
             {joinMutation.isPending || startMutation.isPending ? "Entrando…" : "Empezar partida del equipo"}
           </button>
