@@ -26,6 +26,20 @@ describe("talk_to_character", () => {
     const session = createSession(parseRoomDefinition(pilotYaml));
     const solved = applyAction(session, { type: "submit_answer", puzzleId: "lockbox", value: "1984" });
     expect(solved.ok).toBe(true);
+    const moveMail = applyAction(session, { type: "move", sceneId: "mailroom" });
+    expect(moveMail.ok).toBe(true);
+    const view = applyAction(session, {
+      type: "complete_interaction",
+      puzzleId: "mural_glance",
+      step: "view",
+    });
+    expect(view.ok).toBe(true);
+    const mural = applyAction(session, {
+      type: "submit_answer",
+      puzzleId: "mural_glance",
+      value: "2",
+    });
+    expect(mural.ok).toBe(true);
     const move = applyAction(session, { type: "move", sceneId: "basement" });
     expect(move.ok).toBe(true);
     const talk = applyAction(session, {

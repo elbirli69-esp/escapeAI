@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import {
   clearGameStorage,
+  completeSoundListen,
   expectWon,
   moveToScene,
   selectPuzzle,
@@ -13,6 +14,7 @@ import { createEventFromLobby, joinEventAsTeam } from "../fixtures/events.js";
 import { playSaraEventToWin, SARA_EVENT_WIN } from "../fixtures/event-win-path.js";
 import { playGeoLabToWin } from "../fixtures/geo-lab-win.js";
 import { playLighthouseToWin } from "../fixtures/lighthouse-win.js";
+import { playPilotToWin } from "../fixtures/pilot-win.js";
 import { captureCameraThroughUi, mockCameraForPlaywright } from "../fixtures/media-mock.js";
 import { stubMediaRoutes } from "../fixtures/routes.js";
 
@@ -44,22 +46,9 @@ test.describe("experience metrics (objective scoring)", () => {
     const timeToFirstPuzzleMs = Date.now() - t0;
     const gmBefore = await gmCountBeforeSolve(page);
 
-    await selectPuzzle(page, "lockbox");
-    await submitAnswer(page, "0000");
-    await expect(page.getByTestId("escape-narrative-log")).toContainText(/incorrecta/i, { timeout: 10_000 });
+    await playPilotToWin(page, { withWrongLockbox: true });
     const wrongAttemptFeedback = true;
     const wrongAttemptNoFlash = !(await page.getByTestId("escape-flash-error").isVisible().catch(() => false));
-
-    await submitAnswer(page, "1984");
-
-    await moveToScene(page, "basement");
-    await page.getByRole("button", { name: "Coger" }).click();
-    await selectPuzzle(page, "fuse_slot");
-    await page.getByRole("button", { name: "Usar" }).click();
-    await moveToScene(page, "control");
-    await selectPuzzle(page, "panel_final");
-    await submitAnswer(page, "LUZ");
-    await expectWon(page);
 
     const status = page.getByTestId("escape-game-status");
     const body = await status.locator("p").last().innerText();
@@ -74,7 +63,7 @@ test.describe("experience metrics (objective scoring)", () => {
       victoryBodyChars: body.length,
       victoryIncludesTagline: body.includes("«"),
       victoryIncludesRoomName: body.toLowerCase().includes("conserje") || body.length > 40,
-      scenesVisitedInWinSpec: 3,
+      scenesVisitedInWinSpec: 4,
     });
   });
 
@@ -179,8 +168,37 @@ test.describe("experience metrics (objective scoring)", () => {
     });
   });
 
-  test("session-resume + gamemaster flags", async () => {
+  test("session-resume flags", async () => {
     mergeProfileMetrics("session-resume", { wrongAttemptNoFlash: true });
-    mergeProfileMetrics("gamemaster-persistence", { gmLinesBeforeFirstSolve: 1, wonInE2e: false, partialWin: true });
+  });
+
+  test("gamemaster-persistence runtime", async ({ page }) => {
+    test.setTimeout(150_000);
+    await startClassicRoom(page, "pilot");
+    const gmBefore = await gmCountBeforeSolve(page);
+
+    await selectPuzzle(page, "intercom_tone");
+    await completeSoundListen(page);
+    await submitAnswer(page, "1");
+
+    await selectPuzzle(page, "lockbox");
+    await submitAnswer(page, "1984");
+
+    await page.reload();
+    await expect(page.getByTestId(/escape-puzzle-tab-/).first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("escape-gm-line").first()).toBeVisible({ timeout: 15_000 });
+    const gmAfterReload = await page.getByTestId("escape-gm-line").count();
+    expect(gmAfterReload).toBeGreaterThanOrEqual(1);
+
+    await playPilotToWin(page, { phase: "after-lockbox", withWrongLockbox: false });
+
+    const wrongAttemptNoFlash = !(await page.getByTestId("escape-flash-error").isVisible().catch(() => false));
+    mergeProfileMetrics("gamemaster-persistence", {
+      gmLinesBeforeFirstSolve: gmBefore,
+      wonInE2e: true,
+      partialWin: false,
+      wrongAttemptNoFlash,
+      scenesVisitedInWinSpec: 4,
+    });
   });
 });

@@ -94,11 +94,33 @@ function runPilotWinPath(room: ReturnType<typeof parseRoomDefinition>) {
   const session = createSession(room);
 
   expect(
+    applyAction(session, { type: "complete_interaction", puzzleId: "intercom_tone", step: "listen" })
+      .ok,
+  ).toBe(true);
+  expect(
+    applyAction(session, { type: "submit_answer", puzzleId: "intercom_tone", value: "1" }).ok,
+  ).toBe(true);
+  expect(
+    applyAction(session, { type: "complete_interaction", puzzleId: "concierge_hail", step: "speak" })
+      .ok,
+  ).toBe(true);
+  expect(
+    applyAction(session, { type: "submit_answer", puzzleId: "concierge_hail", value: "conserje" }).ok,
+  ).toBe(true);
+  expect(
     applyAction(session, {
       type: "submit_answer",
       puzzleId: "lockbox",
       value: "1984",
     }).ok,
+  ).toBe(true);
+
+  expect(applyAction(session, { type: "move", sceneId: "mailroom" }).ok).toBe(true);
+  expect(
+    applyAction(session, { type: "complete_interaction", puzzleId: "mural_glance", step: "view" }).ok,
+  ).toBe(true);
+  expect(
+    applyAction(session, { type: "submit_answer", puzzleId: "mural_glance", value: "2" }).ok,
   ).toBe(true);
 
   expect(applyAction(session, { type: "move", sceneId: "basement" }).ok).toBe(true);
