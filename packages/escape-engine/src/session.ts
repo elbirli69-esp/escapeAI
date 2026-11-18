@@ -12,6 +12,7 @@ import { matchPlayerAnswer, sanitizePlayerUtterance, validatePlayerAtTarget } fr
 import type { PlayerContext } from "./player-context.js";
 import {
   effectiveHintCap,
+  maybeCatalogFailForward,
   maybeGeneratedFailForward,
 } from "./adaptive-assist.js";
 import type { Condition, RoomBeat, RoomDefinition, RoomPuzzle } from "./room-definition.js";
@@ -42,6 +43,8 @@ export type SessionRecord = {
   failForwardSoundIntro?: boolean;
   /** Rama narrativa precocinada (beats `branch: compress`) en salas generadas. */
   assistNarrativeMode?: "compress";
+  /** Claves idempotentes de fail-forward en catálogo (pilot / lighthouse). */
+  catalogAssistKeys?: Set<string>;
 };
 
 export function createSession(room: RoomDefinition, playerContext?: PlayerContext): SessionRecord {
@@ -299,6 +302,7 @@ function submitAnswer(
   ) {
     session.narrative.push("Respuesta incorrecta.");
     maybeGeneratedFailForward(session, puzzleId);
+    maybeCatalogFailForward(session, puzzleId);
     return { event: { type: "puzzle_failed", puzzleId, attempts } };
   }
 

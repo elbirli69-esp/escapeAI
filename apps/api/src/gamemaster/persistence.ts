@@ -25,8 +25,10 @@ export type GmSessionMeta = {
   stuckAmbientIssuedPuzzleIds: string[];
   /** Copy de director en evento cuando el equipo va ahead (una vez). */
   aheadFlavorIssued: boolean;
-  /** Pista extra de motor concedida por puzzle (evento generado). */
+  /** Pista extra de motor concedida por puzzle (evento generado o catálogo). */
   bonusHintGrantedPuzzleIds: string[];
+  /** Empujón GM tras 2º fallo en puzzle (catálogo, una vez por puzzle). */
+  catalogFailNudgePuzzleIds: string[];
 };
 
 const defaultMeta = (): GmSessionMeta => ({
@@ -43,6 +45,7 @@ const defaultMeta = (): GmSessionMeta => ({
   stuckAmbientIssuedPuzzleIds: [],
   aheadFlavorIssued: false,
   bonusHintGrantedPuzzleIds: [],
+  catalogFailNudgePuzzleIds: [],
 });
 
 export interface GmInterventionStore {

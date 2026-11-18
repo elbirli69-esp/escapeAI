@@ -21,6 +21,10 @@ import {
   markPaceNudgeIssued,
   resolveAdaptivePolicy,
 } from "./pacing.js";
+import {
+  isCatalogFailNudgeEligible,
+  markCatalogFailNudged,
+} from "./catalog-session.js";
 import { isEventSession, maybeGrantBonusHintFromGm } from "./event-session.js";
 import {
   detectTeamStuckTrigger,
@@ -123,11 +127,16 @@ export class GameMasterService {
     const pacing = computeGmPacing(session);
 
     for (const trigger of triggers) {
-      if (trigger.type === "PUZZLE_FAILED" && TRIGGER_POLICY.PUZZLE_FAILED === "silent") {
+      const catalogFailNudge =
+        trigger.type === "PUZZLE_FAILED" && isCatalogFailNudgeEligible(session, trigger, meta);
+      if (trigger.type === "PUZZLE_FAILED" && TRIGGER_POLICY.PUZZLE_FAILED === "silent" && !catalogFailNudge) {
         continue;
       }
 
-      const basePolicy = TRIGGER_POLICY[trigger.type] ?? "static";
+      const basePolicy =
+        catalogFailNudge
+          ? "static"
+          : (TRIGGER_POLICY[trigger.type] ?? "static");
       const policy = resolveAdaptivePolicy(trigger.type, basePolicy, pacing);
       if (policy === "silent") continue;
 
@@ -163,6 +172,10 @@ export class GameMasterService {
       if (trigger.type === "SCENE_ENTERED" && trigger.payload?.sceneId) {
         const sceneId = String(trigger.payload.sceneId);
         meta.visitedSceneIds = [...new Set([...meta.visitedSceneIds, sceneId])];
+        await this.store.saveMeta(session.sessionId, meta);
+      }
+      if (trigger.type === "PUZZLE_FAILED" && catalogFailNudge && trigger.payload?.puzzleId) {
+        meta = markCatalogFailNudged(meta, String(trigger.payload.puzzleId));
         await this.store.saveMeta(session.sessionId, meta);
       }
       if (trigger.type === "TEAM_STUCK" && trigger.payload?.puzzleId) {

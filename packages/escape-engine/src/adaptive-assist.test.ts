@@ -5,6 +5,8 @@ import {
   createSession,
   effectiveHintCap,
   grantBonusHintLevel,
+  isCatalogSession,
+  maybeCatalogFailForward,
   maybeGeneratedFailForward,
   parseRoomDefinition,
 } from "./index.js";
@@ -84,6 +86,83 @@ describe("adaptive-assist", () => {
     const session = createSession(generatedMini);
     session.puzzleAttempts.set("entry_lock", 10);
     expect(maybeGeneratedFailForward(session, "entry_lock")).toBe(false);
+  });
+
+  it("catalog: fail-forward desbloquea intercom tras lockbox", () => {
+    const pilotMini = parseRoomDefinition(`
+id: pilot
+name: Pilot
+theme: urban
+timeLimitSec: 600
+startSceneId: entrance
+winCondition: { type: puzzle_solved, puzzleId: lockbox }
+scenes:
+  entrance:
+    id: entrance
+    title: Entrada
+    description: d
+    puzzles: [intercom_tone, lockbox]
+puzzles:
+  intercom_tone:
+    id: intercom_tone
+    type: sound
+    prompt: oir
+    answer: "1"
+    label: Timbre
+  lockbox:
+    id: lockbox
+    type: code
+    prompt: lock
+    answer: "1984"
+    label: Candado
+    maxHints: 3
+    hints:
+      - { level: 1, text: p1 }
+      - { level: 2, text: p2 }
+      - { level: 3, text: p3 }
+`);
+    const session = createSession(pilotMini);
+    expect(isCatalogSession(session)).toBe(true);
+    for (let i = 0; i < 3; i++) {
+      applyAction(session, {
+        type: "submit_answer",
+        puzzleId: "lockbox",
+        value: "0000",
+      });
+    }
+    expect(session.puzzleInteractions.get("intercom_tone")?.has("listen")).toBe(true);
+    expect(maybeCatalogFailForward(session, "lockbox")).toBe(false);
+  });
+
+  it("grantBonusHintLevel en catálogo", () => {
+    const session = createSession(
+      parseRoomDefinition(`
+id: pilot
+name: Pilot
+theme: urban
+timeLimitSec: 600
+startSceneId: s
+winCondition: { type: puzzle_solved, puzzleId: p1 }
+scenes:
+  s:
+    id: s
+    title: S
+    description: d
+    puzzles: [p1]
+puzzles:
+  p1:
+    id: p1
+    type: code
+    prompt: x
+    answer: "1"
+    maxHints: 2
+    hints:
+      - { level: 1, text: h1 }
+      - { level: 2, text: h2 }
+`),
+    );
+    grantBonusHintLevel(session, "p1", 1);
+    expect(effectiveHintCap(session, "p1", 2, 2)).toBe(2);
   });
 
   it("activateCompressNarrative es idempotente en eventos generados", () => {

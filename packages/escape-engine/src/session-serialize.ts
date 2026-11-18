@@ -22,6 +22,7 @@ export type SerializedSession = {
   bonusHintLevels?: Record<string, number>;
   failForwardSoundIntro?: boolean;
   assistNarrativeMode?: SessionRecord["assistNarrativeMode"];
+  catalogAssistKeys?: string[];
 };
 
 export function serializeSession(session: SessionRecord): SerializedSession {
@@ -51,6 +52,7 @@ export function serializeSession(session: SessionRecord): SerializedSession {
     bonusHintLevels: Object.fromEntries(session.bonusHintLevels),
     failForwardSoundIntro: session.failForwardSoundIntro,
     assistNarrativeMode: session.assistNarrativeMode,
+    catalogAssistKeys: session.catalogAssistKeys ? [...session.catalogAssistKeys] : undefined,
   };
 }
 
@@ -81,5 +83,8 @@ export function deserializeSession(data: SerializedSession): SessionRecord {
     bonusHintLevels: new Map(Object.entries(data.bonusHintLevels ?? {})),
     failForwardSoundIntro: data.failForwardSoundIntro,
     assistNarrativeMode: data.assistNarrativeMode,
+    catalogAssistKeys: data.catalogAssistKeys?.length
+      ? new Set(data.catalogAssistKeys)
+      : undefined,
   };
 }

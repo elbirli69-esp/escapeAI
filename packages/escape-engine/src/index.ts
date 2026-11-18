@@ -20,7 +20,9 @@ export {
 export {
   activateCompressNarrative,
   grantBonusHintLevel,
+  isCatalogSession,
   isGeneratedEventSession,
+  maybeCatalogFailForward,
   maybeGeneratedFailForward,
   effectiveHintCap,
 } from "./adaptive-assist.js";
