@@ -278,7 +278,7 @@ export function ScannerFlow(props: { onBack: () => void }) {
   };
 
   return (
-    <main className="shell lobby scanner-flow" data-testid="escape-scanner-flow">
+    <main className="shell lobby lobby-panel scanner-flow" data-testid="escape-scanner-flow">
       <button type="button" className="ghost sm back-link" onClick={props.onBack}>
         ← Volver
       </button>

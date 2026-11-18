@@ -67,14 +67,14 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.14em;
   font-size: 0.68rem;
-  opacity: 0.65;
+  color: var(--text-muted);
   margin: 0;
   font-weight: 600;
 }
 
 .lede,
 .scene.prose {
-  opacity: 0.9;
+  color: var(--text-secondary);
   font-size: 1.02rem;
 }
 
@@ -90,6 +90,91 @@ body {
 
 .lobby-hero {
   margin-bottom: 1.25rem;
+}
+
+.lobby-panel {
+  animation: lobby-panel-in 0.3s ease both;
+}
+
+@keyframes lobby-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lobby-panel {
+    animation: none;
+  }
+}
+
+.lobby-card-skeleton {
+  width: 100%;
+  min-height: 14.5rem;
+  border-radius: 1rem;
+  border: 1px solid var(--panel-border);
+  background: linear-gradient(110deg, #1e293b 0%, #0f172a 45%, #1e293b 90%);
+  background-size: 200% 100%;
+  animation: room-card-shimmer 1.4s ease-in-out infinite;
+}
+
+.lobby-card-skeleton-catalog {
+  aspect-ratio: 16 / 12;
+  min-height: auto;
+}
+
+@media (min-width: 768px) {
+  .shell.lobby {
+    padding-left: 1.35rem;
+    padding-right: 1.35rem;
+  }
+
+  .shell.lobby.lobby-home {
+    max-width: 58rem;
+  }
+
+  .shell.lobby.lobby-catalog {
+    max-width: 52rem;
+  }
+
+  .shell.lobby.lobby-create {
+    max-width: 54rem;
+  }
+
+  .shell.lobby.lobby-join,
+  .shell.lobby.lobby-organizer {
+    max-width: 30rem;
+  }
+
+  .lobby-home .lobby-hero .lede {
+    max-width: 36rem;
+  }
+}
+
+@media (min-width: 960px) {
+  .shell.lobby {
+    max-width: 48rem;
+  }
+
+  .lobby-catalog .room-grid-visual {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.15rem;
+  }
+
+  .lobby-create .template-grid.room-grid-visual {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1100px) {
+  .lobby-create .template-grid.room-grid-visual {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .game-head {
