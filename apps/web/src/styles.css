@@ -846,6 +846,78 @@ button {
   cursor: not-allowed;
 }
 
+.wizard-create {
+  position: relative;
+}
+
+.wizard-create.is-busy .wizard-create-body {
+  opacity: 0.42;
+  pointer-events: none;
+  user-select: none;
+  filter: saturate(0.85);
+}
+
+.wizard-create-busy-panel {
+  position: relative;
+  z-index: 3;
+  margin: 0 0 0.75rem;
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  text-align: center;
+  border: 1px solid color-mix(in srgb, var(--accent, #38bdf8) 35%, var(--panel-border));
+  box-shadow: 0 12px 40px color-mix(in srgb, var(--bg, #0c1222) 55%, transparent);
+}
+
+.wizard-create-busy-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 650;
+  color: var(--text-primary, #eef2ff);
+}
+
+.wizard-create-busy-hint {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  max-width: 28rem;
+}
+
+.wizard-create-busy-elapsed {
+  margin: 0.15rem 0 0;
+}
+
+.wizard-create-busy-spinner {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  border: 3px solid color-mix(in srgb, var(--text-muted) 35%, transparent);
+  border-top-color: var(--accent, #38bdf8);
+  animation: wizard-create-spin 0.85s linear infinite;
+}
+
+@keyframes wizard-create-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.create-error-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1rem;
+  margin-bottom: 0.35rem;
+}
+
+.create-error-banner .error {
+  margin: 0;
+  flex: 1 1 12rem;
+}
+
 .wizard-wide {
   max-width: none;
 }
