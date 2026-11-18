@@ -1000,6 +1000,24 @@ button {
   cursor: not-allowed;
 }
 
+.lobby-form-anchor {
+  scroll-margin-top: 0.75rem;
+}
+
+.wizard-create-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.wizard-step-label {
+  margin: 0.25rem 0 0;
+}
+
+.catalog-start-block {
+  margin-top: 1.15rem;
+}
+
 .wizard-create {
   position: relative;
 }

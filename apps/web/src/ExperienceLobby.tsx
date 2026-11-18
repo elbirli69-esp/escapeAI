@@ -35,6 +35,7 @@ import {
   parsePlayableFacts,
   validateCreateEventClient,
 } from "./lib/validate-create-event";
+import { scrollToLobbySection } from "./lib/scroll-to-lobby-section";
 const ScannerFlow = lazy(() =>
   import("./scanner/ScannerFlow").then((m) => ({ default: m.ScannerFlow })),
 );
@@ -137,6 +138,33 @@ export function ExperienceLobby(props: {
     setMode("join");
     stripJoinParamFromUrl();
   }, []);
+
+  useEffect(() => {
+    if (mode === "organizer" && organizerBoardCode) return;
+    const scrollByMode: Partial<
+      Record<LobbyMode, { id: string; focusSelector?: string } | undefined>
+    > = {
+      create: { id: "escape-wizard-create" },
+      join: { id: "escape-join-wizard", focusSelector: "input" },
+      organizer: { id: "escape-organizer-wizard", focusSelector: "input" },
+      catalog: { id: "escape-catalog-actions" },
+    };
+    const target = scrollByMode[mode];
+    if (!target) return;
+    const timer = window.setTimeout(() => {
+      scrollToLobbySection(target.id, { focusSelector: target.focusSelector });
+    }, 80);
+    return () => window.clearTimeout(timer);
+  }, [mode, organizerBoardCode]);
+
+  function selectAdventureTemplate(id: AdventureType) {
+    setAdventureType(id);
+    window.setTimeout(() => {
+      scrollToLobbySection("escape-wizard-create-fields", {
+        focusSelector: "input, select, textarea",
+      });
+    }, 80);
+  }
 
   const homeImageByMode = useMemo(() => {
     const map = new Map<string, string>();
@@ -338,7 +366,7 @@ export function ExperienceLobby(props: {
           <p className="eyebrow">Evento a medida</p>
           <h1 className="display">Configurar aventura</h1>
           <p className="lede muted">
-            Elige el estilo de la fiesta; con nombre y anécdotas generamos pistas personalizadas.
+            Toca una plantilla y completa los datos del formulario debajo para generar tu código.
           </p>
         </header>
         {formError && (
@@ -362,7 +390,8 @@ export function ExperienceLobby(props: {
 
         {!created ? (
           <form
-            className={`wizard wizard-wide wizard-create${createMutation.isPending ? " is-busy" : ""}`}
+            id="escape-wizard-create"
+            className={`wizard wizard-wide wizard-create lobby-form-anchor${createMutation.isPending ? " is-busy" : ""}`}
             aria-busy={createMutation.isPending}
             onSubmit={(e) => {
               e.preventDefault();
@@ -402,7 +431,7 @@ export function ExperienceLobby(props: {
                       <AdventureTemplateCard
                         template={t}
                         active={adventureType === t.id}
-                        onSelect={() => setAdventureType(t.id)}
+                        onSelect={() => selectAdventureTemplate(t.id)}
                       />
                     </li>
                   ))}
@@ -419,6 +448,14 @@ export function ExperienceLobby(props: {
               </details>
             )}
 
+            <section
+              id="escape-wizard-create-fields"
+              className="wizard-create-fields lobby-form-anchor"
+              aria-labelledby="escape-wizard-create-fields-title"
+            >
+              <p id="escape-wizard-create-fields-title" className="eyebrow wizard-step-label">
+                Datos de tu evento
+              </p>
             <label>
               Equipos en competición (2–5)
               <input
@@ -487,6 +524,7 @@ export function ExperienceLobby(props: {
                 placeholder="Ej: Misterio de cumpleaños"
               />
             </label>
+            </section>
             </div>
             <div className="wizard-create-dock">
               <button
@@ -577,7 +615,8 @@ export function ExperienceLobby(props: {
               </p>
             )}
             <form
-              className="wizard"
+              id="escape-organizer-wizard"
+              className="wizard lobby-form-anchor"
               onSubmit={(e) => {
                 e.preventDefault();
                 const next = normalizeJoinCodeInput(organizerDraft);
@@ -632,7 +671,8 @@ export function ExperienceLobby(props: {
         <h1 className="display">Unirse como equipo</h1>
         {formError && <p className="error">{formError}</p>}
         <form
-          className="wizard"
+          id="escape-join-wizard"
+          className="wizard lobby-form-anchor"
           onSubmit={(e) => {
             e.preventDefault();
             setFormError(null);
@@ -734,22 +774,29 @@ export function ExperienceLobby(props: {
                 layout="stack"
                 variant="compact"
                 data-testid={`escape-room-${room.id}`}
-                onClick={() => props.onSelectRoom(room.id)}
+                onClick={() => {
+                  props.onSelectRoom(room.id);
+                  window.setTimeout(() => {
+                    scrollToLobbySection("escape-catalog-actions", { focusSelector: "button" });
+                  }, 80);
+                }}
               />
             </li>
           );
         })}
       </ul>
       )}
-      <button
-        type="button"
-        className="primary wide"
-        data-testid="escape-start-classic"
-        disabled={props.roomsLoading || props.classicBusy}
-        onClick={props.onClassicStart}
-      >
-        {props.classicBusy ? "Preparando…" : "Empezar partida"}
-      </button>
+      <div id="escape-catalog-actions" className="catalog-start-block lobby-form-anchor">
+        <button
+          type="button"
+          className="primary wide"
+          data-testid="escape-start-classic"
+          disabled={props.roomsLoading || props.classicBusy}
+          onClick={props.onClassicStart}
+        >
+          {props.classicBusy ? "Preparando…" : "Empezar partida"}
+        </button>
+      </div>
     </LobbyShell>
   );
 }
