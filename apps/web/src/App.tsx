@@ -293,6 +293,7 @@ export function App() {
     return (
       <ExperienceLobby
         homeCards={homeCardsQuery.data}
+        homeCardsLoading={homeCardsQuery.isPending && !homeCardsQuery.data}
         homeCardsError={homeCardsQuery.isError}
         adventureTemplates={adventuresQuery.data}
         adventureTemplatesLoading={adventuresQuery.isPending && !adventuresQuery.data}

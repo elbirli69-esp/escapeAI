@@ -25,7 +25,7 @@ export function listLobbyHomeModes(): LobbyHomeModeInfo[] {
     {
       mode: "create",
       title: "Crear experiencia",
-      description: "Tipo, nombre central, datos → código para invitar",
+      description: "Diseña la fiesta y recibe un código para invitar",
       imageAlt: "Panel de control iluminado, ambiente de misterio urbano",
       coverImage: "/media/pilot-control.jpg",
       pexelsQuery: "control panel neon lights escape",
@@ -34,7 +34,7 @@ export function listLobbyHomeModes(): LobbyHomeModeInfo[] {
     {
       mode: "join",
       title: "Entrar como equipo",
-      description: "Código del organizador + nombre del equipo",
+      description: "Introduce el código del organizador y el nombre de tu equipo",
       imageAlt: "Entrada de edificio con luces de neón",
       coverImage: "/media/pilot-entrance.jpg",
       pexelsQuery: "neon city entrance doorway lights urban",

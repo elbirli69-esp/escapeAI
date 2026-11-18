@@ -18,6 +18,8 @@ import {
 import { EventJoinQr } from "./EventJoinQr";
 import { EventOrganizerBoard } from "./EventOrganizerBoard";
 import { AdventureTemplateCard } from "./AdventureTemplateCard";
+import { LobbyHomeSkeleton } from "./LobbyHomeSkeleton";
+import { LobbyShell } from "./LobbyShell";
 import { formatRoomDuration, VisualCard } from "./VisualCard";
 import { readJoinCodeFromLocation, stripJoinParamFromUrl } from "./lib/event-join-url";
 import { isJoinCodeValid, normalizeJoinCodeInput } from "./lib/join-code";
@@ -50,14 +52,14 @@ const HOME_MODES: Array<{
   {
     mode: "create",
     title: "Crear experiencia",
-    description: "Tipo, nombre central, datos → código para invitar",
+    description: "Diseña la fiesta y recibe un código para invitar",
     image: "/media/pilot-control.jpg",
     imageAlt: "Panel de control iluminado, ambiente de misterio urbano",
   },
   {
     mode: "join",
     title: "Entrar como equipo",
-    description: "Código del organizador + nombre del equipo",
+    description: "Introduce el código del organizador y el nombre de tu equipo",
     image: "/media/pilot-entrance.jpg",
     imageAlt: "Entrada de edificio con luces de neón",
   },
@@ -83,6 +85,7 @@ function themeClass(theme?: string): string {
 
 export function ExperienceLobby(props: {
   homeCards?: LobbyHomeCard[];
+  homeCardsLoading?: boolean;
   homeCardsError?: boolean;
   adventureTemplates?: AdventureTemplateInfo[];
   adventureTemplatesLoading?: boolean;
@@ -203,8 +206,10 @@ export function ExperienceLobby(props: {
   }
 
   if (mode === "home") {
+    const showHomeSkeleton =
+      props.homeCardsLoading && !props.homeCardsError && (props.homeCards?.length ?? 0) === 0;
     return (
-      <main className="shell lobby" data-testid="escape-lobby-home">
+      <LobbyShell mode="home" testId="escape-lobby-home">
         <header className="lobby-hero">
           <p className="eyebrow">escapeAI</p>
           <h1 className="display">Tu escape, a tu medida</h1>
@@ -244,40 +249,44 @@ export function ExperienceLobby(props: {
             </div>
           </section>
         )}
-        <div className="mode-grid mode-grid-visual">
-          {HOME_MODES.map((card) => (
-            <VisualCard
-              key={card.mode}
-              title={card.title}
-              description={card.description}
-              imageSrc={props.homeCardsError ? card.image : homeImageByMode.get(card.mode)}
-              imageAlt={card.imageAlt}
-              imagePriority
-              layout="stack"
-              data-testid={
-                card.mode === "catalog"
-                  ? "escape-mode-catalog"
-                  : card.mode === "create"
-                    ? "escape-mode-create"
-                    : card.mode === "scan"
-                      ? "escape-mode-scan"
-                      : card.mode === "join"
-                      ? "escape-mode-join"
-                      : card.mode === "organizer"
-                        ? "escape-mode-organizer"
-                        : undefined
-              }
-              onClick={() => {
-                if (card.mode === "organizer") {
-                  setOrganizerBoardCode(null);
-                  setOrganizerDraft("");
+        {showHomeSkeleton ? (
+          <LobbyHomeSkeleton />
+        ) : (
+          <div className="mode-grid mode-grid-visual">
+            {HOME_MODES.map((card) => (
+              <VisualCard
+                key={card.mode}
+                title={card.title}
+                description={card.description}
+                imageSrc={props.homeCardsError ? card.image : homeImageByMode.get(card.mode)}
+                imageAlt={card.imageAlt}
+                imagePriority
+                layout="stack"
+                data-testid={
+                  card.mode === "catalog"
+                    ? "escape-mode-catalog"
+                    : card.mode === "create"
+                      ? "escape-mode-create"
+                      : card.mode === "scan"
+                        ? "escape-mode-scan"
+                        : card.mode === "join"
+                        ? "escape-mode-join"
+                        : card.mode === "organizer"
+                          ? "escape-mode-organizer"
+                          : undefined
                 }
-                setMode(card.mode);
-              }}
-            />
-          ))}
-        </div>
-      </main>
+                onClick={() => {
+                  if (card.mode === "organizer") {
+                    setOrganizerBoardCode(null);
+                    setOrganizerDraft("");
+                  }
+                  setMode(card.mode);
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </LobbyShell>
     );
   }
 
@@ -285,7 +294,7 @@ export function ExperienceLobby(props: {
 
   if (mode === "create") {
     return (
-      <main className={`shell lobby ${themeClass(selectedTemplate?.theme)}`}>
+      <LobbyShell mode="create" className={themeClass(selectedTemplate?.theme)}>
         <button type="button" className="ghost sm back-link" onClick={() => setMode("home")}>
           ← Volver
         </button>
@@ -480,7 +489,7 @@ export function ExperienceLobby(props: {
             </div>
           </>
         )}
-      </main>
+      </LobbyShell>
     );
   }
 
@@ -489,17 +498,21 @@ export function ExperienceLobby(props: {
     return (
       <>
         {!code ? (
-          <main className="shell lobby">
+          <LobbyShell mode="organizer">
             <button type="button" className="ghost sm back-link" onClick={() => setMode("home")}>
               ← Volver
             </button>
-            <h1 className="display">Panel organizador</h1>
+            <header className="lobby-hero">
+              <p className="eyebrow">Modo proyección</p>
+              <h1 className="display">Panel organizador</h1>
+              <p className="lede muted">Ranking en vivo para TV o proyector. Un código por evento.</p>
+            </header>
             <form
               className="wizard"
               onSubmit={(e) => {
                 e.preventDefault();
-                const next = organizerDraft.trim().toUpperCase();
-                if (!next) return;
+                const next = normalizeJoinCodeInput(organizerDraft);
+                if (!isJoinCodeValid(next)) return;
                 setOrganizerBoardCode(next);
               }}
             >
@@ -508,15 +521,24 @@ export function ExperienceLobby(props: {
                 <input
                   data-testid="escape-organizer-code-input"
                   value={organizerDraft}
-                  onChange={(e) => setOrganizerDraft(e.target.value.toUpperCase())}
+                  onChange={(e) => setOrganizerDraft(normalizeJoinCodeInput(e.target.value))}
+                  placeholder="Ej: X7K2M9"
+                  maxLength={6}
+                  autoCapitalize="characters"
+                  spellCheck={false}
                   required
                 />
               </label>
-              <button type="submit" className="primary wide" data-testid="escape-organizer-open">
+              <button
+                type="submit"
+                className="primary wide"
+                data-testid="escape-organizer-open"
+                disabled={!isJoinCodeValid(organizerDraft)}
+              >
                 Ver ranking
               </button>
             </form>
-          </main>
+          </LobbyShell>
         ) : (
           <EventOrganizerBoard
             joinCode={code}
@@ -533,7 +555,7 @@ export function ExperienceLobby(props: {
 
   if (mode === "join") {
     return (
-      <main className="shell lobby">
+      <LobbyShell mode="join">
         <button type="button" className="ghost sm back-link" onClick={() => setMode("home")}>
           ← Volver
         </button>
@@ -593,7 +615,7 @@ export function ExperienceLobby(props: {
             {joinMutation.isPending || startMutation.isPending ? "Entrando…" : "Empezar partida del equipo"}
           </button>
         </form>
-      </main>
+      </LobbyShell>
     );
   }
 
@@ -601,7 +623,7 @@ export function ExperienceLobby(props: {
   const catalogTheme = themeClass(selectedRoom?.theme);
 
   return (
-    <main className={`shell lobby ${catalogTheme}`}>
+    <LobbyShell mode="catalog" className={catalogTheme}>
       <button type="button" className="ghost sm back-link" onClick={() => setMode("home")}>
         ← Volver
       </button>
@@ -614,7 +636,13 @@ export function ExperienceLobby(props: {
       </header>
       {props.classicError && <p className="error">{props.classicError}</p>}
       {props.roomsLoading ? (
-        <p className="muted">Cargando salas…</p>
+        <ul className="room-grid room-grid-visual" aria-busy="true" aria-label="Cargando salas">
+          {Array.from({ length: 4 }, (_, i) => (
+            <li key={i}>
+              <div className="lobby-card-skeleton lobby-card-skeleton-catalog" />
+            </li>
+          ))}
+        </ul>
       ) : (
       <ul className="room-grid room-grid-visual">
         {props.rooms.map((room) => {
@@ -651,6 +679,6 @@ export function ExperienceLobby(props: {
       >
         {props.classicBusy ? "Preparando…" : "Empezar partida"}
       </button>
-    </main>
+    </LobbyShell>
   );
 }
