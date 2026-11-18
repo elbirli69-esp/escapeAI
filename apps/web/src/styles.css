@@ -1214,11 +1214,21 @@ button {
 
 .mode-grid-visual {
   grid-template-columns: 1fr;
+  gap: 1.35rem;
+}
+
+.lobby-home .mode-grid-visual {
+  gap: 1.5rem;
 }
 
 @media (min-width: 640px) {
   .mode-grid-visual {
     grid-template-columns: repeat(2, 1fr);
+    gap: 1.15rem;
+  }
+
+  .lobby-home .mode-grid-visual {
+    gap: 1.25rem;
   }
 }
 

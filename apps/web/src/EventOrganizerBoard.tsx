@@ -45,7 +45,8 @@ export function EventOrganizerBoard(props: { joinCode: string; onBack?: () => vo
   const q = useQuery({
     queryKey: ["leaderboard", props.joinCode],
     queryFn: () => fetchEventLeaderboard(props.joinCode),
-    refetchInterval: 8_000,
+    retry: 1,
+    refetchInterval: (query) => (query.state.error ? false : 8_000),
   });
 
   const board = q.data as EventLeaderboard | undefined;
@@ -107,7 +108,11 @@ export function EventOrganizerBoard(props: { joinCode: string; onBack?: () => vo
         <div className="event-poster-scrim" aria-hidden />
         <div className="event-poster-body">
           <p className="eyebrow poster-eyebrow">{projectorTv ? "Ranking en vivo" : "Invitación al escape"}</p>
-          <h1 className="display-sm">{board?.title ?? "Cargando evento…"}</h1>
+          <h1 className="display-sm">
+            {q.isError
+              ? "Evento no encontrado"
+              : board?.title ?? (q.isLoading ? "Cargando evento…" : "—")}
+          </h1>
           <div className="event-poster-invite">
             <div className="event-poster-invite-copy">
               <p className="join-code poster-code" aria-label={`Código del evento: ${props.joinCode}`}>
@@ -129,8 +134,16 @@ export function EventOrganizerBoard(props: { joinCode: string; onBack?: () => vo
           {board.teamVariable.label}: {board.teamVariable.value}/{board.teamVariable.goal}
         </p>
       )}
-      {q.isError && <p className="error">No se pudo cargar el evento.</p>}
-      {q.isLoading && <p className="muted">Actualizando equipos…</p>}
+      {q.isError && (
+        <p className="error" role="alert" data-testid="escape-organizer-not-found">
+          No encontramos un evento con el código <strong>{props.joinCode}</strong>. Compruébalo con quien
+          creó la partida.
+        </p>
+      )}
+      {q.isLoading && !q.isError && <p className="muted">Cargando ranking…</p>}
+      {q.isFetching && !q.isLoading && !q.isError && (
+        <p className="muted sm">Actualizando equipos…</p>
+      )}
       <ol className="leaderboard-list leaderboard-projector" data-testid="escape-leaderboard-list">
         {(board?.teams ?? []).map((t, i) => {
           const avatar = teamAvatarStyle(t.teamName);
