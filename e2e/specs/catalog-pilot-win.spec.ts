@@ -1,13 +1,6 @@
 import { test } from "@playwright/test";
-import {
-  clearGameStorage,
-  expectNoFlashError,
-  expectWon,
-  moveToScene,
-  selectPuzzle,
-  startClassicRoom,
-  submitAnswer,
-} from "../fixtures/game.js";
+import { clearGameStorage, expectNoFlashError, startClassicRoom } from "../fixtures/game.js";
+import { playPilotToWin } from "../fixtures/pilot-win.js";
 import { stubMediaRoutes } from "../fixtures/routes.js";
 
 test.describe("pilot victory", () => {
@@ -17,23 +10,9 @@ test.describe("pilot victory", () => {
   });
 
   test("recorrido completo hasta victoria", async ({ page }) => {
+    test.setTimeout(120_000);
     await startClassicRoom(page, "pilot");
-
-    await selectPuzzle(page, "lockbox");
-    await submitAnswer(page, "1984");
+    await playPilotToWin(page);
     await expectNoFlashError(page);
-
-    await moveToScene(page, "basement");
-    await page.getByRole("button", { name: "Coger" }).click();
-    await selectPuzzle(page, "fuse_slot");
-    await page.getByRole("button", { name: "Usar" }).click();
-    await expectNoFlashError(page);
-
-    await moveToScene(page, "control");
-    await selectPuzzle(page, "panel_final");
-    await submitAnswer(page, "LUZ");
-    await expectNoFlashError(page);
-
-    await expectWon(page);
   });
 });

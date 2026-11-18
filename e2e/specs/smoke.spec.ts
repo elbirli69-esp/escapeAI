@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { clearGameStorage, openCatalog } from "../fixtures/game.js";
+import { clearGameStorage, openCatalog, selectPuzzle } from "../fixtures/game.js";
 
 const API = "http://127.0.0.1:8787/api";
 
@@ -25,6 +25,8 @@ test.describe("smoke", () => {
     await page.getByTestId("escape-mode-catalog").click();
     await page.getByTestId("escape-room-pilot").click();
     await page.getByTestId("escape-start-classic").click();
+    await page.getByTestId(/escape-puzzle-tab-/).first().waitFor({ timeout: 30_000 });
+    await selectPuzzle(page, "lockbox");
     await page.getByTestId("escape-answer-input").fill("0000");
     await page.getByTestId("escape-submit-answer").click();
     await expect(page.getByTestId("escape-narrative-log")).toContainText("incorrecta");
