@@ -143,13 +143,17 @@ function ClassicPuzzleForm(props: {
           props.onAnswerChange("");
         }}
       >
+        <label className="sr-only" htmlFor={`escape-answer-${puzzle.id}`}>
+          Respuesta para {puzzle.label ?? puzzle.id}
+        </label>
         <input
+          id={`escape-answer-${puzzle.id}`}
           data-testid="escape-answer-input"
           value={props.answer}
           onChange={(e) => props.onAnswerChange(e.target.value)}
           placeholder={props.answerPlaceholder ?? "Tu respuesta"}
           autoComplete="off"
-          disabled={props.submitDisabled}
+          disabled={props.submitDisabled || props.busy}
         />
         <button
           type="submit"

@@ -60,8 +60,14 @@ export function SceneHero(props: { image?: string; title: string; mood?: string 
         )}
       </div>
       <figcaption className="scene-hero-caption">
-        <h2 className="scene-hero-title">{props.title}</h2>
-        {props.mood && <p className="scene-hero-mood">{props.mood}</p>}
+        <p className="scene-hero-title" aria-hidden="true">
+          {props.title}
+        </p>
+        {props.mood && (
+          <p className="scene-hero-mood" aria-hidden="true">
+            {props.mood}
+          </p>
+        )}
       </figcaption>
     </figure>
   );
