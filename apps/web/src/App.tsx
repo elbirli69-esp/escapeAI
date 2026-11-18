@@ -1,6 +1,6 @@
 import type { NarrativeIntervention, PublicItem, PublicState } from "@escapeai/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   createSession,
   fetchAdventureTemplates,
@@ -296,6 +296,18 @@ export function App() {
     return selectedInScene?.id ?? open?.id ?? null;
   }, [state, selectedPuzzle]);
 
+  const dispatchAction = useCallback(
+    (action: Parameters<typeof sendAction>[1]) => {
+      actionMutation.mutate(action);
+    },
+    [actionMutation.mutate],
+  );
+
+  useEffect(() => {
+    if (!state) return;
+    setSelectedPuzzle(null);
+  }, [state?.currentSceneId]);
+
   if (!sessionId) {
     return (
       <ExperienceLobby
@@ -371,7 +383,7 @@ export function App() {
       answer={answer}
       onAnswerChange={setAnswer}
       onSelectPuzzle={setSelectedPuzzle}
-      onAction={(action) => actionMutation.mutate(action)}
+      onAction={dispatchAction}
       busy={actionMutation.isPending}
       actionError={actionError}
       onDismissError={() => setActionError(null)}
