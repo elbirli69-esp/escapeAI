@@ -29,6 +29,7 @@ function readProjectorFromUrl(): boolean {
 
 export function EventOrganizerBoard(props: { joinCode: string; onBack?: () => void }) {
   const [projectorTv, setProjectorTv] = useState(readProjectorFromUrl);
+  const [projectorLinkCopied, setProjectorLinkCopied] = useState(false);
 
   const syncProjectorUrl = useCallback((on: boolean) => {
     const url = new URL(window.location.href);
@@ -50,6 +51,18 @@ export function EventOrganizerBoard(props: { joinCode: string; onBack?: () => vo
   const board = q.data as EventLeaderboard | undefined;
   const shareLine = `QR o código ${props.joinCode} — cada equipo elige su nombre al entrar.`;
 
+  async function copyProjectorLink() {
+    const url = new URL(window.location.href);
+    url.searchParams.set("projector", "1");
+    try {
+      await navigator.clipboard.writeText(url.toString());
+      setProjectorLinkCopied(true);
+      window.setTimeout(() => setProjectorLinkCopied(false), 2500);
+    } catch {
+      window.prompt("Copia este enlace para el televisor:", url.toString());
+    }
+  }
+
   return (
     <main
       className={`shell lobby organizer-board ${themeClass(board?.theme)} ${projectorTv ? "organizer-tv" : ""}`}
@@ -69,9 +82,17 @@ export function EventOrganizerBoard(props: { joinCode: string; onBack?: () => vo
         >
           {projectorTv ? "Modo TV activo" : "Activar modo TV"}
         </button>
-        {projectorTv && (
-          <span className="meta">Tipografía ampliada · comparte la URL con ?projector=1</span>
-        )}
+        <button
+          type="button"
+          className="ghost sm"
+          data-testid="escape-organizer-copy-tv-link"
+          onClick={() => void copyProjectorLink()}
+        >
+          {projectorLinkCopied ? "Enlace copiado" : "Copiar enlace TV"}
+        </button>
+        <span className="meta organizer-toolbar-hint">
+          En el proyector abre el enlace copiado (incluye <code>?projector=1</code>)
+        </span>
       </div>
       <div className={`event-poster organizer-poster poster-cartel ${projectorTv ? "poster-cartel-tv" : ""}`}>
         {board?.coverImage && (

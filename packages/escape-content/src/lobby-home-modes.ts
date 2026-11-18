@@ -37,8 +37,8 @@ export function listLobbyHomeModes(): LobbyHomeModeInfo[] {
       description: "Introduce el código del organizador y el nombre de tu equipo",
       imageAlt: "Entrada de edificio con luces de neón",
       coverImage: "/media/pilot-entrance.jpg",
-      pexelsQuery: "neon city entrance doorway lights urban",
-      pexelsPage: 3,
+      pexelsQuery: "bright colorful arcade entrance neon lights",
+      pexelsPage: 2,
     },
     {
       mode: "organizer",
