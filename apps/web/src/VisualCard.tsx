@@ -13,6 +13,8 @@ type VisualCardProps = {
   variant?: "default" | "compact";
   /** Carga prioritaria en tarjetas above-the-fold del lobby. */
   imagePriority?: boolean;
+  /** Accesibilidad: si se omite, se usa título + descripción. */
+  ariaLabel?: string;
   className?: string;
   onClick?: () => void;
   type?: "button" | "article";
@@ -31,6 +33,7 @@ export function VisualCard(props: VisualCardProps) {
     layout = "stack",
     variant = "default",
     imagePriority = false,
+    ariaLabel,
     className = "",
     onClick,
     type = "button",
@@ -49,6 +52,7 @@ export function VisualCard(props: VisualCardProps) {
 
   const visibleSrc = useDecodedImageSrc(imageSrc);
   const showFallback = !visibleSrc;
+  const accessibleLabel = ariaLabel ?? `${title}. ${description}`.trim();
 
   const media = (
     <div className="room-card-media">
@@ -84,7 +88,7 @@ export function VisualCard(props: VisualCardProps) {
 
   if (type === "article") {
     return (
-      <article className={cardClass}>
+      <article className={cardClass} aria-label={accessibleLabel}>
         {media}
         {copy}
       </article>
@@ -92,7 +96,13 @@ export function VisualCard(props: VisualCardProps) {
   }
 
   return (
-    <button type="button" className={cardClass} onClick={onClick} data-testid={dataTestId}>
+    <button
+      type="button"
+      className={cardClass}
+      onClick={onClick}
+      data-testid={dataTestId}
+      aria-label={accessibleLabel}
+    >
       {media}
       {copy}
     </button>

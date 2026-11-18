@@ -10,6 +10,7 @@ import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import type { EventDurationMin } from "@escapeai/shared";
 import {
   createCustomEvent,
+  fetchEventLeaderboard,
   type LobbyHomeCard,
   joinEventAsTeam,
   startEventSession,
@@ -171,6 +172,16 @@ export function ExperienceLobby(props: {
     onError: (e: Error) => setFormError(e.message),
   });
 
+  const organizerVerifyMutation = useMutation({
+    mutationFn: (code: string) => fetchEventLeaderboard(code),
+    onSuccess: (_, code) => {
+      setFormError(null);
+      setOrganizerBoardCode(code);
+    },
+    onError: () =>
+      setFormError("No encontramos ese código. Pídelo a quien creó el evento o crea uno nuevo."),
+  });
+
   const templates = props.adventureTemplates ?? [];
   const joinCodeValue = joinCode || created?.joinCode || "";
   const joinCodeReady = isJoinCodeValid(joinCodeValue);
@@ -264,6 +275,7 @@ export function ExperienceLobby(props: {
                 imagePriority
                 layout="stack"
                 className={homeModeAccentClass(card.mode)}
+                ariaLabel={`${card.title}: ${card.description}`}
                 data-testid={
                   card.mode === "catalog"
                     ? "escape-mode-catalog"
@@ -279,9 +291,10 @@ export function ExperienceLobby(props: {
                 }
                 onClick={() => {
                   if (card.mode === "organizer") {
-                    setOrganizerBoardCode(null);
-                    setOrganizerDraft("");
-                  }
+                  setOrganizerBoardCode(null);
+                  setOrganizerDraft("");
+                  setFormError(null);
+                }
                   setMode(card.mode);
                 }}
               />
@@ -513,13 +526,19 @@ export function ExperienceLobby(props: {
               <h1 className="display">Panel organizador</h1>
               <p className="lede muted">Ranking en vivo para TV o proyector. Un código por evento.</p>
             </header>
+            {formError && mode === "organizer" && !code && (
+              <p className="error" role="alert">
+                {formError}
+              </p>
+            )}
             <form
               className="wizard"
               onSubmit={(e) => {
                 e.preventDefault();
                 const next = normalizeJoinCodeInput(organizerDraft);
                 if (!isJoinCodeValid(next)) return;
-                setOrganizerBoardCode(next);
+                setFormError(null);
+                organizerVerifyMutation.mutate(next);
               }}
             >
               <label>
@@ -539,9 +558,9 @@ export function ExperienceLobby(props: {
                 type="submit"
                 className="primary wide"
                 data-testid="escape-organizer-open"
-                disabled={!isJoinCodeValid(organizerDraft)}
+                disabled={!isJoinCodeValid(organizerDraft) || organizerVerifyMutation.isPending}
               >
-                Ver ranking
+                {organizerVerifyMutation.isPending ? "Comprobando código…" : "Ver ranking"}
               </button>
             </form>
           </LobbyShell>
@@ -664,6 +683,7 @@ export function ExperienceLobby(props: {
                 description={room.tagline ?? room.summary}
                 imageSrc={room.coverImage}
                 imageAlt={`Portada: ${room.title}`}
+                ariaLabel={`Sala ${room.title}: ${room.tagline ?? room.summary}. ${metaParts.join(", ")}`}
                 meta={metaParts.join(" · ")}
                 active={room.id === props.selectedRoomId}
                 layout="stack"
