@@ -1,12 +1,13 @@
 import type {
   AdventureTemplateInfo,
   AdventureType,
+  CreateEventRequest,
   EventPreview,
   JoinEventResponse,
   PublicState,
 } from "@escapeai/shared";
 import { useMutation } from "@tanstack/react-query";
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { EventDurationMin } from "@escapeai/shared";
 import {
   createCustomEvent,
@@ -26,6 +27,9 @@ import { readJoinCodeFromLocation, stripJoinParamFromUrl } from "./lib/event-joi
 import { isJoinCodeValid, normalizeJoinCodeInput } from "./lib/join-code";
 import { homeModeAccentClass, type HomeModeId } from "./lib/home-mode-accent";
 import { roomThemeLabel } from "./lib/room-theme-label";
+import { CreateEventLoadingPanel } from "./CreateEventLoadingPanel";
+import { mapCreateEventClientError } from "./lib/create-event-loading";
+import { useElapsedMsWhile } from "./lib/useElapsedMsWhile";
 import {
   clampTeamCount,
   parsePlayableFacts,
@@ -120,6 +124,8 @@ export function ExperienceLobby(props: {
   const [joinCode, setJoinCode] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  const [createErrorRetryable, setCreateErrorRetryable] = useState(false);
+  const lastCreatePayload = useRef<CreateEventRequest | null>(null);
   /** Código activo del panel organizador (solo tras enviar el formulario). */
   const [organizerBoardCode, setOrganizerBoardCode] = useState<string | null>(null);
   const [organizerDraft, setOrganizerDraft] = useState("");
@@ -141,13 +147,21 @@ export function ExperienceLobby(props: {
   }, [props.homeCards]);
 
   const createMutation = useMutation({
-    mutationFn: createCustomEvent,
+    mutationFn: (body: CreateEventRequest) => createCustomEvent(body),
+    retry: false,
     onSuccess: (preview) => {
       setCreated(preview);
       setFormError(null);
+      setCreateErrorRetryable(false);
     },
-    onError: (e: Error) => setFormError(e.message),
+    onError: (e: Error) => {
+      const mapped = mapCreateEventClientError(e);
+      setFormError(mapped.message);
+      setCreateErrorRetryable(mapped.retryable);
+    },
   });
+
+  const createElapsedMs = useElapsedMsWhile(createMutation.isPending);
 
   const joinMutation = useMutation({
     mutationFn: async (): Promise<JoinEventResponse> => joinEventAsTeam(joinCode, displayName),
@@ -310,7 +324,14 @@ export function ExperienceLobby(props: {
   if (mode === "create") {
     return (
       <LobbyShell mode="create" className={themeClass(selectedTemplate?.theme)}>
-        <button type="button" className="ghost sm back-link" onClick={() => setMode("home")}>
+        <button
+          type="button"
+          className="ghost sm back-link"
+          onClick={() => {
+            if (createMutation.isPending) createMutation.reset();
+            setMode("home");
+          }}
+        >
           ← Volver
         </button>
         <header className="lobby-hero">
@@ -320,19 +341,39 @@ export function ExperienceLobby(props: {
             Elige el estilo de la fiesta; con nombre y anécdotas generamos pistas personalizadas.
           </p>
         </header>
-        {formError && <p className="error">{formError}</p>}
+        {formError && (
+          <div className="create-error-banner" role="alert">
+            <p className="error">{formError}</p>
+            {createErrorRetryable && lastCreatePayload.current && !createMutation.isPending && (
+              <button
+                type="button"
+                className="ghost sm"
+                data-testid="escape-event-create-retry"
+                onClick={() => {
+                  setFormError(null);
+                  createMutation.mutate(lastCreatePayload.current!);
+                }}
+              >
+                Reintentar
+              </button>
+            )}
+          </div>
+        )}
 
         {!created ? (
           <form
-            className="wizard wizard-wide wizard-create"
+            className={`wizard wizard-wide wizard-create${createMutation.isPending ? " is-busy" : ""}`}
+            aria-busy={createMutation.isPending}
             onSubmit={(e) => {
               e.preventDefault();
               if (!canSubmitCreate) {
                 setFormError(createDraftError ?? "Revisa el formulario.");
+                setCreateErrorRetryable(false);
                 return;
               }
               setFormError(null);
-              createMutation.mutate({
+              setCreateErrorRetryable(false);
+              const payload: CreateEventRequest = {
                 adventureType,
                 teamCount,
                 durationMin,
@@ -343,9 +384,12 @@ export function ExperienceLobby(props: {
                 },
                 facts: factLines,
                 eventTitle: eventTitle.trim() || undefined,
-              });
+              };
+              lastCreatePayload.current = payload;
+              createMutation.mutate(payload);
             }}
           >
+            {createMutation.isPending && <CreateEventLoadingPanel elapsedMs={createElapsedMs} />}
             <div className="wizard-create-body">
             <fieldset className="template-picker">
               <legend className="picker-legend">Tipo de aventura</legend>
@@ -450,8 +494,9 @@ export function ExperienceLobby(props: {
                 className="primary wide"
                 data-testid="escape-event-create-submit"
                 disabled={!canSubmitCreate || createMutation.isPending}
+                aria-describedby={createMutation.isPending ? "escape-event-create-loading" : undefined}
               >
-                {createMutation.isPending ? "Generando sala…" : "Generar y obtener código"}
+                {createMutation.isPending ? "Generando…" : "Generar y obtener código"}
               </button>
             </div>
           </form>

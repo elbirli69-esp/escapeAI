@@ -21,6 +21,9 @@ import type {
   SpatialProposalsResponse,
 } from "@escapeai/shared";
 
+import { CREATE_EVENT_REQUEST_TIMEOUT_MS } from "./lib/create-event-loading";
+import { fetchWithTimeout } from "./lib/fetch-json";
+
 const base = "/api";
 
 export type RoomSummary = {
@@ -79,11 +82,16 @@ export async function fetchAdventureTemplates(): Promise<AdventureTemplateInfo[]
   return data.templates as AdventureTemplateInfo[];
 }
 
-export async function createCustomEvent(body: CreateEventRequest): Promise<EventPreview> {
-  const res = await fetch(`${base}/events`, {
+export async function createCustomEvent(
+  body: CreateEventRequest,
+  signal?: AbortSignal,
+): Promise<EventPreview> {
+  const res = await fetchWithTimeout(`${base}/events`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
+    signal,
+    timeoutMs: CREATE_EVENT_REQUEST_TIMEOUT_MS,
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((data as { error?: string }).error ?? "No se pudo crear el evento");
