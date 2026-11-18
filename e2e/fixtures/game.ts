@@ -54,27 +54,24 @@ export async function completeSoundListen(page: Page): Promise<void> {
   const listenedBtn = page.getByRole("button", { name: "Escuchado" });
   const readyLine = page.getByText("Listo para responder");
   const fallbackBeeps = page.getByRole("button", { name: "Pitidos de respaldo" });
+  const beepPlay = page.getByRole("button", { name: "Reproducir pista" });
 
-  const deadline = Date.now() + 35_000;
-  let usedFallback = false;
-  while (Date.now() < deadline) {
-    if (await listenedBtn.isVisible().catch(() => false)) return;
-    if (await readyLine.isVisible().catch(() => false)) return;
+  const primaryDone = listenedBtn
+    .or(readyLine)
+    .waitFor({ timeout: 12_000 })
+    .then(() => true)
+    .catch(() => false);
 
-    if (!usedFallback && (await fallbackBeeps.isVisible().catch(() => false))) {
-      await fallbackBeeps.click();
-      usedFallback = true;
-    }
+  if (await primaryDone) return;
 
-    // TTS sin voz en CI: reintento con el botón principal si sigue habilitado.
-    if (await play.isEnabled().catch(() => false)) {
-      await play.click().catch(() => undefined);
-    }
-
-    await page.waitForTimeout(400);
+  // TTS sin voz en CI: pitidos de respaldo o botón de beeps directo.
+  if (await fallbackBeeps.isVisible().catch(() => false)) {
+    await fallbackBeeps.click();
+  } else if (await beepPlay.isVisible().catch(() => false)) {
+    await beepPlay.click();
   }
 
-  await expect(listenedBtn).toBeVisible({ timeout: 1_000 });
+  await expect(listenedBtn.or(readyLine)).toBeVisible({ timeout: 20_000 });
 }
 
 export async function expectNoFlashError(page: Page): Promise<void> {
