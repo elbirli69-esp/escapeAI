@@ -152,6 +152,35 @@ export function eventSessionStartedCopy(session: SessionRecord): string {
   return tag ? `${intro} ${tag}` : intro;
 }
 
+export function eventPuzzleFailedCopy(
+  puzzleId: string,
+  puzzleLabel: string,
+  adventure?: AdventureType,
+): string {
+  if (puzzleId === "sound_intro") {
+    return "El mensaje oculto no encaja todavía. Escuchad el audio completo (o pitidos de respaldo) y anotad solo el prefijo de dos cifras.";
+  }
+  if (puzzleId === "entry_lock") {
+    const tone =
+      adventure === "mystery"
+        ? "El candado rechaza la hipótesis. Cruzad lo del cuaderno con el prefijo del audio."
+        : "El candado numérico resiste. Las dos primeras cifras vinieron del mensaje sonoro del mismo acto.";
+    return tone;
+  }
+  if (puzzleId === "camera_hunt") {
+    return `«${puzzleLabel}» no valida la foto. Buscad en escena lo que el organizador nombró, no texto aleatorio.`;
+  }
+  if (puzzleId === "token_slot" || puzzleId === "visual_gallery") {
+    return "El recuerdo físico aún no encaja. Revisad lo resuelto en la escena anterior y el cuaderno.";
+  }
+  if (puzzleId === "final_code" || puzzleId === "voice_seal") {
+    return adventure === "team"
+      ? "El cierre del reto pide orden: cuaderno primero, cifra final después — sin atajos."
+      : "El cierre exige paciencia: enlazad las pistas del cuaderno antes de otro intento a ciegas.";
+  }
+  return `«${puzzleLabel}» resiste. Repasad el cuaderno y escenas previas antes de insistir.`;
+}
+
 export function eventAheadPuzzleSolvedCopy(
   puzzleLabel: string,
   adventure?: AdventureType,

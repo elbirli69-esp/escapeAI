@@ -1,6 +1,7 @@
 import {
   activateCompressNarrative,
   getExitAvailability,
+  isGeneratedEventSession,
   toPublicState,
   type SessionRecord,
 } from "@escapeai/escape-engine";
@@ -22,8 +23,8 @@ import {
   resolveAdaptivePolicy,
 } from "./pacing.js";
 import {
-  isCatalogFailNudgeEligible,
-  markCatalogFailNudged,
+  isPuzzleFailNudgeEligible,
+  markPuzzleFailNudged,
 } from "./catalog-session.js";
 import { isEventSession, maybeGrantBonusHintFromGm } from "./event-session.js";
 import {
@@ -127,14 +128,14 @@ export class GameMasterService {
     const pacing = computeGmPacing(session);
 
     for (const trigger of triggers) {
-      const catalogFailNudge =
-        trigger.type === "PUZZLE_FAILED" && isCatalogFailNudgeEligible(session, trigger, meta);
-      if (trigger.type === "PUZZLE_FAILED" && TRIGGER_POLICY.PUZZLE_FAILED === "silent" && !catalogFailNudge) {
+      const failNudge =
+        trigger.type === "PUZZLE_FAILED" && isPuzzleFailNudgeEligible(session, trigger, meta);
+      if (trigger.type === "PUZZLE_FAILED" && TRIGGER_POLICY.PUZZLE_FAILED === "silent" && !failNudge) {
         continue;
       }
 
       const basePolicy =
-        catalogFailNudge
+        failNudge
           ? "static"
           : (TRIGGER_POLICY[trigger.type] ?? "static");
       const policy = resolveAdaptivePolicy(trigger.type, basePolicy, pacing);
@@ -174,9 +175,22 @@ export class GameMasterService {
         meta.visitedSceneIds = [...new Set([...meta.visitedSceneIds, sceneId])];
         await this.store.saveMeta(session.sessionId, meta);
       }
-      if (trigger.type === "PUZZLE_FAILED" && catalogFailNudge && trigger.payload?.puzzleId) {
-        meta = markCatalogFailNudged(meta, String(trigger.payload.puzzleId));
+      if (trigger.type === "PUZZLE_FAILED" && failNudge && trigger.payload?.puzzleId) {
+        meta = markPuzzleFailNudged(meta, String(trigger.payload.puzzleId));
         await this.store.saveMeta(session.sessionId, meta);
+      }
+      if (
+        trigger.type === "PUZZLE_FAILED" &&
+        failNudge &&
+        isGeneratedEventSession(session) &&
+        trigger.payload?.puzzleId
+      ) {
+        const puzzleId = String(trigger.payload.puzzleId);
+        const attempts = Number(trigger.payload.attempts ?? 0);
+        if (attempts >= 4) {
+          meta = maybeGrantBonusHintFromGm(session, meta, puzzleId);
+          await this.store.saveMeta(session.sessionId, meta);
+        }
       }
       if (trigger.type === "TEAM_STUCK" && trigger.payload?.puzzleId) {
         const puzzleId = String(trigger.payload.puzzleId);

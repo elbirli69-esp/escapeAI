@@ -13,11 +13,13 @@ import {
   eventAdventureType,
   eventAheadPuzzleSolvedCopy,
   eventPaceNudgeCopy,
+  eventPuzzleFailedCopy,
   eventSessionStartedCopy,
   eventTeamStuckCopy,
   eventTimeWarningCopy,
   isEventSession,
 } from "./event-session.js";
+import { isGeneratedEventSession } from "@escapeai/escape-engine";
 import { computeGmPacing } from "./pacing.js";
 
 const STATIC_META: NarrativeInterventionMeta = { provider: "static", fallback: true };
@@ -215,7 +217,9 @@ export function staticInterventionText(
       const text = isCatalogSession(session)
         ? (catalogPuzzleFailedCopy(session.room.id, puzzleId, label) ??
           `«${label}» no cede todavía. Repasad lo que lleváis anotado.`)
-        : `«${label}» resiste. Buscad otro ángulo antes de insistir.`;
+        : isGeneratedEventSession(session)
+          ? eventPuzzleFailedCopy(puzzleId, label, eventAdventureType(session))
+          : `«${label}» resiste. Buscad otro ángulo antes de insistir.`;
       return {
         text,
         kind: "notification",
