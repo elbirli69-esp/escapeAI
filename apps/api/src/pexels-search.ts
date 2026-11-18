@@ -1,3 +1,4 @@
+import { listAdventureTemplates } from "@escapeai/escape-content";
 import type { AdventureType } from "@escapeai/shared";
 
 const LOCAL_FALLBACK: Record<string, string> = {
@@ -70,4 +71,20 @@ export async function resolveCoverImage(opts: {
     coverImage: source === "pexels" ? url : opts.localFallback,
     coverImageSource: source,
   };
+}
+
+/** Misma portada Pexels que la plantilla elegida al crear el evento. */
+export async function resolveAdventureTemplateCover(
+  adventureType: AdventureType,
+  localFallback: string,
+): Promise<{ coverImage: string; coverImageSource: "pexels" | "fallback" }> {
+  const tmpl = listAdventureTemplates().find((t) => t.id === adventureType);
+  if (!tmpl?.pexelsQuery) {
+    return { coverImage: localFallback, coverImageSource: "fallback" };
+  }
+  return resolveCoverImage({
+    pexelsQuery: tmpl.pexelsQuery,
+    page: pexelsPageForAdventure(adventureType),
+    localFallback: localFallback || tmpl.coverImage,
+  });
 }

@@ -15,7 +15,11 @@ import {
 } from "./event-store.js";
 import type { SessionStore } from "./session-store.js";
 import { randomUUID } from "node:crypto";
-import { pexelsPageForAdventure, resolveCoverImage } from "./pexels-search.js";
+import {
+  pexelsPageForAdventure,
+  resolveAdventureTemplateCover,
+  resolveCoverImage,
+} from "./pexels-search.js";
 import { computeSceneProgress, teamSceneFields } from "./event-milestones.js";
 import { applyValidatedFlavor } from "./flavor/apply-flavor.js";
 import { initTeamVariable, resolveTeamVariableConfig, teamVariableToPublic } from "./team-variable.js";
@@ -54,6 +58,11 @@ export function mountEventRoutes(app: Hono, eventStore: EventStore, _gm?: GameMa
     const tvConfig = resolveTeamVariableConfig(body);
     body.playSeed = body.playSeed ?? dailyPlaySeed(`generated:${eventId}`);
     let room = applyValidatedFlavor(generateAdventureRoom(body, eventId));
+    const { coverImage: templateCover } = await resolveAdventureTemplateCover(
+      body.adventureType,
+      room.coverImage ?? "/media/pilot-cover.jpg",
+    );
+    room = { ...room, coverImage: templateCover };
     if (tvConfig?.puzzleId) {
       const start = room.scenes.start;
       if (start) {
