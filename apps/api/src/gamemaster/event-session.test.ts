@@ -126,6 +126,7 @@ describe("event adaptive fallbacks", () => {
       stuckAmbientIssuedPuzzleIds: [],
       aheadFlavorIssued: false,
       bonusHintGrantedPuzzleIds: [],
+      catalogFailNudgePuzzleIds: [],
     };
     const next = maybeGrantBonusHintFromGm(session, meta, "p1");
     expect(next.bonusHintGrantedPuzzleIds).toContain("p1");
