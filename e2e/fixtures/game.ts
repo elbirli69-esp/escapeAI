@@ -50,7 +50,25 @@ export async function completeSoundListen(page: Page): Promise<void> {
   });
   await expect(play).toBeVisible({ timeout: 15_000 });
   await play.click();
-  await page.getByRole("button", { name: "Escuchado" }).waitFor({ timeout: 25_000 });
+
+  const listenedBtn = page.getByRole("button", { name: "Escuchado" });
+  const fallbackBeeps = page.getByRole("button", { name: "Pitidos de respaldo" });
+  const beepPlay = page.getByRole("button", { name: "Reproducir pista" });
+
+  const primaryOk = await listenedBtn
+    .waitFor({ state: "visible", timeout: 12_000 })
+    .then(() => true)
+    .catch(() => false);
+  if (primaryOk) return;
+
+  // TTS sin voz en CI: pitidos de respaldo o botón de beeps directo.
+  if (await fallbackBeeps.isVisible().catch(() => false)) {
+    await fallbackBeeps.click();
+  } else if (await beepPlay.isVisible().catch(() => false)) {
+    await beepPlay.click();
+  }
+
+  await listenedBtn.waitFor({ state: "visible", timeout: 20_000 });
 }
 
 export async function expectNoFlashError(page: Page): Promise<void> {

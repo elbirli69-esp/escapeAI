@@ -23,6 +23,7 @@ function metaBase(overrides: Partial<GmSessionMeta> = {}): GmSessionMeta {
     stuckAmbientIssuedPuzzleIds: [],
     aheadFlavorIssued: false,
     bonusHintGrantedPuzzleIds: [],
+    catalogFailNudgePuzzleIds: [],
     ...overrides,
   };
 }
@@ -104,6 +105,22 @@ describe("stuck-detection", () => {
       3000,
     );
     expect(cleared.stuckNotifiedPuzzleIds).not.toContain("entry_lock");
+  });
+
+  it("catálogo: segundo TEAM_STUCK ambient tras primer aviso", async () => {
+    const { loadRoomById } = await import("@escapeai/escape-content");
+    const session = createSession(loadRoomById("pilot"));
+    const puzzleId = "lockbox";
+    session.puzzleAttempts.set(puzzleId, 7);
+
+    const meta = metaBase({
+      focusedPuzzleId: puzzleId,
+      lastProgressMs: 0,
+      stuckNotifiedPuzzleIds: [puzzleId],
+    });
+
+    const trigger = detectTeamStuckTrigger(session, meta, Date.now());
+    expect(trigger?.payload?.assistTier).toBe("ambient");
   });
 
   it("evento: segundo TEAM_STUCK ambient tras primer aviso", () => {

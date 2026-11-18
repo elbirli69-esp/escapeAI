@@ -5,6 +5,7 @@ import {
 } from "@escapeai/escape-engine";
 import type { AdventureType, GmPacingMode } from "@escapeai/shared";
 import type { GmSessionMeta } from "./persistence.js";
+import { isCatalogSession } from "./catalog-session.js";
 
 /** Partida ligada a evento multiequipo (código de acceso). */
 export function isEventSession(session: SessionRecord): boolean {
@@ -17,7 +18,7 @@ export function maybeGrantBonusHintFromGm(
   meta: GmSessionMeta,
   puzzleId: string | undefined,
 ): GmSessionMeta {
-  if (!puzzleId || !isGeneratedEventSession(session)) return meta;
+  if (!puzzleId || (!isGeneratedEventSession(session) && !isCatalogSession(session))) return meta;
   if (meta.bonusHintGrantedPuzzleIds.includes(puzzleId)) return meta;
   if (!grantBonusHintLevel(session, puzzleId, 1)) return meta;
   return {

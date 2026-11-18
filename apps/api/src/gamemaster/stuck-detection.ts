@@ -2,6 +2,7 @@ import { effectiveHintCap, type SessionRecord } from "@escapeai/escape-engine";
 import type { GameAction, GameEvent, GmProcessTrigger } from "@escapeai/shared";
 import { randomUUID } from "node:crypto";
 import type { GmSessionMeta } from "./persistence.js";
+import { isCatalogSession } from "./catalog-session.js";
 import { isEventSession } from "./event-session.js";
 import { hasProgressEvent, isPuzzleActiveInScene, primaryOpenPuzzleId } from "./hints.js";
 
@@ -74,8 +75,9 @@ export function detectTeamStuckTrigger(
 
   const alreadyNotified = meta.stuckNotifiedPuzzleIds.includes(puzzleId);
   if (alreadyNotified) {
+    const ambientEligible = isEventSession(session) || isCatalogSession(session);
     if (
-      !isEventSession(session) ||
+      !ambientEligible ||
       meta.stuckAmbientIssuedPuzzleIds.includes(puzzleId) ||
       attempts < STUCK_FAST_ATTEMPTS + 2
     ) {

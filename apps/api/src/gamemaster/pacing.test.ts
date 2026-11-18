@@ -23,6 +23,7 @@ function metaBase(overrides: Partial<GmSessionMeta> = {}): GmSessionMeta {
     stuckAmbientIssuedPuzzleIds: [],
     aheadFlavorIssued: false,
     bonusHintGrantedPuzzleIds: [],
+    catalogFailNudgePuzzleIds: [],
     ...overrides,
   };
 }

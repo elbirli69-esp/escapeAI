@@ -3,14 +3,23 @@ import type { SessionRecord } from "./session.js";
 
 const FAIL_FORWARD_ENTRY_ATTEMPTS = 4;
 const FAIL_FORWARD_SOUND_ATTEMPTS = 2;
+const CATALOG_FAIL_FORWARD_ATTEMPTS = 3;
+
+const CATALOG_ROOM_IDS = new Set(["pilot", "lighthouse"]);
 
 export function isGeneratedEventSession(session: SessionRecord): boolean {
   return Boolean(session.playerContext?.joinCode) && session.room.id.startsWith("generated-");
 }
 
+/** Sala de catálogo productiva (sin evento / join code). */
+export function isCatalogSession(session: SessionRecord): boolean {
+  if (session.playerContext?.joinCode) return false;
+  return CATALOG_ROOM_IDS.has(session.room.id);
+}
+
 /** Pista YAML adicional autorizada por el director (sin cambiar la respuesta). */
 export function grantBonusHintLevel(session: SessionRecord, puzzleId: string, levels = 1): boolean {
-  if (!isGeneratedEventSession(session)) return false;
+  if (!isGeneratedEventSession(session) && !isCatalogSession(session)) return false;
   const next = (session.bonusHintLevels.get(puzzleId) ?? 0) + levels;
   session.bonusHintLevels.set(puzzleId, next);
   return true;
@@ -59,6 +68,54 @@ export function maybeGeneratedFailForward(session: SessionRecord, failedPuzzleId
     "📻 El mensaje sonoro se afina solo — el director os deja escucharlo para anotar el prefijo.",
   );
   return true;
+}
+
+function catalogAssistKey(session: SessionRecord, key: string): boolean {
+  if (!session.catalogAssistKeys) {
+    session.catalogAssistKeys = new Set();
+  }
+  if (session.catalogAssistKeys.has(key)) return true;
+  session.catalogAssistKeys.add(key);
+  return false;
+}
+
+/** Catálogo: desbloquea escucha sensorial tras atascos típicos (sin revelar respuesta). */
+export function maybeCatalogFailForward(session: SessionRecord, failedPuzzleId: string): boolean {
+  if (!isCatalogSession(session)) return false;
+
+  if (session.room.id === "pilot" && failedPuzzleId === "lockbox") {
+    const attempts = session.puzzleAttempts.get("lockbox") ?? 0;
+    if (attempts < CATALOG_FAIL_FORWARD_ATTEMPTS) return false;
+    if (session.solvedPuzzles.has("intercom_tone")) return false;
+    if (catalogAssistKey(session, "pilot_lockbox_intercom")) return false;
+    const sound = session.room.puzzles.intercom_tone;
+    if (!sound || sound.type !== "sound") return false;
+    if (interactionSet(session, "intercom_tone").has("listen")) return false;
+
+    interactionSet(session, "intercom_tone").add("listen");
+    session.narrative.push(
+      "📞 El timbre del portal se calibra: el conserje os invita a escuchar el pitido antes de insistir con el candado.",
+    );
+    return true;
+  }
+
+  if (session.room.id === "lighthouse" && failedPuzzleId === "tide_lock") {
+    const attempts = session.puzzleAttempts.get("tide_lock") ?? 0;
+    if (attempts < CATALOG_FAIL_FORWARD_ATTEMPTS) return false;
+    if (session.solvedPuzzles.has("fog_horn")) return false;
+    if (catalogAssistKey(session, "lighthouse_tide_fog")) return false;
+    const horn = session.room.puzzles.fog_horn;
+    if (!horn || horn.type !== "sound") return false;
+    if (interactionSet(session, "fog_horn").has("listen")) return false;
+
+    interactionSet(session, "fog_horn").add("listen");
+    session.narrative.push(
+      "🌊 La niebla suaviza el pitido del cuerno: el farero sugiere escuchar la secuencia antes de la cerradura de marea.",
+    );
+    return true;
+  }
+
+  return false;
 }
 
 const COMPRESS_KICKOFF: Record<AdventureType, string> = {

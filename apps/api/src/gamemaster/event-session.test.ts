@@ -85,6 +85,30 @@ describe("event adaptive fallbacks", () => {
     expect(eventPaceNudgeCopy("critical", "team")).toMatch(/equipos|ranking|puzzle/i);
   });
 
+  it("maybeGrantBonusHintFromGm en catálogo pilot", async () => {
+    const { loadRoomById } = await import("@escapeai/escape-content");
+    const session = createSession(loadRoomById("pilot"));
+    const meta = {
+      sequence: 0,
+      dedupeKeys: [],
+      llmCallCount: 0,
+      lastLlmCallMs: 0,
+      visitedSceneIds: [],
+      lastProgressMs: Date.now(),
+      stuckNotifiedPuzzleIds: [],
+      characterTurnCount: 0,
+      lastCharacterTurnMs: 0,
+      paceNudgeIssued: false,
+      stuckAmbientIssuedPuzzleIds: [],
+      aheadFlavorIssued: false,
+      bonusHintGrantedPuzzleIds: [],
+      catalogFailNudgePuzzleIds: [],
+    };
+    const next = maybeGrantBonusHintFromGm(session, meta, "lockbox");
+    expect(next.bonusHintGrantedPuzzleIds).toContain("lockbox");
+    expect(session.bonusHintLevels.get("lockbox")).toBe(1);
+  });
+
   it("maybeGrantBonusHintFromGm solo en sala generated con join", () => {
     const session = createSession(miniRoom, eventCtx);
     session.room = { ...session.room, id: "generated-abc12345" };
@@ -102,6 +126,7 @@ describe("event adaptive fallbacks", () => {
       stuckAmbientIssuedPuzzleIds: [],
       aheadFlavorIssued: false,
       bonusHintGrantedPuzzleIds: [],
+      catalogFailNudgePuzzleIds: [],
     };
     const next = maybeGrantBonusHintFromGm(session, meta, "p1");
     expect(next.bonusHintGrantedPuzzleIds).toContain("p1");
