@@ -316,6 +316,7 @@ Copiar al lanzar subagente:
 ## 12. Relación con CI
 
 - `pnpm test:e2e` sigue siendo **regresión replay**.
-- Este prompt **no** añade specs obligatorios a CI; opcional futuro: `partidas-reales-smoke.spec.ts` que solo verifique que se puede **abrir** sesión y resolver **un** puzzle con path no hardcodeado (sin victoria completa).
+- Runner local (no CI obligatorio): `pnpm --filter @escapeai/e2e exec playwright test specs/partidas-reales-runner.spec.ts` — simula perfiles, escribe `e2e/.cache/partidas-reales-runs.json`.
+- Opcional futuro: integrar subset en CI tras ampliar campaña.
 
 **North star:** las partidas reales son la fuente de verdad para **dificultad, coherencia y jugabilidad**; `experience-eval` y `audit-coherence` son contrapesos objetivos que deben **concordar o explicar tensiones** en el informe.
