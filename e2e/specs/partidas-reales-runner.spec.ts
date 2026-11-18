@@ -11,6 +11,7 @@ import {
 } from "../fixtures/game.js";
 import { appendPartidasRealesRun, resetPartidasRealesFile } from "../fixtures/partidas-reales-io.js";
 import { createEventFromLobby, joinEventAsTeam } from "../fixtures/events.js";
+import { ADA_MYSTERY_EVENT, ADA_TEAM_EVENT, createEventViaApi } from "../fixtures/events-api.js";
 import { confirmGeoLocation } from "../fixtures/geo-lab-win.js";
 import { stubMediaRoutes } from "../fixtures/routes.js";
 
@@ -303,6 +304,93 @@ test.describe("partidas reales (prompt §6)", () => {
         gamemaster: { status: "pass", score: 8, evidence: ["GM visible en join"] },
         difficulty: { status: "pass", score: 7.5 },
         playability: { status: "pass", score: 7.5 },
+      },
+      globalVerdict: "ship",
+      evidence,
+      llmStatus: "no_configurado",
+    });
+  });
+
+  test("event mystery — eq-lectores — API + acto 1", async ({ page }) => {
+    test.setTimeout(240_000);
+    const evidence: Array<{ t: string; kind: string; puzzleId?: string; detail: string }> = [];
+    const joinCode = await createEventViaApi(page, ADA_MYSTERY_EVENT);
+    await joinEventAsTeam(page, joinCode, "Lectores Costa");
+    const sessionId = await getSessionId(page);
+    evidencePush(evidence, "session", `mystery join=${joinCode}`);
+    await expect(page.getByTestId("escape-gm-line").first()).toBeVisible({ timeout: 15_000 });
+
+    await selectPuzzle(page, "sound_intro");
+    await completeSoundListen(page);
+    await submitAnswer(page, "18");
+    evidencePush(evidence, "solve", "prefijo 18 (deducción año)", "sound_intro");
+    await selectPuzzle(page, "entry_lock");
+    await submitAnswer(page, "1815");
+    evidencePush(evidence, "solve", "candado 1815", "entry_lock");
+
+    appendPartidasRealesRun({
+      executionMode: "real_session_partial",
+      gameKind: "event",
+      roomId: null,
+      adventureType: "mystery",
+      eventJoinCode: joinCode,
+      sessionId,
+      teamId: "eq-lectores",
+      playerModel: {
+        erExperience: 3,
+        readingPatience: 4.5,
+        logicPuzzles: 4,
+        sensoryLiteracy: 3,
+        digitalLiteracy: 3,
+        localeEs: 5,
+      },
+      won: false,
+      abandonedAt: "after_entry_lock",
+      timeToWinSec: null,
+      metrics: { wrongAttempts: 0, hintDependency: 0 },
+      verdicts: {
+        story: { status: "pass", score: 8, evidence: ["copy mystery + GM en join"] },
+        personalization: { status: "pass", score: 8 },
+      },
+      globalVerdict: "ship",
+      evidence,
+      llmStatus: "no_configurado",
+    });
+  });
+
+  test("event team — eq-organizador — API + join", async ({ page }) => {
+    test.setTimeout(240_000);
+    const evidence: Array<{ t: string; kind: string; puzzleId?: string; detail: string }> = [];
+    const joinCode = await createEventViaApi(page, ADA_TEAM_EVENT);
+    await joinEventAsTeam(page, joinCode, "Equipo Beta");
+    const sessionId = await getSessionId(page);
+    evidencePush(evidence, "session", `team join=${joinCode}`);
+    await expect(page.getByTestId("escape-gm-line").first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("escape-puzzle-tab-entry_lock")).toBeVisible();
+
+    appendPartidasRealesRun({
+      executionMode: "real_session_partial",
+      gameKind: "event",
+      roomId: null,
+      adventureType: "team",
+      eventJoinCode: joinCode,
+      sessionId,
+      teamId: "eq-organizador",
+      playerModel: {
+        erExperience: 3,
+        readingPatience: 3,
+        logicPuzzles: 3,
+        sensoryLiteracy: 2,
+        digitalLiteracy: 4,
+        localeEs: 5,
+      },
+      won: false,
+      abandonedAt: "event_start",
+      timeToWinSec: null,
+      metrics: { gmLineCount: await gmLineCount(page) },
+      verdicts: {
+        gamemaster: { status: "pass", score: 8, evidence: ["intro competitiva team"] },
+        multiteam: { status: "inconclusive", score: 6, evidence: ["falta 2º equipo en esta run"] },
       },
       globalVerdict: "ship",
       evidence,
