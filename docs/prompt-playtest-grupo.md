@@ -8,6 +8,7 @@
 
 | Documento | Aporta |
 | --------- | ------ |
+| [prompt-partidas-reales-jugadores.md](./prompt-partidas-reales-jugadores.md) | **Partidas reales** con jugadores simulados (conocimiento, veredicto dificultad/coherencia/jugabilidad) |
 | [prompt-e2e-experiencia-jugable.md](./prompt-e2e-experiencia-jugable.md) | Rúbrica 0–10 objetiva, `experience-matrix.json`, cap por e2e rojo |
 | [prompt-coherencia-partidas.md](./prompt-coherencia-partidas.md) | Criterios mecánica/narrativa; `pnpm audit-coherence` |
 | [prompt-playwright-e2e.md](./prompt-playwright-e2e.md) | Reglas E2E, specs, `webServer` API 8787 + Vite 5173 |
@@ -145,6 +146,7 @@ Si el entorno impide exploratorio (p. ej. sin tiempo para UI manual), documentar
 | `pnpm experience-eval:score` | Métricas agregadas 0–10, plan de gaps numéricos | Juicio «¿el equipo lo habría abandonado?» |
 | `pnpm audit-coherence` | Grafos, prefijos sonido→candado, inconsistencias mecánicas | UX de pista en UI, LLM conversacional |
 | Playtest v2 | Modalidades, evidencias, multiequipo profundo, personalización real vs cosmetic | — |
+| [prompt-partidas-reales-jugadores.md](./prompt-partidas-reales-jugadores.md) | Veredicto cualitativo por partida real (sessionId, perfiles conocimiento); **no** sustituye replay CI |
 
 ---
 
