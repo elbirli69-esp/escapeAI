@@ -4,7 +4,7 @@
 **Objetivo:** validar de forma repetible que escapeAI **engancha**, **entretiene**, **desafía sin frustrar** y ofrece **variedad** entre modos — no solo que los tests técnicos pasen.  
 **No objetivo:** sustituir playtests humanos largos ni juzgar calidad del copy del LLM sin API keys (usar fallbacks GM como baseline).
 
-**Complementa:** [prompt-playwright-e2e.md](./prompt-playwright-e2e.md) (funcional), [prompt-coherencia-partidas.md](./prompt-coherencia-partidas.md) (mecánica), [prompt-entretenimiento-er.md](./prompt-entretenimiento-er.md) (diseño ER).
+**Complementa:** [prompt-playwright-e2e.md](./prompt-playwright-e2e.md) (funcional), [prompt-coherencia-partidas.md](./prompt-coherencia-partidas.md) (mecánica), [prompt-entretenimiento-er.md](./prompt-entretenimiento-er.md) (diseño ER), [prompt-playtest-grupo.md](./prompt-playtest-grupo.md) (playtest multiequipo v2: exploratorio, replay, auditoría estática).
 
 **Parametrización:** `e2e/experience-matrix.json`  
 **Señales objetivas:** `pnpm experience-eval:signals`  
@@ -252,6 +252,8 @@ test("@experience pilot full win", async ({ page }) => {
 | Técnico | Todos los perfiles `P0` con e2e verde |
 | Producto mínimo | Nota global ≥ **6.5** y ningún catálogo `pilot`/`lighthouse` &lt; **6.0** en `hook`+`fun` |
 | Aspiration | Nota global ≥ **7.5**; `variety` ≥ **7** en al menos 3 perfiles distintos |
+
+Para capa cualitativa (frustración, pistas, personalización, multiequipo) tras `experience-eval`, ejecutar [prompt-playtest-grupo.md](./prompt-playtest-grupo.md) — sin sustituir las notas objetivas.
 
 ---
 
