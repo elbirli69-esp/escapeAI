@@ -483,8 +483,15 @@ function VisualStation(props: {
     return () => clearInterval(t);
   }, [url, viewed]);
 
+  const autoViewDispatchedRef = useRef(false);
+
   useEffect(() => {
-    if (dwellSec >= 2 && !viewed && url) {
+    autoViewDispatchedRef.current = false;
+  }, [props.puzzle.id]);
+
+  useEffect(() => {
+    if (dwellSec >= 2 && !viewed && url && !autoViewDispatchedRef.current) {
+      autoViewDispatchedRef.current = true;
       props.onAction({
         type: "complete_interaction",
         puzzleId: props.puzzle.id,
