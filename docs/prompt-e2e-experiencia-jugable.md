@@ -4,7 +4,7 @@
 **Objetivo:** validar de forma repetible que escapeAI **engancha**, **entretiene**, **desafía sin frustrar** y ofrece **variedad** entre modos — no solo que los tests técnicos pasen.  
 **No objetivo:** sustituir playtests humanos largos ni juzgar calidad del copy del LLM sin API keys (usar fallbacks GM como baseline).
 
-**Complementa:** [prompt-playwright-e2e.md](./prompt-playwright-e2e.md) (funcional), [prompt-coherencia-partidas.md](./prompt-coherencia-partidas.md) (mecánica), [prompt-entretenimiento-er.md](./prompt-entretenimiento-er.md) (diseño ER), [prompt-playtest-grupo.md](./prompt-playtest-grupo.md) (playtest multiequipo v2: exploratorio, replay, auditoría estática).
+**Complementa:** [prompt-playwright-e2e.md](./prompt-playwright-e2e.md) (funcional), [prompt-coherencia-partidas.md](./prompt-coherencia-partidas.md) (mecánica), [prompt-entretenimiento-er.md](./prompt-entretenimiento-er.md) (diseño ER), [prompt-playtest-grupo.md](./prompt-playtest-grupo.md) (playtest multiequipo v2: exploratorio, replay, auditoría estática), [prompt-partidas-reales-jugadores.md](./prompt-partidas-reales-jugadores.md) (partidas reales con jugadores simulados y veredicto ER).
 
 **Parametrización:** `e2e/experience-matrix.json`  
 **Señales objetivas:** `pnpm experience-eval:signals`  
