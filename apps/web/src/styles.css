@@ -8,6 +8,8 @@
   --text-muted: #9fb0c9;
   --accent: #38bdf8;
   --accent-dim: #0ea5e920;
+  --accent-celebration: #f472b6;
+  --glow-celebration: #f472b64d;
   --panel: #151d30;
   --panel-border: #2a3650;
   --glow: #38bdf850;
@@ -632,9 +634,42 @@ button {
 
 .poster-hint {
   font-size: 0.92rem;
-  opacity: 0.88;
+  color: var(--text-secondary);
   margin: 0;
   max-width: 36rem;
+}
+
+.poster-eyebrow {
+  color: #fff;
+  letter-spacing: 0.16em;
+}
+
+.poster-cartel {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--panel-border));
+}
+
+.poster-cartel .poster-code {
+  font-family: Fraunces, Georgia, serif;
+  font-weight: 700;
+  color: #fff;
+  text-shadow:
+    0 2px 12px #000000aa,
+    0 0 36px var(--glow);
+}
+
+.poster-cartel-tv {
+  border-width: 2px;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent),
+    0 28px 80px #00000088;
+}
+
+.poster-cartel-tv .event-poster-scrim {
+  background: linear-gradient(to top, #070b14f5 5%, #070b1488 50%, #070b1440 100%);
+}
+
+.poster-cartel-tv .poster-eyebrow {
+  font-size: clamp(0.75rem, 1.8vw, 0.95rem);
 }
 
 .event-poster-invite {
@@ -935,6 +970,46 @@ button {
 .room-card-v2.active {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent), 0 12px 40px #00000044;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .room-card-v2.accent-urban:hover,
+  .room-card-v2.accent-urban:focus-visible {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), 0 16px 44px var(--glow);
+  }
+
+  .room-card-v2.accent-coastal:hover,
+  .room-card-v2.accent-coastal:focus-visible,
+  .room-card-v2.accent-coastal.active {
+    border-color: #818cf8;
+    box-shadow: 0 0 0 1px #818cf8, 0 16px 44px #818cf84d;
+  }
+
+  .room-card-v2.accent-celebration:hover,
+  .room-card-v2.accent-celebration:focus-visible,
+  .room-card-v2.accent-celebration.active {
+    border-color: var(--accent-celebration);
+    box-shadow: 0 0 0 1px var(--accent-celebration), 0 16px 44px var(--glow-celebration);
+  }
+}
+
+.lobby-home {
+  position: relative;
+}
+
+@media (min-width: 768px) {
+  .lobby-home::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 80% 50% at 15% 0%, #38bdf818, transparent 55%),
+      radial-gradient(ellipse 70% 45% at 85% 10%, #818cf814, transparent 50%),
+      radial-gradient(ellipse 60% 40% at 50% 100%, #f472b610, transparent 45%);
+  }
 }
 
 .room-card-v2.layout-stack {
@@ -1556,6 +1631,7 @@ button {
 
 .organizer-tv .poster-code {
   font-size: clamp(3rem, 12vw, 5rem);
+  letter-spacing: 0.32em;
 }
 
 .organizer-tv .poster-hint {
@@ -1572,7 +1648,7 @@ button {
 
 .organizer-tv .leaderboard-row .meta {
   font-size: 1rem;
-  opacity: 0.8;
+  color: var(--text-secondary);
 }
 
 .organizer-tv .rank {

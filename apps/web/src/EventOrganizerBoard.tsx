@@ -73,7 +73,7 @@ export function EventOrganizerBoard(props: { joinCode: string; onBack?: () => vo
           <span className="meta">Tipografía ampliada · comparte la URL con ?projector=1</span>
         )}
       </div>
-      <div className="event-poster organizer-poster">
+      <div className={`event-poster organizer-poster poster-cartel ${projectorTv ? "poster-cartel-tv" : ""}`}>
         {board?.coverImage && (
           <img
             src={board.coverImage}
@@ -85,7 +85,7 @@ export function EventOrganizerBoard(props: { joinCode: string; onBack?: () => vo
         )}
         <div className="event-poster-scrim" aria-hidden />
         <div className="event-poster-body">
-          <p className="eyebrow">Invitación al escape</p>
+          <p className="eyebrow poster-eyebrow">{projectorTv ? "Ranking en vivo" : "Invitación al escape"}</p>
           <h1 className="display-sm">{board?.title ?? "Cargando evento…"}</h1>
           <div className="event-poster-invite">
             <div className="event-poster-invite-copy">

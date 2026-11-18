@@ -23,6 +23,7 @@ import { LobbyShell } from "./LobbyShell";
 import { formatRoomDuration, VisualCard } from "./VisualCard";
 import { readJoinCodeFromLocation, stripJoinParamFromUrl } from "./lib/event-join-url";
 import { isJoinCodeValid, normalizeJoinCodeInput } from "./lib/join-code";
+import { homeModeAccentClass, type HomeModeId } from "./lib/home-mode-accent";
 import { roomThemeLabel } from "./lib/room-theme-label";
 import {
   clampTeamCount,
@@ -36,7 +37,7 @@ const ScannerFlow = lazy(() =>
 type LobbyMode = "home" | "create" | "join" | "organizer" | "catalog" | "scan";
 
 const HOME_MODES: Array<{
-  mode: LobbyMode;
+  mode: HomeModeId;
   title: string;
   description: string;
   image: string;
@@ -262,6 +263,7 @@ export function ExperienceLobby(props: {
                 imageAlt={card.imageAlt}
                 imagePriority
                 layout="stack"
+                className={homeModeAccentClass(card.mode)}
                 data-testid={
                   card.mode === "catalog"
                     ? "escape-mode-catalog"
@@ -442,13 +444,17 @@ export function ExperienceLobby(props: {
           </form>
         ) : (
           <>
-            <div className={`event-poster join-card-poster ${themeClass(created.theme)}`}>
+            <div
+              className={`event-poster join-card-poster poster-cartel ${themeClass(created.theme)}`}
+            >
               {created.coverImage && (
                 <img src={created.coverImage} alt="" className="event-poster-bg" loading="eager" />
               )}
               <div className="event-poster-scrim" aria-hidden />
               <div className="event-poster-body">
-                <p className="eyebrow">Código para compartir</p>
+                <p className="eyebrow poster-eyebrow">
+                  {selectedTemplate?.tagline ?? "Tu escape está listo"}
+                </p>
                 <div className="event-poster-invite">
                   <div className="event-poster-invite-copy">
                     <p className="join-code poster-code" data-testid="escape-join-code-display">
