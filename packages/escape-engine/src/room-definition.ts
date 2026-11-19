@@ -1,7 +1,7 @@
 export type Condition =
   | { type: "puzzle_solved"; puzzleId: string }
   | { type: "has_item"; itemId: string }
-  | { type: "has_clue"; clueId: string }
+  | { type: "has_clue"; clueId: string; anyRole?: boolean }
   | { type: "team_progress_gte"; min: number };
 
 export type PuzzleType =
@@ -74,6 +74,8 @@ export type RoomPuzzle = {
   visualLayout?: "single" | "dual";
   pexelsQueryB?: string;
   interactionHints?: string[];
+  /** P6-B: si se define, solo esos roles ven y pueden resolver el puzzle. */
+  visibleToRoles?: import("@escapeai/shared").PlayerRoleId[];
   /** Llegar al punto (`reach`) o quiz en el sitio (`quiz`). */
   locationMode?: "reach" | "quiz";
   /** `area_context` usa GPS solo para fijar ciudad/barrio y cuestiones del entorno, no waypoints interiores. */
@@ -87,6 +89,8 @@ export type RoomPuzzle = {
   quizPrompt?: string;
   /** Tras resolver: anota una pista jugable en el diario (sin exponer answers al cliente vía API dedicada). */
   onSolve?: { grantClue?: { id: string; text: string } };
+  /** P6-B: pistas del cuaderno (propias o del equipo) antes de enviar respuesta. */
+  requiresClueIds?: string[];
   /** P6-A whodunit: acusación a un sospechoso (`answer` = id del culpable). */
   deduction?: RoomPuzzleDeduction;
 };

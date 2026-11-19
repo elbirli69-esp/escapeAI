@@ -54,6 +54,8 @@ export type CreateEventRequest = {
    * Por defecto `room`.
    */
   hybridPlayMode?: "room" | "mobile_only";
+  /** P6-B: dos roles por equipo (investigador + campo); requiere 2 móviles en el mismo equipo. */
+  asymmetricRoles?: boolean;
 };
 
 export type EventTeamVariablePublic = {
@@ -104,6 +106,7 @@ export type JoinEventResponse = {
   slot: number;
   joinCode: string;
   eventTitle: string;
+  asymmetricRoles?: boolean;
 };
 
 export type EventTeamPublic = {
@@ -152,13 +155,20 @@ export type EventLeaderboard = {
   /** P5: cartel acto 3 (dos letras, sin código final). */
   posterKeyword?: string;
   hybridPlayMode?: "room" | "mobile_only";
+  asymmetricRoles?: boolean;
   /** @deprecated */
   players?: EventTeamPublic[];
 };
 
 export type CreateSessionRequest =
   | { roomId: string }
-  | { eventCode: string; teamId?: string; playerId?: string };
+  | {
+      eventCode: string;
+      teamId?: string;
+      playerId?: string;
+      playerRole?: import("./player-role.js").PlayerRoleId;
+      memberName?: string;
+    };
 
 export function durationMinToSec(min: EventDurationMin = 45): number {
   return min * 60;

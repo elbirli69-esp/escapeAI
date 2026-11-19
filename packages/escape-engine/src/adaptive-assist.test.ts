@@ -16,6 +16,7 @@ const eventCtx: PlayerContext = {
   displayName: "Equipo",
   eventId: "ev",
   playerId: "p",
+  teamId: "p",
   joinCode: "JOIN01",
   slot: 1,
   adventureType: "birthday",

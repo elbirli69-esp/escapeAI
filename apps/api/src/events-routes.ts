@@ -26,6 +26,14 @@ import {
   resolveCoverImage,
 } from "./pexels-search.js";
 import { computeSceneProgress, teamSceneFields } from "./event-milestones.js";
+import {
+  assignPlayerRole,
+  eventHasAsymmetricRoles,
+  findTeamByName,
+  syncAsymmetricTeamAfterAction,
+  upsertTeamMember,
+} from "./asymmetric-team.js";
+import { isPlayerRoleId, PLAYER_ROLE_LABELS, type PlayerRoleId } from "@escapeai/shared";
 import { applyValidatedFlavor } from "./flavor/apply-flavor.js";
 import { initTeamVariable, resolveTeamVariableConfig, teamVariableToPublic } from "./team-variable.js";
 import { refreshSessionTeamProgress } from "./team-variable.js";
@@ -123,6 +131,22 @@ export function mountEventRoutes(app: Hono, eventStore: EventStore, _gm?: GameMa
     }
 
     const e = migrateLegacyEvent(event);
+    const asymmetric = eventHasAsymmetricRoles(e);
+    const existing = asymmetric ? findTeamByName(e, teamName) : undefined;
+    if (existing) {
+      return {
+        status: 200,
+        body: {
+          teamId: existing.teamId,
+          playerId: existing.teamId,
+          slot: existing.slot,
+          joinCode: e.joinCode,
+          eventTitle: e.title,
+          asymmetricRoles: true,
+        },
+      };
+    }
+
     const slot = nextTeamSlot(e);
     if (slot === undefined) {
       return { status: 409, body: { error: "Cupo de equipos completo." } };
@@ -146,6 +170,7 @@ export function mountEventRoutes(app: Hono, eventStore: EventStore, _gm?: GameMa
         slot,
         joinCode: e.joinCode,
         eventTitle: e.title,
+        asymmetricRoles: asymmetric || undefined,
       },
     };
   };
@@ -187,10 +212,17 @@ export function mountEventRoutes(app: Hono, eventStore: EventStore, _gm?: GameMa
       prepChecklist,
       posterKeyword,
       hybridPlayMode,
+      asymmetricRoles: e.config.asymmetricRoles,
       players: teams,
     });
   });
 }
+
+export type StartEventSessionOptions = {
+  playerRole?: PlayerRoleId;
+  memberName?: string;
+  memberId?: string;
+};
 
 export async function startEventSession(
   eventCode: string,
@@ -198,6 +230,7 @@ export async function startEventSession(
   eventStore: EventStore,
   sessionStore: SessionStore,
   gm?: GameMasterService,
+  opts?: StartEventSessionOptions,
 ): Promise<{ status: number; body: unknown }> {
   const event = await eventStore.getByCode(eventCode);
   if (!event) return { status: 404, body: { error: "Evento no encontrado" } };
@@ -206,7 +239,31 @@ export async function startEventSession(
   const team = e.teams[teamId];
   if (!team) return { status: 404, body: { error: "Equipo no registrado en este evento" } };
 
-  if (team.sessionId) {
+  const asymmetric = eventHasAsymmetricRoles(e);
+
+  if (asymmetric) {
+    const resumeId = opts?.memberId;
+    if (resumeId && team.members?.[resumeId]?.sessionId) {
+      const existing = await sessionStore.get(team.members[resumeId].sessionId!);
+      if (existing) {
+        await refreshSessionTeamProgress(eventStore, existing);
+        await syncAsymmetricTeamAfterAction({ eventStore, sessionStore, session: existing });
+        const view = gm
+          ? await buildSessionView(existing, gm)
+          : { state: toPublicState(existing), gmInterventions: [] };
+        return {
+          status: 200,
+          body: {
+            sessionId: existing.sessionId,
+            memberId: resumeId,
+            playerRole: existing.playerContext?.playerRole,
+            state: view.state,
+            gmInterventions: view.gmInterventions,
+          },
+        };
+      }
+    }
+  } else if (team.sessionId) {
     const existing = await sessionStore.get(team.sessionId);
     if (existing) {
       await refreshSessionTeamProgress(eventStore, existing);
@@ -223,15 +280,47 @@ export async function startEventSession(
     }
   }
 
-  const playerContext: PlayerContext = {
-    displayName: team.teamName,
-    eventId: e.eventId,
-    playerId: teamId,
-    joinCode: e.joinCode,
-    slot: team.slot,
-    eventTitle: e.title,
-    adventureType: e.config.adventureType,
-  };
+  let assignedRole: PlayerRoleId | undefined;
+  if (asymmetric) {
+    const requested = opts?.playerRole && isPlayerRoleId(opts.playerRole) ? opts.playerRole : undefined;
+    assignedRole = assignPlayerRole(team, requested);
+    if (!assignedRole) {
+      return {
+        status: 409,
+        body: {
+          error:
+            "Este equipo ya tiene los dos roles en juego. Usa el mismo nombre de equipo en el segundo móvil.",
+        },
+      };
+    }
+  }
+
+  const memberId = asymmetric ? opts?.memberId ?? randomUUID() : teamId;
+
+  const playerContext: PlayerContext = asymmetric
+    ? {
+        displayName:
+          opts?.memberName?.trim() || `${team.teamName} · ${PLAYER_ROLE_LABELS[assignedRole!]}`,
+        eventId: e.eventId,
+        playerId: memberId,
+        teamId,
+        joinCode: e.joinCode,
+        slot: team.slot,
+        eventTitle: e.title,
+        adventureType: e.config.adventureType,
+        playerRole: assignedRole,
+        asymmetricRoles: true,
+      }
+    : {
+        displayName: team.teamName,
+        eventId: e.eventId,
+        playerId: teamId,
+        teamId,
+        joinCode: e.joinCode,
+        slot: team.slot,
+        eventTitle: e.title,
+        adventureType: e.config.adventureType,
+      };
 
   const session = createSession(e.room, playerContext);
   await refreshSessionTeamProgress(eventStore, session);
@@ -241,7 +330,15 @@ export async function startEventSession(
     ? await buildSessionView(session, gm)
     : { state: toPublicState(session), gmInterventions: [] };
 
-  team.sessionId = session.sessionId;
+  if (asymmetric) {
+    upsertTeamMember(team, memberId, {
+      role: assignedRole!,
+      sessionId: session.sessionId,
+      displayName: playerContext.displayName,
+    });
+  } else {
+    team.sessionId = session.sessionId;
+  }
   team.status = "playing";
   await eventStore.save(e);
 
@@ -249,6 +346,8 @@ export async function startEventSession(
     status: 201,
     body: {
       sessionId: session.sessionId,
+      memberId: asymmetric ? memberId : undefined,
+      playerRole: asymmetric ? assignedRole : undefined,
       state: view.state,
       gmInterventions: view.gmInterventions,
       interventions,
@@ -265,8 +364,12 @@ export async function syncPlayerStatusFromSession(
   const event = await eventStore.getByCode(ctx.joinCode);
   if (!event) return;
   const e = migrateLegacyEvent(event);
-  const team = e.teams[ctx.playerId];
-  if (!team || team.sessionId !== session.sessionId) return;
+  const teamId = ctx.teamId ?? ctx.playerId;
+  const team = e.teams[teamId];
+  if (!team) return;
+  const member = ctx.playerRole ? team.members?.[ctx.playerId] : undefined;
+  const boundSessionId = member?.sessionId ?? team.sessionId;
+  if (boundSessionId !== session.sessionId) return;
 
   const elapsed = Math.floor((Date.now() - session.startedAtMs) / 1000);
   team.timeRemainingSec = Math.max(0, session.room.timeLimitSec - elapsed);

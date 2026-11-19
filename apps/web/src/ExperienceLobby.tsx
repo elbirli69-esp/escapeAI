@@ -134,6 +134,7 @@ export function ExperienceLobby(props: {
   const [facts, setFacts] = useState("");
   const [eventTitle, setEventTitle] = useState("");
   const [hybridPlayMode, setHybridPlayMode] = useState<"room" | "mobile_only">("room");
+  const [asymmetricRoles, setAsymmetricRoles] = useState(false);
   const [created, setCreated] = useState<EventPreview | null>(null);
   const [joinCode, setJoinCode] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -216,11 +217,20 @@ export function ExperienceLobby(props: {
   });
 
   const startMutation = useMutation({
-    mutationFn: async (payload: JoinEventResponse) =>
-      startEventSession(payload.joinCode, payload.teamId ?? payload.playerId),
+    mutationFn: async (payload: JoinEventResponse) => {
+      const memberId = localStorage.getItem("escapeai.memberId") ?? undefined;
+      const params = new URLSearchParams(window.location.search);
+      const roleParam = params.get("role");
+      return startEventSession(payload.joinCode, payload.teamId ?? payload.playerId, {
+        memberId: memberId ?? undefined,
+        playerRole:
+          roleParam === "researcher" || roleParam === "field" ? roleParam : undefined,
+      });
+    },
     onSuccess: (data) => {
       localStorage.setItem("escapeai.sessionId", data.sessionId);
       localStorage.setItem("escapeai.eventCode", joinCode || created?.joinCode || "");
+      if (data.memberId) localStorage.setItem("escapeai.memberId", data.memberId);
       localStorage.setItem(
         "escapeai.teamId",
         joinMutation.data?.teamId ?? joinMutation.data?.playerId ?? "",
@@ -433,6 +443,7 @@ export function ExperienceLobby(props: {
                 teamCount,
                 durationMin,
                 hybridPlayMode,
+                asymmetricRoles: adventureType === "team" ? asymmetricRoles : undefined,
                 subject: {
                   name: subjectName.trim(),
                   nickname: nickname.trim() || undefined,
@@ -515,6 +526,16 @@ export function ExperienceLobby(props: {
                 <option value="mobile_only">Solo móvil (sin props obligatorios)</option>
               </select>
             </label>
+            {adventureType === "team" && (
+              <label className="checkbox-row" data-testid="escape-asymmetric-roles">
+                <input
+                  type="checkbox"
+                  checked={asymmetricRoles}
+                  onChange={(e) => setAsymmetricRoles(e.target.checked)}
+                />
+                Roles asimétricos (P6-B): 2 móviles por equipo — laboratorio y campo
+              </label>
+            )}
             <label>
               Nombre central (persona, pareja o nombre del evento)
               <input

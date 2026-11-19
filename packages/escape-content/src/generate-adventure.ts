@@ -3,6 +3,7 @@ import type { AdventureType, CreateEventRequest, EventSubject } from "@escapeai/
 import { durationMinToSec, resolveDurationMin } from "@escapeai/shared";
 import type { RoomBeat, RoomCharacter, RoomDefinition } from "@escapeai/escape-engine";
 import { buildProceduralSoundIntro } from "./sound-digit-clues.js";
+import { applyTeamAsymmetricRoles } from "./asymmetric-roles.js";
 import { applyMysteryWhodunit } from "./whodunit.js";
 
 type AdventureVisual = {
@@ -403,6 +404,9 @@ export function generateAdventureRoom(
     },
   };
 
+  if (input.asymmetricRoles && input.adventureType === "team") {
+    applyTeamAsymmetricRoles(room, codes);
+  }
   applyMysteryWhodunit(room, input, eventId);
   return room;
 }

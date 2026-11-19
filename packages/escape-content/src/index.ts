@@ -47,6 +47,7 @@ export {
   type GeneratedHybridPlayMode,
 } from "./generated-prep-checklist.js";
 export { applyMysteryWhodunit, pickWhodunitCulprit } from "./whodunit.js";
+export { applyTeamAsymmetricRoles } from "./asymmetric-roles.js";
 export { dailyPlaySeed } from "./play-seed.js";
 export { applyCatalogDailyVariant } from "./daily-variant.js";
 export { buildSpatialRoom } from "./spatial/build-room.js";
