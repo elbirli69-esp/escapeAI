@@ -116,6 +116,11 @@ export async function createApp(store?: SessionStore): Promise<Hono> {
         eventStore,
         sessionStore,
         gm,
+        {
+          playerRole: "playerRole" in body ? body.playerRole : undefined,
+          memberName: "memberName" in body ? body.memberName : undefined,
+          memberId: "memberId" in body ? body.memberId : undefined,
+        },
       );
       return c.json(result.body, result.status as 200 | 201 | 404);
     }

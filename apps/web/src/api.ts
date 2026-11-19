@@ -143,11 +143,17 @@ export async function fetchFalImage(prompt: string): Promise<{ url: string; sour
 export async function startEventSession(
   eventCode: string,
   teamId: string,
-): Promise<{ sessionId: string; state: PublicState; gmInterventions?: NarrativeIntervention[] }> {
+  opts?: { memberId?: string; playerRole?: "researcher" | "field"; memberName?: string },
+): Promise<{
+  sessionId: string;
+  memberId?: string;
+  state: PublicState;
+  gmInterventions?: NarrativeIntervention[];
+}> {
   const res = await fetch(`${base}/sessions`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ eventCode, teamId, playerId: teamId }),
+    body: JSON.stringify({ eventCode, teamId, playerId: teamId, ...opts }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((data as { error?: string }).error ?? "No se pudo iniciar la partida");

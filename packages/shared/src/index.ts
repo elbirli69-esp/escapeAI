@@ -215,6 +215,10 @@ export type PublicState = {
   roomName: string;
   /** Nombre mostrado del jugador en sesiones de evento. */
   playerDisplayName?: string;
+  /** P6-B: rol asignado en eventos con información asimétrica. */
+  playerRole?: import("./player-role.js").PlayerRoleId;
+  playerRoleLabel?: string;
+  asymmetricCoopBanner?: string;
   eventJoinCode?: string;
   status: GameStatus;
   currentSceneId: string;
@@ -310,6 +314,7 @@ export type AiContext = {
 };
 
 export * from "./events.js";
+export * from "./player-role.js";
 export type {
   GmPacingMode,
   GmProcessTrigger,

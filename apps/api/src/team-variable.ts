@@ -89,10 +89,13 @@ export async function onPuzzleSolvedForTeamVariable(deps: {
   const raw = await deps.eventStore.getByCode(ctx.joinCode);
   if (!raw) return;
   const e = migrateLegacyEvent(raw);
-  const team = e.teams[ctx.playerId];
-  if (!team || team.sessionId !== deps.session.sessionId) return;
+  const teamId = ctx.teamId ?? ctx.playerId;
+  const team = e.teams[teamId];
+  const member = team?.members?.[ctx.playerId];
+  const boundSessionId = member?.sessionId ?? team?.sessionId;
+  if (!team || boundSessionId !== deps.session.sessionId) return;
 
-  const bumped = applyTeamVariableBump(e, ctx.playerId, deps.puzzleId);
+  const bumped = applyTeamVariableBump(e, teamId, deps.puzzleId);
   if (!bumped) return;
   await deps.eventStore.save(bumped);
   attachTeamProgressToSession(deps.session, bumped);

@@ -9,7 +9,11 @@ import type {
   PublicState,
   VoiceMatchMode,
 } from "@escapeai/shared";
-import { DIRECTOR_FAQ_IDS } from "@escapeai/shared";
+import {
+  ASYMMETRIC_COOP_BANNER,
+  DIRECTOR_FAQ_IDS,
+  PLAYER_ROLE_LABELS,
+} from "@escapeai/shared";
 import { matchPlayerAnswer, sanitizePlayerUtterance, validatePlayerAtTarget } from "@escapeai/shared";
 import type { PlayerContext } from "./player-context.js";
 import {
@@ -19,6 +23,7 @@ import {
 } from "./adaptive-assist.js";
 import { buildClueHistory } from "./clue-ledger.js";
 import type { Condition, RoomBeat, RoomDefinition, RoomPuzzle } from "./room-definition.js";
+import { puzzleVisibleToRole } from "./role-filter.js";
 
 export type SessionRecord = {
   sessionId: string;
@@ -48,9 +53,14 @@ export type SessionRecord = {
   assistNarrativeMode?: "compress";
   /** Claves idempotentes de fail-forward en catálogo (pilot / lighthouse). */
   catalogAssistKeys?: Set<string>;
+  /** P6-B: pistas aportadas por otros miembros del equipo (solo lectura cooperativa). */
+  teamGrantedClues: Map<string, string>;
 };
 
 export function createSession(room: RoomDefinition, playerContext?: PlayerContext): SessionRecord {
+  if (playerContext && !playerContext.teamId) {
+    playerContext = { ...playerContext, teamId: playerContext.playerId };
+  }
   const sceneItems = new Map<string, Set<string>>();
   for (const scene of Object.values(room.scenes)) {
     sceneItems.set(scene.id, new Set(scene.items ?? []));
@@ -75,6 +85,7 @@ export function createSession(room: RoomDefinition, playerContext?: PlayerContex
     startedAtMs: Date.now(),
     status: "playing",
     grantedClues: new Map(),
+    teamGrantedClues: new Map(),
     firedBeats: new Set(),
     bonusHintLevels: new Map(),
   };
@@ -288,16 +299,27 @@ function submitAnswer(
   if (!isAnswerablePuzzle(puzzle)) {
     return { error: "Este puzzle no admite respuesta escrita." };
   }
-  if (!isPuzzleActive(session, puzzleId)) return { error: "Ese puzzle no está disponible aquí." };
+  if (!isPuzzleActiveForPlayer(session, puzzleId)) {
+    return { error: "Ese puzzle no está disponible en tu rol." };
+  }
   if (session.solvedPuzzles.has(puzzleId)) return { error: "Puzzle ya resuelto." };
 
   const stepErr = requireInteractionSteps(session, puzzle);
   if (stepErr) return { error: stepErr };
 
-  if (puzzle.type === "deduction" && puzzle.deduction?.requiredClueIds?.length) {
-    for (const clueId of puzzle.deduction.requiredClueIds) {
-      if (!session.grantedClues.has(clueId)) {
-        return { error: "Aún faltan pruebas en el cuaderno antes de la acusación." };
+  const requiredClues = [
+    ...(puzzle.deduction?.requiredClueIds ?? []),
+    ...(puzzle.requiresClueIds ?? []),
+  ];
+  if (requiredClues.length) {
+    for (const clueId of requiredClues) {
+      if (!clueAvailable(session, clueId)) {
+        return {
+          error:
+            puzzle.type === "deduction"
+              ? "Aún faltan pruebas en el cuaderno antes de la acusación."
+              : "Aún faltan pistas del equipo en el diario.",
+        };
       }
     }
   }
@@ -347,7 +369,9 @@ function submitLocation(
   if (puzzle.type !== "location") {
     return { error: "Este puzzle no usa geolocalización." };
   }
-  if (!isPuzzleActive(session, puzzleId)) return { error: "Ese puzzle no está disponible aquí." };
+  if (!isPuzzleActiveForPlayer(session, puzzleId)) {
+    return { error: "Ese puzzle no está disponible en tu rol." };
+  }
   if (session.solvedPuzzles.has(puzzleId)) return { error: "Puzzle ya resuelto." };
 
   if (puzzle.targetLat === undefined || puzzle.targetLon === undefined) {
@@ -426,8 +450,8 @@ function useItem(
   if (!puzzle || puzzle.type !== "inventory") {
     return { error: "Ese objeto no encaja en este puzzle." };
   }
-  if (!isPuzzleActive(session, puzzleId)) {
-    return { error: "Ese puzzle no está disponible aquí." };
+  if (!isPuzzleActiveForPlayer(session, puzzleId)) {
+    return { error: "Ese puzzle no está disponible en tu rol." };
   }
   if (session.solvedPuzzles.has(puzzleId)) {
     return { error: "Puzzle ya resuelto." };
@@ -472,7 +496,9 @@ function requestHint(
 ): { error?: string; text?: string; level?: number } {
   const puzzle = session.room.puzzles[puzzleId];
   if (!puzzle) return { error: "Puzzle desconocido." };
-  if (!isPuzzleActive(session, puzzleId)) return { error: "Ese puzzle no está disponible." };
+  if (!isPuzzleActiveForPlayer(session, puzzleId)) {
+    return { error: "Ese puzzle no está disponible en tu rol." };
+  }
   if (session.solvedPuzzles.has(puzzleId)) return { error: "Puzzle ya resuelto." };
 
   const hints = puzzle.hints ?? [];
@@ -503,7 +529,7 @@ function conditionMet(session: SessionRecord, condition: Condition): boolean {
     case "has_item":
       return session.inventory.has(condition.itemId);
     case "has_clue":
-      return session.grantedClues.has(condition.clueId);
+      return clueAvailable(session, condition.clueId);
     case "team_progress_gte":
       return (session.teamProgress?.value ?? 0) >= condition.min;
     default:
@@ -511,9 +537,20 @@ function conditionMet(session: SessionRecord, condition: Condition): boolean {
   }
 }
 
+function clueAvailable(session: SessionRecord, clueId: string): boolean {
+  return session.grantedClues.has(clueId) || session.teamGrantedClues.has(clueId);
+}
+
 function isPuzzleActive(session: SessionRecord, puzzleId: string): boolean {
   const scene = session.room.scenes[session.currentSceneId];
   return (scene.puzzles ?? []).includes(puzzleId);
+}
+
+function isPuzzleActiveForPlayer(session: SessionRecord, puzzleId: string): boolean {
+  if (!isPuzzleActive(session, puzzleId)) return false;
+  const puzzle = session.room.puzzles[puzzleId];
+  if (!puzzle) return false;
+  return puzzleVisibleToRole(puzzle, session.playerContext?.playerRole);
 }
 
 function isAnswerablePuzzle(puzzle: RoomPuzzle): boolean {
@@ -561,7 +598,9 @@ function completeInteraction(
   if (session.status !== "playing") return "La partida ya ha terminado.";
   const puzzle = session.room.puzzles[puzzleId];
   if (!puzzle) return "Puzzle desconocido.";
-  if (!isPuzzleActive(session, puzzleId)) return "Ese puzzle no está disponible aquí.";
+  if (!isPuzzleActiveForPlayer(session, puzzleId)) {
+    return "Ese puzzle no está disponible en tu rol.";
+  }
   if (session.solvedPuzzles.has(puzzleId)) return "Puzzle ya resuelto.";
   if (puzzle.type === "location" && step === "arrive") {
     return "Confirma tu posición con el botón «Estoy aquí».";
@@ -706,6 +745,11 @@ export function toPublicState(session: SessionRecord, nowMs = Date.now()): Publi
     roomId: session.room.id,
     roomName: session.room.name,
     playerDisplayName: session.playerContext?.displayName,
+    playerRole: session.playerContext?.playerRole,
+    playerRoleLabel: session.playerContext?.playerRole
+      ? PLAYER_ROLE_LABELS[session.playerContext.playerRole]
+      : undefined,
+    asymmetricCoopBanner: session.playerContext?.asymmetricRoles ? ASYMMETRIC_COOP_BANNER : undefined,
     eventJoinCode: session.playerContext?.joinCode,
     status: session.status,
     currentSceneId: session.currentSceneId,
@@ -719,7 +763,12 @@ export function toPublicState(session: SessionRecord, nowMs = Date.now()): Publi
     roomTagline: session.room.tagline,
     adventureType: session.playerContext?.adventureType,
     narrative: [...session.narrative],
-    puzzles: (scene.puzzles ?? []).map((id) => {
+    puzzles: (scene.puzzles ?? [])
+      .filter((id) => {
+        const puzzle = session.room.puzzles[id];
+        return puzzle && puzzleVisibleToRole(puzzle, session.playerContext?.playerRole);
+      })
+      .map((id) => {
       const puzzle = session.room.puzzles[id];
       const steps = session.puzzleInteractions.get(id);
       return {
@@ -777,7 +826,10 @@ export function toPublicState(session: SessionRecord, nowMs = Date.now()): Publi
     timeRemainingSec,
     spatialSiteMap,
     spatialRoomLabel: spatialRoom?.label,
-    clueNotes: [...session.grantedClues.entries()].map(([id, text]) => ({ id, text })),
+    clueNotes: [
+      ...session.grantedClues.entries(),
+      ...[...session.teamGrantedClues.entries()].filter(([id]) => !session.grantedClues.has(id)),
+    ].map(([id, text]) => ({ id, text })),
     clueHistory: buildClueHistory(session),
     teamProgress: session.teamProgress,
     sceneCharacters: buildSceneCharacters(session),

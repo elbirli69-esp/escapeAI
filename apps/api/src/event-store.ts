@@ -4,6 +4,7 @@ import type {
   CreateEventRequest,
   EventPreview,
   EventTeamPublic,
+  PlayerRoleId,
 } from "@escapeai/shared";
 import { MAX_EVENT_TEAMS, MIN_EVENT_TEAMS, resolveTeamCount } from "@escapeai/shared";
 import { Redis } from "@upstash/redis";
@@ -11,11 +12,20 @@ import { createUpstashRedis, sessionTtlSec } from "./redis-session-store.js";
 
 const EVENT_KEY_PREFIX = "escapeai:event:";
 
+export type StoredTeamMember = {
+  memberId: string;
+  displayName: string;
+  role: PlayerRoleId;
+  sessionId?: string;
+  joinedAtMs: number;
+};
+
 export type StoredTeam = {
   teamId: string;
   teamName: string;
   slot: number;
   sessionId?: string;
+  members?: Record<string, StoredTeamMember>;
   status: EventTeamPublic["status"];
   joinedAtMs: number;
   timeRemainingSec?: number;

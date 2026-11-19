@@ -585,6 +585,12 @@ function GameView(props: {
     >
       <header className="game-head">
         <div>
+          {state.playerRoleLabel && (
+            <p className="role-banner sm" data-testid="escape-player-role-banner">
+              Tu rol: {state.playerRoleLabel}
+              {state.asymmetricCoopBanner ? ` — ${state.asymmetricCoopBanner}` : ""}
+            </p>
+          )}
           <p className="eyebrow">
             {state.playerDisplayName ? `${state.playerDisplayName} · ` : ""}
             {state.roomName}
