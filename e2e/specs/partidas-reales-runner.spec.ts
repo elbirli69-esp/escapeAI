@@ -88,6 +88,8 @@ test.describe("partidas reales (prompt §6)", () => {
     await submitAnswer(page, "0000");
     wrongAttempts++;
     evidencePush(evidence, "attempt", "0000 en candado (orden malo)", "lockbox");
+    await page.getByTestId("escape-director-faq-stuck_no_spoiler").click();
+    evidencePush(evidence, "director_faq", "stuck_no_spoiler", "lockbox");
     if (await page.getByTestId("escape-request-hint").isEnabled().catch(() => false)) {
       await requestHint(page);
       evidencePush(evidence, "hint", "pista candado", "lockbox");
