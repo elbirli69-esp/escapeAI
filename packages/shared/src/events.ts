@@ -49,6 +49,11 @@ export type CreateEventRequest = {
       };
   /** Semilla fijada al crear evento (variante espacial reproducible). */
   playSeed?: string;
+  /**
+   * P5: `room` exige props en casa (token, cartel); `mobile_only` omite gate físico del token.
+   * Por defecto `room`.
+   */
+  hybridPlayMode?: "room" | "mobile_only";
 };
 
 export type EventTeamVariablePublic = {
@@ -126,6 +131,11 @@ export type EventPlayerPublic = EventTeamPublic & {
   displayName: string;
 };
 
+export type EventOrganizerPrepItem = {
+  kind: "existing_object" | "organizer_setup" | "digital_only";
+  text: string;
+};
+
 export type EventLeaderboard = {
   joinCode: string;
   title: string;
@@ -137,6 +147,11 @@ export type EventLeaderboard = {
   progressSummary?: string;
   sceneMilestones?: EventSceneMilestone[];
   teamVariable?: EventTeamVariablePublic;
+  /** P5-C: qué preparar antes del evento generado. */
+  prepChecklist?: EventOrganizerPrepItem[];
+  /** P5: cartel acto 3 (dos letras, sin código final). */
+  posterKeyword?: string;
+  hybridPlayMode?: "room" | "mobile_only";
   /** @deprecated */
   players?: EventTeamPublic[];
 };

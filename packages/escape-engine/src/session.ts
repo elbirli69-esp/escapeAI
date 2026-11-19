@@ -500,6 +500,10 @@ function isAnswerablePuzzle(puzzle: RoomPuzzle): boolean {
   return ["code", "sound", "voice", "camera", "visual"].includes(puzzle.type);
 }
 
+function puzzleHasHybridSalaHint(puzzle: RoomPuzzle): boolean {
+  return puzzle.interactionHints?.some((h) => h.startsWith("En la sala:")) ?? false;
+}
+
 function requiredSteps(puzzle: RoomPuzzle): InteractionStep[] {
   switch (puzzle.type) {
     case "sound":
@@ -507,7 +511,7 @@ function requiredSteps(puzzle: RoomPuzzle): InteractionStep[] {
     case "voice":
       return ["speak"];
     case "camera":
-      return ["capture"];
+      return puzzleHasHybridSalaHint(puzzle) ? ["room_ready", "capture"] : ["capture"];
     case "visual":
       return ["view"];
     case "location":
@@ -550,6 +554,7 @@ function completeInteraction(
     capture: "Foto registrada. Ahora introduce la palabra clave.",
     view: "Has estudiado la imagen.",
     arrive: "Has llegado al punto del mapa.",
+    room_ready: "Preparación en sala confirmada.",
   };
   session.narrative.push(labels[step]);
   return undefined;
@@ -572,6 +577,8 @@ function requireInteractionSteps(session: SessionRecord, puzzle: RoomPuzzle): st
           return "Abre y mira la imagen antes de responder.";
         case "arrive":
           return "Ve al lugar indicado y confirma tu posición antes del quiz.";
+        case "room_ready":
+          return "Confirma la preparación en sala antes de usar el móvil.";
       }
     }
   }

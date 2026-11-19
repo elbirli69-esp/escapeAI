@@ -108,6 +108,30 @@ export function EventOrganizerBoard(props: { joinCode: string; onBack?: () => vo
           {board.teamVariable.label}: {board.teamVariable.value}/{board.teamVariable.goal}
         </p>
       )}
+      {(board?.prepChecklist?.length ?? 0) > 0 && (
+        <section className="panel organizer-prep" data-testid="escape-organizer-prep">
+          <p className="eyebrow">Qué preparar (P5)</p>
+          <p className="meta sm">
+            Montaje:{" "}
+            <strong>{board?.hybridPlayMode === "mobile_only" ? "Solo móvil" : "Sala en casa"}</strong>
+          </p>
+          {board?.posterKeyword && board.hybridPlayMode !== "mobile_only" && (
+            <p className="organizer-poster-keyword" data-testid="escape-organizer-poster">
+              Cartel acto 3 (dos letras, no leer en voz alta): <strong>{board.posterKeyword}</strong>
+            </p>
+          )}
+          <ul className="organizer-prep-list">
+            {board!.prepChecklist!.map((item, i) => (
+              <li key={i} className={`prep-${item.kind}`}>
+                {item.text}
+              </li>
+            ))}
+          </ul>
+          <button type="button" className="ghost sm" onClick={() => window.print()}>
+            Imprimir ficha
+          </button>
+        </section>
+      )}
       {q.isError && <p className="error">No se pudo cargar el evento.</p>}
       {q.isLoading && <p className="muted">Actualizando equipos…</p>}
       <ol className="leaderboard-list leaderboard-projector" data-testid="escape-leaderboard-list">

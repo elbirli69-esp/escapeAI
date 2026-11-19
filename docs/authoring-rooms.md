@@ -124,6 +124,22 @@ when:
   itemId: key_a
 ```
 
+## Estaciones híbridas (P5)
+
+Para puzzles que mezclan **prop en sala** y **validación en móvil**, usa `interactionHints` con prefijos fijos:
+
+- `En la sala: …` — lo que debe preparar o hacer el grupo en el entorno físico.
+- `En el móvil: …` — captura, código, inventario, etc.
+
+Cadenas recomendadas en generados:
+
+1. `camera` → `grantClue` → `items.<id>.takeRequiresPuzzleSolved` (acto 2).
+2. Acto 3: `camera` con `cameraMode: ocr_hint` (cartel A5) → `grantClue` → finale.
+
+En cámara con bloque «En la sala», el motor exige el paso `room_ready` (`complete_interaction`) antes de `capture`.
+
+Eventos generados exponen checklist al organizador vía API `GET /events/:code/leaderboard` (`prepChecklist`, `posterKeyword`). Modo `hybridPlayMode: mobile_only` en creación omite el gate físico del token.
+
 ## Buenas prácticas
 
 - **Lineal al inicio:** 3–4 escenas hasta dominar el formato.

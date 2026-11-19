@@ -233,12 +233,12 @@ Arquitectura: `apps/api/src/flavor/` + tests de validación.
 
 **Validación suave v1:** encadenar puzzles (`grantClue`, `requiresItem`, resolver cámara **antes** de `take_item`); no exigir BLE/NFC.
 
-- [ ] **Fase A — Contrato contenido:** en YAML/generador, `interactionHints` con bloques **«En la sala»** / **«En el móvil»**; cada híbrido publica `grantClue` entre fases; documentar en [authoring-rooms.md](./authoring-rooms.md).
+- [x] **Fase A — Contrato contenido:** en YAML/generador, `interactionHints` con bloques **«En la sala»** / **«En el móvil»**; cada híbrido publica `grantClue` entre fases; documentar en [authoring-rooms.md](./authoring-rooms.md).
 - [x] **Fase B (acto 2):** cámara → `grantClue` → `takeRequiresPuzzleSolved` en token + hints sala/móvil; tests `generated-hybrid-act2` / `hybrid-take-item`.
-- [ ] **Fase B (acto 3+):** cartel A5 + `ocr_hint` opcional; modo organizador *sala ligera* vs *solo móvil*; ficha PDF.
-- [ ] **Fase C — Producto organizador:** ficha «Qué preparar» (PDF/pantalla) desde `prepChecklist` + QR/carteles derivados de `joinCode` ([prompt-inventario-fisico.md](./prompt-inventario-fisico.md), `pnpm audit-fisico`).
-- [ ] **Fase D — PWA:** UI **estación 2 pasos** (no avanzar paso móvil hasta `complete_interaction` / `take_item` de la fase sala); copy diegético en `PuzzleInstructionCard`.
-- [ ] **Fase E — Auditoría:** extender `audit-coherence` o `audit-fisico` con **cadenas híbridas** por modo (mínimo N estaciones de 2 fases en generados + 1 en catálogo).
+- [x] **Fase B (acto 3+):** cartel A5 + `ocr_hint` (`finale_poster`); modo *solo móvil* en creación de evento; ficha imprimible vía `window.print`.
+- [x] **Fase C — Producto organizador:** ficha «Qué preparar» en panel desde `prepChecklist` + `posterKeyword` + QR (`joinCode`) en leaderboard API.
+- [x] **Fase D — PWA:** UI **estación 2 pasos** (`HybridStationSteps`, paso `room_ready` en motor).
+- [x] **Fase E — Auditoría:** `audit-fisico` con prep generados y conteo cadenas híbridas (objetivo ≥2 por tipo).
 
 **Fuera de P5 (roadmap posterior):** categoría `mirror`, NFC, validación servidor de imagen.
 

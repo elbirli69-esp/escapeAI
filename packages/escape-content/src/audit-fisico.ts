@@ -22,6 +22,7 @@ import {
   type RoomPuzzle,
 } from "@escapeai/escape-engine";
 import { generateAdventureRoom } from "./generate-adventure.js";
+import { buildGeneratedPrepChecklist, countHybridStations } from "./generated-prep-checklist.js";
 import { ROOM_FILES } from "./rooms.js";
 import { buildSpatialRoom } from "./spatial/build-room.js";
 import { proposeSiteAdventures } from "./spatial/generate-site-proposals.js";
@@ -184,6 +185,15 @@ function collectPrepRows(): PrepRow[] {
       rows.push({ mode, kind: item.kind, text: item.text, printRelated: tagsPrintRelated(item.text) });
     }
   }
+
+  const types: AdventureType[] = ["celebration", "birthday", "mystery", "team"];
+  for (const adventureType of types) {
+    const mode = `generated:${adventureType}`;
+    const room = generateAdventureRoom({ ...SAMPLE_EVENT, adventureType }, SAMPLE_EVENT_ID);
+    for (const item of buildGeneratedPrepChecklist(room, { joinCode: "DEMO00", hybridPlayMode: "room" })) {
+      rows.push({ mode, kind: item.kind, text: item.text, printRelated: tagsPrintRelated(item.text) });
+    }
+  }
   return rows;
 }
 
@@ -228,6 +238,14 @@ function loadGeneratedRooms(): RoomSnapshot[] {
   return types.map((adventureType) => {
     const room = generateAdventureRoom({ ...SAMPLE_EVENT, adventureType }, SAMPLE_EVENT_ID);
     return summarizeRoom(`generated:${adventureType}`, room);
+  });
+}
+
+function auditHybridChains(): { mode: string; count: number }[] {
+  const types: AdventureType[] = ["celebration", "birthday", "mystery", "team"];
+  return types.map((adventureType) => {
+    const room = generateAdventureRoom({ ...SAMPLE_EVENT, adventureType }, SAMPLE_EVENT_ID);
+    return { mode: `generated:${adventureType}`, count: countHybridStations(room) };
   });
 }
 
@@ -311,7 +329,7 @@ function formatMd(
     "",
     "| Modo | Impresión obligatoria en código |",
     "| ---- | -------------------------------- |",
-    "| Eventos generados (4 tipos) | No (imágenes y sonido en pantalla/dispositivo) |",
+    "| Eventos generados (4 tipos) | Opcional: token + cartel A5 (modo **sala en casa**); checklist en panel organizador |",
     "| `interactive-lab` / `geo-lab` | No |",
     "| `pilot` / `lighthouse` | No (códigos en móvil; props opcionales) |",
     "| QR unirse al evento (`EventJoinQr`) | No (pantalla del organizador vale) |",
@@ -352,6 +370,18 @@ function formatMd(
     }
     lines.push("");
   }
+
+  const hybridChains = auditHybridChains();
+  const weakHybrid = hybridChains.filter((h) => h.count < 2);
+  lines.push("### Cadenas híbridas en eventos generados (P5-E)", "");
+  for (const h of hybridChains) {
+    const flag = h.count >= 2 ? "✓" : "⚠";
+    lines.push(`- ${flag} \`${h.mode}\`: ${h.count} estación(es) sala↔móvil`);
+  }
+  if (weakHybrid.length) {
+    lines.push("", `_Objetivo: ≥2 por tipo. Revisar: ${weakHybrid.map((h) => h.mode).join(", ")}._`);
+  }
+  lines.push("");
 
   if (physicalPuzzles.length) {
     lines.push("### Puzzles en sala que exigen soporte físico (motor)", "");

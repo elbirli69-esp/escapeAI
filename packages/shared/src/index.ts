@@ -13,7 +13,7 @@ export type GameActionType =
   | "complete_interaction"
   | "talk_to_character";
 
-export type InteractionStep = "listen" | "speak" | "capture" | "view" | "arrive";
+export type InteractionStep = "listen" | "speak" | "capture" | "view" | "arrive" | "room_ready";
 
 export type LocationMode = "reach" | "quiz";
 /** waypoint = rally a coordenadas; area_context = zona urbana para preguntas del entorno (no navegación interior). */

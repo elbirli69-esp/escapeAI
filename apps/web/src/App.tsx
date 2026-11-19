@@ -751,6 +751,7 @@ function GameView(props: {
               onAnswerChange={props.onAnswerChange}
               busy={props.busy}
               onAction={props.onAction}
+              inventoryItemIds={inventoryItems.map((item) => item.id)}
             />
           )}
         </section>
