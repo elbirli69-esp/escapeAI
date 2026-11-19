@@ -280,6 +280,14 @@ function submitAnswer(
   const stepErr = requireInteractionSteps(session, puzzle);
   if (stepErr) return { error: stepErr };
 
+  if (puzzle.type === "deduction" && puzzle.deduction?.requiredClueIds?.length) {
+    for (const clueId of puzzle.deduction.requiredClueIds) {
+      if (!session.grantedClues.has(clueId)) {
+        return { error: "Aún faltan pruebas en el cuaderno antes de la acusación." };
+      }
+    }
+  }
+
   if (!rawValue.trim()) {
     return { error: "Escribe una respuesta antes de enviar." };
   }
@@ -497,7 +505,7 @@ function isAnswerablePuzzle(puzzle: RoomPuzzle): boolean {
   if (puzzle.type === "location" && (puzzle.locationMode ?? "reach") === "quiz") {
     return true;
   }
-  return ["code", "sound", "voice", "camera", "visual"].includes(puzzle.type);
+  return ["code", "sound", "voice", "camera", "visual", "deduction"].includes(puzzle.type);
 }
 
 function puzzleHasHybridSalaHint(puzzle: RoomPuzzle): boolean {
@@ -728,6 +736,7 @@ export function toPublicState(session: SessionRecord, nowMs = Date.now()): Publi
         maxAccuracyMeters: puzzle.maxAccuracyMeters,
         waypointLabel: puzzle.waypointLabel,
         quizPrompt: puzzle.quizPrompt,
+        deductionSuspects: puzzle.deduction?.suspects,
       };
     }),
     exits: getAvailableExits(session),

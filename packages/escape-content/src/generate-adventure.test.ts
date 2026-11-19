@@ -42,9 +42,10 @@ describe("generateAdventureRoom", () => {
       "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
     );
     expect(mystery.scenes.start.title).not.toBe(team.scenes.start.title);
-    expect(mystery.scenes.finale.description).toMatch(/opcional/i);
+    expect(mystery.scenes.finale.description).toMatch(/culpable|acusación|inspector/i);
     expect(team.scenes.finale.description).toMatch(/ranking|victoria/i);
-    expect(mystery.puzzles.voice_seal?.prompt).toMatch(/Opcional/i);
+    expect(mystery.puzzles.case_accusation?.type).toBe("deduction");
+    expect(mystery.winCondition).toEqual({ type: "puzzle_solved", puzzleId: "case_accusation" });
   });
 
   it("sound_intro procedural con tts o beeps", () => {

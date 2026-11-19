@@ -247,7 +247,7 @@ Arquitectura: `apps/api/src/flavor/` + tests de validación.
 Estudio completo: `docs/estudio-erl-online-gratis.md` (45 títulos indexados en la guía ERL).  
 **Plan de adopción (fases, PRs, criterios):** `docs/plan-adopcion-tecnicas-erl.md`.
 
-- [ ] **P6-A — Whodunit generado:** pantalla/tablas de sospechosos + código final desde clues (Firulais, *Justicia criminal*, *Investigando Covid*).
+- [x] **P6-A — Whodunit generado:** `case_accusation` (deduction) en `mystery` + `WhodunitPanel` + e2e `p6-whodunit.spec.ts`.
 - [ ] **P6-B — Roles asimétricos:** dos (o N) paneles de pista complementaria en el mismo evento (*La cura del virus*, *Suero Javinski*).
 - [ ] **P6-C — Demo lobby:** aventura corta gratuita 1–2 jugadores (*Michelón*, *Toda una vida*).
 - [ ] **P6-D — Saga opcional:** segundo acto en el mismo `eventId` (*Misión rescate* tras retorno).

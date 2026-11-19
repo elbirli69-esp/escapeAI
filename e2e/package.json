@@ -9,5 +9,8 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.49.1"
+  },
+  "dependencies": {
+    "@escapeai/escape-content": "workspace:*"
   }
 }

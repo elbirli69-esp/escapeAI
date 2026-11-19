@@ -21,6 +21,7 @@ Cada PR con cambio de producto debe demostrar el comportamiento **de punta a pun
 | Iniciativa | Spec |
 |------------|------|
 | P5 híbrido | `e2e/specs/p5-hybrid.spec.ts` |
+| P6-A whodunit | `e2e/specs/p6-whodunit.spec.ts` |
 | Eventos MVP | `e2e/specs/events-mvp.spec.ts` |
 | Organizador | `e2e/specs/organizer-panel.spec.ts` |
 | Sensorial lab | `e2e/specs/interactive-lab-partial.spec.ts` |
