@@ -36,10 +36,11 @@ export type RoomSummary = {
   theme?: string;
   sceneCount?: number;
   timeLimitSec: number;
+  isPublicDemo?: boolean;
 };
 
 export type LobbyHomeCard = {
-  mode: "scan" | "create" | "join" | "organizer" | "catalog";
+  mode: "demo" | "scan" | "create" | "join" | "organizer" | "catalog";
   title: string;
   description: string;
   imageAlt: string;

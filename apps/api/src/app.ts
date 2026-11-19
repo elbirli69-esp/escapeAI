@@ -96,9 +96,11 @@ export async function createApp(store?: SessionStore): Promise<Hono> {
           theme: def.theme ?? entry.theme,
           sceneCount: Object.keys(def.scenes).length,
           timeLimitSec: def.timeLimitSec,
+          isPublicDemo: entry.isPublicDemo === true,
         };
       }),
     );
+    rooms.sort((a, b) => Number(b.isPublicDemo) - Number(a.isPublicDemo));
     return c.json({ rooms, ids: listRoomIds() });
   });
 

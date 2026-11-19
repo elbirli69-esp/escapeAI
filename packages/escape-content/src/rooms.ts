@@ -1,11 +1,15 @@
 export const ROOM_FILES = {
   pilot: "pilot.yaml",
   lighthouse: "lighthouse.yaml",
+  "demo-michelon": "demo-michelon.yaml",
   "interactive-lab": "interactive-lab.yaml",
   "geo-lab": "geo-lab.yaml",
 } as const;
 
 export type RoomId = keyof typeof ROOM_FILES;
+
+/** Sala corta pública (P6-C): lobby → partida sin wizard. */
+export const PUBLIC_DEMO_ROOM_ID = "demo-michelon" as const satisfies RoomId;
 
 export const ROOM_CATALOG: Array<{
   id: RoomId;
@@ -16,7 +20,20 @@ export const ROOM_CATALOG: Array<{
   pexelsQuery: string;
   pexelsPage?: number;
   theme?: string;
+  /** P6-C: destacar en lobby y post-victoria CTA a evento personalizado. */
+  isPublicDemo?: boolean;
 }> = [
+  {
+    id: "demo-michelon",
+    title: "Michelón de recuerdos",
+    summary: "Demo gratis ~15 min: cocina, candado y brindis — 1 o 2 jugadores.",
+    tagline: "Quince minutos en la cocina de la abuela — tres pistas y una mesa puesta.",
+    coverImage: "/media/lighthouse-dock.jpg",
+    pexelsQuery: "cozy kitchen table dinner warm light",
+    pexelsPage: 2,
+    theme: "coastal",
+    isPublicDemo: true,
+  },
   {
     id: "pilot",
     title: "La oficina del conserje",

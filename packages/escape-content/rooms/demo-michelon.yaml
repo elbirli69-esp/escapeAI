@@ -1,0 +1,93 @@
+id: demo-michelon
+name: Michelón de recuerdos
+tagline: Quince minutos en la cocina de la abuela — tres pistas y una mesa puesta.
+theme: coastal
+coverImage: /media/lighthouse-dock.jpg
+timeLimitSec: 1200
+startSceneId: kitchen
+winCondition:
+  type: puzzle_solved
+  puzzleId: toast_seal
+beats:
+  - id: demo_open
+    after: session_started
+    text: "Huele a pan recién hecho; el silbato de la tetera guarda el primer número."
+  - id: demo_pantry
+    after: puzzle_solved
+    puzzleId: pantry_lock
+    text: "El armario cede: en el comedor la servilleta dibuja el brindis final."
+  - id: demo_table
+    after: scene_entered
+    sceneId: table
+    text: "Solo queda una palabra corta antes de levantar la copa."
+scenes:
+  kitchen:
+    id: kitchen
+    title: Cocina del mesón
+    image: /media/lighthouse-supply.jpg
+    mood: Calor de horno, madera curtida y el silbido de la tetera.
+    description: >
+      Tarros de especias alineados y un post-it junto al armario: «Primero oye la
+      tetera, luego cuenta quince». Es la demostración gratuita de escapeAI —
+      ideal para 1 o 2 jugadores en el móvil.
+    puzzles: [kettle_tone, pantry_lock]
+    exits:
+      - toSceneId: table
+        label: Pasar al comedor
+        when:
+          type: puzzle_solved
+          puzzleId: pantry_lock
+  table:
+    id: table
+    title: La mesa puesta
+    image: /media/lighthouse-dock.jpg
+    mood: Mantel blanco, copas al reves y una servilleta doblada en forma de corazón.
+    description: >
+      Platos para dos y un sello de cera sin abrir. Quien comparta la fiesta en
+      casa sabrá la palabra del brindis.
+    puzzles: [toast_seal]
+    exits: []
+puzzles:
+  kettle_tone:
+    id: kettle_tone
+    type: sound
+    label: Silbido de la tetera
+    cardImage: /media/lighthouse-supply.jpg
+    prompt: Escucha la tetera (cada pitido = una cifra del armario).
+    soundMode: beeps
+    beepPattern: [160, 160, 160]
+    minListenSec: 1
+    answer: "3"
+    normalize: trim
+    maxHints: 2
+    hints:
+      - level: 1
+        text: Tres pitidos iguales, uno tras otro.
+      - level: 2
+        text: Responde con un solo dígito tres.
+  pantry_lock:
+    id: pantry_lock
+    type: code
+    label: Candado del armario
+    prompt: Código del armario (3 dígitos; mezcla la tetera y los quince minutos del reto).
+    answer: "315"
+    normalize: trim
+    maxHints: 2
+    hints:
+      - level: 1
+        text: Empieza con el dígito de la tetera.
+      - level: 2
+        text: Tres, uno y cinco — quince minutos de aventura.
+  toast_seal:
+    id: toast_seal
+    type: code
+    label: Sello del brindis
+    prompt: Palabra del brindis (4 letras, mayúsculas).
+    answer: TOMA
+    normalize: uppercase
+    maxHints: 2
+    hints:
+      - level: 1
+        text: Es lo que se dice antes de chocar las copas en español.
+      - level: 2
+        text: "Cuatro letras: la voz de salud al levantar la copa."

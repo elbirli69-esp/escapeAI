@@ -25,6 +25,8 @@ import {
   shouldAutoResumeSession,
 } from "./lib/session-persistence";
 
+const PUBLIC_DEMO_ROOM_ID = "demo-michelon";
+
 function themeClass(theme?: string): string {
   return theme === "coastal" ? "theme-coastal" : "theme-urban";
 }
@@ -118,6 +120,13 @@ function endGameMessage(state: PublicState): { title: string; body: string; meta
   const metaParts = [who ? `${who} · ${time}` : `Tiempo ${time}`, event].filter(Boolean);
 
   if (state.status === "won") {
+    if (state.roomId === PUBLIC_DEMO_ROOM_ID) {
+      return {
+        title: "¡Brindis completado!",
+        body: "Has probado escapeAI en unos quince minutos. ¿Listo para diseñar tu propia fiesta?",
+        meta: metaParts.join(" · "),
+      };
+    }
     let body = victoryEpilogueByAdventure(state.adventureType, coastal);
     if (state.roomTagline) {
       body = `${body} «${state.roomTagline}»`;
@@ -186,6 +195,7 @@ export function App() {
   });
   const [pendingResumeRoomId] = useState<string | null>(() => readStoredRoomId());
   const [selectedRoomId, setSelectedRoomId] = useState("pilot");
+  const [lobbyIntent, setLobbyIntent] = useState<"create" | null>(null);
   const [answer, setAnswer] = useState("");
   const [selectedPuzzle, setSelectedPuzzle] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -328,6 +338,12 @@ export function App() {
             : null
         }
         onClassicStart={() => startGame.mutate(selectedRoomId)}
+        onQuickDemoStart={() => {
+          setSelectedRoomId(PUBLIC_DEMO_ROOM_ID);
+          startGame.mutate(PUBLIC_DEMO_ROOM_ID);
+        }}
+        initialLobbyMode={lobbyIntent}
+        onLobbyIntentConsumed={() => setLobbyIntent(null)}
         pendingResume={Boolean(pendingResumeId)}
         pendingResumeRoomId={pendingResumeRoomId}
         onContinuePendingSession={continuePendingSession}
@@ -395,6 +411,14 @@ export function App() {
         setPendingResumeId(null);
         setSelectedPuzzle(null);
         setActionError(null);
+      }}
+      onCreateCustomEvent={() => {
+        clearStoredSessionKeys();
+        setSessionId(null);
+        setPendingResumeId(null);
+        setSelectedPuzzle(null);
+        setActionError(null);
+        setLobbyIntent("create");
       }}
     />
   );
@@ -506,6 +530,7 @@ function GameView(props: {
   onDismissError: () => void;
   gmInterventions: NarrativeIntervention[];
   onNewGame: () => void;
+  onCreateCustomEvent: () => void;
 }) {
   const { state } = props;
   const diaryLines = useMemo(() => buildDiaryTimeline(state.narrative, props.gmInterventions), [
@@ -840,7 +865,17 @@ function GameView(props: {
             {endGameMessage(state).meta}
           </p>
           <p>{endGameMessage(state).body}</p>
-          <button type="button" className="primary wide" onClick={props.onNewGame}>
+          {state.status === "won" && state.roomId === PUBLIC_DEMO_ROOM_ID && (
+            <button
+              type="button"
+              className="primary wide"
+              data-testid="escape-demo-cta-create"
+              onClick={props.onCreateCustomEvent}
+            >
+              Crear mi experiencia personalizada
+            </button>
+          )}
+          <button type="button" className={state.roomId === PUBLIC_DEMO_ROOM_ID ? "ghost wide" : "primary wide"} onClick={props.onNewGame}>
             Nueva partida
           </button>
         </section>
