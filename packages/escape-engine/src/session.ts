@@ -17,6 +17,7 @@ import {
   maybeCatalogFailForward,
   maybeGeneratedFailForward,
 } from "./adaptive-assist.js";
+import { buildClueHistory } from "./clue-ledger.js";
 import type { Condition, RoomBeat, RoomDefinition, RoomPuzzle } from "./room-definition.js";
 
 export type SessionRecord = {
@@ -757,6 +758,7 @@ export function toPublicState(session: SessionRecord, nowMs = Date.now()): Publi
     spatialSiteMap,
     spatialRoomLabel: spatialRoom?.label,
     clueNotes: [...session.grantedClues.entries()].map(([id, text]) => ({ id, text })),
+    clueHistory: buildClueHistory(session),
     teamProgress: session.teamProgress,
     sceneCharacters: buildSceneCharacters(session),
   };

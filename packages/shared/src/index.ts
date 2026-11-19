@@ -88,6 +88,14 @@ export type DirectorFaqAction = {
   faqId: DirectorFaqId;
 };
 
+export type ClueLedgerEntry = {
+  id: string;
+  kind: "hint" | "beat_clue";
+  puzzleId?: string;
+  hintLevel?: number;
+  text: string;
+};
+
 export type PublicCharacter = {
   id: string;
   displayName: string;
@@ -222,6 +230,8 @@ export type PublicState = {
   spatialRoomLabel?: string;
   /** Notas jugables (clue ledger) anotadas al resolver puzzles. */
   clueNotes?: Array<{ id: string; text: string }>;
+  /** Pistas consumidas (YAML) + clues de beats, derivado del motor. */
+  clueHistory?: ClueLedgerEntry[];
   /** Progreso comunitario del evento (solo partidas multiequipo). */
   teamProgress?: { label: string; value: number; goal: number };
   /** Personajes con los que se puede hablar en la escena actual. */
