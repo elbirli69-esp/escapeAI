@@ -107,7 +107,7 @@ Sala de referencia: `packages/escape-content/rooms/geo-lab.yaml`.
 | ---------- | ------ |
 | `submit_answer` | Puzzles `code`, sensoriales y `location` en modo `quiz` |
 | `submit_location` | Puzzles `location` (`reach` o paso `arrive` del `quiz`) |
-| `take_item` | Objeto listado en `sceneItems` |
+| `take_item` | Objeto listado en `sceneItems` (puede exigir puzzle previo con `items.<id>.takeRequiresPuzzleSolved`) |
 | `use_item` + `puzzleId` | Puzzles `inventory` |
 | `move` | Cuando la salida está `available` |
 | `request_hint` | Consume siguiente pista del YAML |
@@ -123,6 +123,22 @@ when:
   type: has_item
   itemId: key_a
 ```
+
+## Estaciones híbridas (P5)
+
+Para puzzles que mezclan **prop en sala** y **validación en móvil**, usa `interactionHints` con prefijos fijos:
+
+- `En la sala: …` — lo que debe preparar o hacer el grupo en el entorno físico.
+- `En el móvil: …` — captura, código, inventario, etc.
+
+Cadenas recomendadas en generados:
+
+1. `camera` → `grantClue` → `items.<id>.takeRequiresPuzzleSolved` (acto 2).
+2. Acto 3: `camera` con `cameraMode: ocr_hint` (cartel A5) → `grantClue` → finale.
+
+En cámara con bloque «En la sala», el motor exige el paso `room_ready` (`complete_interaction`) antes de `capture`.
+
+Eventos generados exponen checklist al organizador vía API `GET /events/:code/leaderboard` (`prepChecklist`, `posterKeyword`). Modo `hybridPlayMode: mobile_only` en creación omite el gate físico del token.
 
 ## Buenas prácticas
 

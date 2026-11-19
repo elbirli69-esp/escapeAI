@@ -121,6 +121,7 @@ export function ExperienceLobby(props: {
   const [age, setAge] = useState("");
   const [facts, setFacts] = useState("");
   const [eventTitle, setEventTitle] = useState("");
+  const [hybridPlayMode, setHybridPlayMode] = useState<"room" | "mobile_only">("room");
   const [created, setCreated] = useState<EventPreview | null>(null);
   const [joinCode, setJoinCode] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -406,6 +407,7 @@ export function ExperienceLobby(props: {
                 adventureType,
                 teamCount,
                 durationMin,
+                hybridPlayMode,
                 subject: {
                   name: subjectName.trim(),
                   nickname: nickname.trim() || undefined,
@@ -475,6 +477,17 @@ export function ExperienceLobby(props: {
                 <option value={30}>30 min</option>
                 <option value={45}>45 min</option>
                 <option value={60}>60 min</option>
+              </select>
+            </label>
+            <label>
+              Montaje físico (P5)
+              <select
+                value={hybridPlayMode}
+                onChange={(e) => setHybridPlayMode(e.target.value as "room" | "mobile_only")}
+                data-testid="escape-hybrid-play-mode"
+              >
+                <option value="room">Sala en casa (token + cartel)</option>
+                <option value="mobile_only">Solo móvil (sin props obligatorios)</option>
               </select>
             </label>
             <label>

@@ -3,6 +3,7 @@ import type { AdventureType, CreateEventRequest, EventSubject } from "@escapeai/
 import { durationMinToSec, resolveDurationMin } from "@escapeai/shared";
 import type { RoomBeat, RoomCharacter, RoomDefinition } from "@escapeai/escape-engine";
 import { buildProceduralSoundIntro } from "./sound-digit-clues.js";
+import { applyMysteryWhodunit } from "./whodunit.js";
 
 type AdventureVisual = {
   cover: string;
@@ -146,6 +147,9 @@ export function generateAdventureRoom(
   const nickname =
     (input.subject.nickname?.trim() || input.subject.name.split(/\s+/)[0]) ?? "protagonista";
 
+  const hybridRoom = (input.hybridPlayMode ?? "room") === "room";
+  const posterCode = codes.letterCode.slice(0, 2).toUpperCase();
+
   const introTone = toneForType(input.adventureType, input.subject.name, nickname);
   const soundIntro = buildProceduralSoundIntro({
     eventId,
@@ -156,7 +160,7 @@ export function generateAdventureRoom(
 
   const characters = buildGeneratedCharacters(input.adventureType, nickname, factA, factB);
 
-  return {
+  const room: RoomDefinition = {
     id: `generated-${eventId.slice(0, 8)}`,
     name: title,
     tagline: introTone.tagline,
@@ -171,6 +175,7 @@ export function generateAdventureRoom(
       token: {
         name: `Recuerdo de ${nickname}`,
         description: factB,
+        takeRequiresPuzzleSolved: hybridRoom ? "camera_hunt" : undefined,
       },
     },
     scenes: {
@@ -212,7 +217,7 @@ export function generateAdventureRoom(
         image: imgs.scenes[2],
         mood: introTone.mood3,
         description: introTone.finaleSceneBody,
-        puzzles: ["visual_gallery", "final_code", "voice_seal"],
+        puzzles: ["finale_poster", "visual_gallery", "final_code", "voice_seal"],
         exits: [],
       },
     },
@@ -231,7 +236,10 @@ export function generateAdventureRoom(
         soundMode: soundIntro.soundMode,
         beepPattern: soundIntro.beepPattern,
         ttsText: soundIntro.ttsText,
-        interactionHints: soundIntro.interactionHints,
+        interactionHints: [
+          ...(soundIntro.interactionHints ?? []),
+          "En el móvil: escucha el mensaje completo antes de abrir el candado de la misma escena.",
+        ],
         answer: codes.yearCode.slice(0, 2),
         normalize: "trim",
         minListenSec: 3,
@@ -252,7 +260,9 @@ export function generateAdventureRoom(
           },
         },
         prompt: `${introTone.lockPrompt} El audio de la misma sala ya dio el prefijo de dos cifras.`,
-        interactionHints: ["Combina el prefijo del mensaje oculto con el resto del código (año o cifra clave)."],
+        interactionHints: [
+          "En el móvil: combina el prefijo del mensaje oculto con el resto del código (año o cifra clave).",
+        ],
         answer: codes.yearCode,
         normalize: "trim",
         maxHints: 3,
@@ -267,10 +277,21 @@ export function generateAdventureRoom(
         type: "camera",
         label: "Prueba en el salón",
         cameraPrompt: `Haz una foto relacionada con: ${factA.slice(0, 60)}.`,
-        interactionHints: [
-          "Esta prueba no cambia el candado numérico: prueba que estuviste en el sitio del evento.",
-          `La respuesta enlaza con el token y con la sala final (${nickname}).`,
-        ],
+        onSolve: {
+          grantClue: {
+            id: "salon_photo_ok",
+            text: `Foto validada: ya puedes coger el recuerdo físico de ${nickname} en la sala.`,
+          },
+        },
+        interactionHints: hybridRoom
+          ? [
+              "En la sala: prepara el recuerdo/token en la mesa antes de empezar (el organizador lo indica).",
+              "En el móvil: captura la foto del entorno y escribe el apodo; sin eso no podrás coger el objeto.",
+              `La pista del cuaderno «salon_photo_ok» autoriza a recoger el token.`,
+            ]
+          : [
+              "En el móvil: foto del entorno + apodo; el recuerdo aparece en inventario sin prop físico.",
+            ],
         prompt: `Tras la foto, escribe en MAYÚSCULAS el apodo «${nickname}».`,
         answer: nickname.toUpperCase().replace(/[^A-ZÁÉÍÓÚÑ]/gi, "X").slice(0, 12) || "EQUIPO",
         normalize: "uppercase",
@@ -283,11 +304,44 @@ export function generateAdventureRoom(
         label: "Ranura del recuerdo",
         prompt: `Coloca el recuerdo vinculado a ${nickname}.`,
         requiresItem: "token",
+        interactionHints: [
+          "En la sala: usa el mismo objeto que dejaste al lado del grupo tras la foto.",
+          "En el móvil: usa el objeto del inventario cuando la ranura esté activa.",
+          "Revisa en Notas la pista salon_photo_ok y el candado numérico del acto 1 si dudas.",
+        ],
         maxHints: 2,
         hints: [
-          { level: 1, text: `Coge el objeto que nombra a ${nickname}.` },
+          { level: 1, text: `Coge el objeto que nombra a ${nickname} (tras la prueba de cámara).` },
           { level: 2, text: factB },
         ],
+      },
+      finale_poster: {
+        id: "finale_poster",
+        type: "camera",
+        label: "Cartel del cierre",
+        cameraMode: "ocr_hint",
+        cameraPrompt: hybridRoom
+          ? `Fotografía el cartel A5 con la palabra «${posterCode}» visible en la sala.`
+          : `Busca en pantalla del organizador o en la guía la palabra «${posterCode}» y confírmala en el móvil.`,
+        prompt: `Escribe las dos letras del cartel (sin espacios).`,
+        answer: posterCode,
+        normalize: "uppercase",
+        onSolve: {
+          grantClue: {
+            id: "poster_ok",
+            text: `Cartel validado: las dos letras «${posterCode}» encajan con el código final.`,
+          },
+        },
+        interactionHints: hybridRoom
+          ? [
+              "En la sala: imprime o escribe a mano un cartel A5 con la palabra clave (el organizador la ve en su panel).",
+              "En el móvil: haz la foto del cartel y envía las dos letras; OCR puede ayudar en pantalla.",
+            ]
+          : [
+              "En el móvil: lee el código de dos letras en el panel del organizador o en la convocatoria.",
+            ],
+        maxHints: 1,
+        hints: [{ level: 1, text: "Son dos letras mayúsculas, las mismas que abren el código final." }],
       },
       visual_gallery: {
         id: "visual_gallery",
@@ -295,8 +349,8 @@ export function generateAdventureRoom(
         label: "Galería enigma",
         prompt: `Mira la imagen. ¿Cuántas letras tiene el apodo «${nickname}»? (número)`,
         interactionHints: [
-          "Paso 1 del cierre: anota el número; conecta con las iniciales de quien da nombre al evento.",
-          "El código de cuatro letras (siguiente prueba) no usa este número directamente, pero confirma el apodo.",
+          "En el móvil: paso 2 del cierre — anota el número; conecta con las iniciales de quien da nombre al evento.",
+          "Revisa en Notas la pista «poster_ok» antes del candado de letras.",
         ],
         pexelsQuery:
           input.adventureType === "mystery"
@@ -348,6 +402,9 @@ export function generateAdventureRoom(
       },
     },
   };
+
+  applyMysteryWhodunit(room, input, eventId);
+  return room;
 }
 
 function defaultTitle(type: AdventureType, subject: EventSubject): string {

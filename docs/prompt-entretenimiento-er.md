@@ -233,13 +233,25 @@ Arquitectura: `apps/api/src/flavor/` + tests de validación.
 
 **Validación suave v1:** encadenar puzzles (`grantClue`, `requiresItem`, resolver cámara **antes** de `take_item`); no exigir BLE/NFC.
 
-- [ ] **Fase A — Contrato contenido:** en YAML/generador, `interactionHints` con bloques **«En la sala»** / **«En el móvil»**; cada híbrido publica `grantClue` entre fases; documentar en [authoring-rooms.md](./authoring-rooms.md).
-- [ ] **Fase B — Eventos generados:** acto 2 = **cámara → clue → token_slot** (foto/keyword antes de `take_item`); acto 3 opcional **cartel A5 + `ocr_hint`** con modo organizador *sala ligera* vs *solo móvil*; tests en `generate-adventure.test.ts` + win-path.
-- [ ] **Fase C — Producto organizador:** ficha «Qué preparar» (PDF/pantalla) desde `prepChecklist` + QR/carteles derivados de `joinCode` ([prompt-inventario-fisico.md](./prompt-inventario-fisico.md), `pnpm audit-fisico`).
-- [ ] **Fase D — PWA:** UI **estación 2 pasos** (no avanzar paso móvil hasta `complete_interaction` / `take_item` de la fase sala); copy diegético en `PuzzleInstructionCard`.
-- [ ] **Fase E — Auditoría:** extender `audit-coherence` o `audit-fisico` con **cadenas híbridas** por modo (mínimo N estaciones de 2 fases en generados + 1 en catálogo).
+- [x] **Fase A — Contrato contenido:** en YAML/generador, `interactionHints` con bloques **«En la sala»** / **«En el móvil»**; cada híbrido publica `grantClue` entre fases; documentar en [authoring-rooms.md](./authoring-rooms.md).
+- [x] **Fase B (acto 2):** cámara → `grantClue` → `takeRequiresPuzzleSolved` en token + hints sala/móvil; tests `generated-hybrid-act2` / `hybrid-take-item`.
+- [x] **Fase B (acto 3+):** cartel A5 + `ocr_hint` (`finale_poster`); modo *solo móvil* en creación de evento; ficha imprimible vía `window.print`.
+- [x] **Fase C — Producto organizador:** ficha «Qué preparar» en panel desde `prepChecklist` + `posterKeyword` + QR (`joinCode`) en leaderboard API.
+- [x] **Fase D — PWA:** UI **estación 2 pasos** (`HybridStationSteps`, paso `room_ready` en motor).
+- [x] **Fase E — Auditoría:** `audit-fisico` con prep generados y conteo cadenas híbridas (objetivo ≥2 por tipo).
 
 **Fuera de P5 (roadmap posterior):** categoría `mirror`, NFC, validación servidor de imagen.
+
+### P6 — Ideas desde catálogo online (ERL, #YoEscapoEnCasa)
+
+Estudio completo: `docs/estudio-erl-online-gratis.md` (45 títulos indexados en la guía ERL).  
+**Plan de adopción (fases, PRs, criterios):** `docs/plan-adopcion-tecnicas-erl.md`.
+
+- [x] **P6-A — Whodunit generado:** `case_accusation` (deduction) en `mystery` + `WhodunitPanel` + e2e `p6-whodunit.spec.ts`.
+- [ ] **P6-B — Roles asimétricos:** dos (o N) paneles de pista complementaria en el mismo evento (*La cura del virus*, *Suero Javinski*).
+- [ ] **P6-C — Demo lobby:** aventura corta gratuita 1–2 jugadores (*Michelón*, *Toda una vida*).
+- [ ] **P6-D — Saga opcional:** segundo acto en el mismo `eventId` (*Misión rescate* tras retorno).
+- [ ] **Catálogo — Investigación ampliada:** sala tipo *La oficina* junto a `pilot`.
 
 ---
 
@@ -264,8 +276,9 @@ Cualquier PR bajo este prompt debería declarar cómo valida:
 2. Si toca motor: esquema en `room-definition.ts` + tests `applyAction` + migración gradual en YAML.
 3. Si toca generador: fixture fijo en `generate-adventure.test.ts` + playtest mental del clue ledger.
 4. Si toca GM: solo datos en `GmViewContext`; nunca mutar sesión desde LLM.
-5. Manual: grabar **2 min** de partida (lobby → victoria) o walkthrough según [walkthrough-artifacts skill] si hay UI.
-6. No regresar coherencia: `pnpm audit-coherence` verde.
+5. **Prueba funcional obligatoria:** además de `pnpm test` en paquetes afectados, añadir o extender un spec en `e2e/specs/` que recorra la UI/API del cambio (`pnpm test:e2e` verde). Sin spec nuevo si el flujo ya está cubierto por otro e2e documentado en el PR.
+6. Manual (UI visible): grabar **2 min** o walkthrough según skill walkthrough-artifacts cuando el cambio sea principalmente UX.
+7. No regresar coherencia: `pnpm audit-coherence` verde.
 
 ---
 

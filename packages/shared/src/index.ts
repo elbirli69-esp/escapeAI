@@ -14,7 +14,7 @@ export type GameActionType =
   | "talk_to_character"
   | "director_faq";
 
-export type InteractionStep = "listen" | "speak" | "capture" | "view" | "arrive";
+export type InteractionStep = "listen" | "speak" | "capture" | "view" | "arrive" | "room_ready";
 
 export type LocationMode = "reach" | "quiz";
 /** waypoint = rally a coordenadas; area_context = zona urbana para preguntas del entorno (no navegación interior). */
@@ -124,7 +124,20 @@ export type PublicPuzzleType =
   | "voice"
   | "camera"
   | "visual"
-  | "location";
+  | "location"
+  | "deduction";
+
+export type PublicDeductionTrait = {
+  id: string;
+  label: string;
+  clearingClueId: string;
+};
+
+export type PublicDeductionSuspect = {
+  id: string;
+  name: string;
+  traits: PublicDeductionTrait[];
+};
 
 export type PublicItem = {
   id: string;
@@ -187,6 +200,7 @@ export type PublicPuzzle = {
   maxAccuracyMeters?: number;
   waypointLabel?: string;
   quizPrompt?: string;
+  deductionSuspects?: PublicDeductionSuspect[];
 };
 
 export type PublicExit = {

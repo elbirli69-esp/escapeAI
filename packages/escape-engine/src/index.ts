@@ -1,5 +1,7 @@
 export type {
   Condition,
+  DeductionSuspect,
+  DeductionTrait,
   PuzzleType,
   RoomBeat,
   RoomCharacter,

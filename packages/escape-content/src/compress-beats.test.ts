@@ -99,6 +99,7 @@ function winPathToFinale(
     value: room.puzzles.entry_lock!.answer!,
   });
   applyAction(session, { type: "move", sceneId: "middle" });
+  applyAction(session, { type: "complete_interaction", puzzleId: "camera_hunt", step: "room_ready" });
   applyAction(session, { type: "complete_interaction", puzzleId: "camera_hunt", step: "capture" });
   applyAction(session, {
     type: "submit_answer",

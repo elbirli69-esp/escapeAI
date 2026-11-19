@@ -1,4 +1,9 @@
-import { generateAdventureRoom, listAdventureTemplates } from "@escapeai/escape-content";
+import {
+  buildGeneratedPrepChecklist,
+  generateAdventureRoom,
+  listAdventureTemplates,
+  posterKeywordForOrganizer,
+} from "@escapeai/escape-content";
 import { createSession, toPublicState, type PlayerContext, type SessionRecord } from "@escapeai/escape-engine";
 import type { CreateEventRequest, JoinEventRequest } from "@escapeai/shared";
 import { Hono } from "hono";
@@ -163,6 +168,12 @@ export function mountEventRoutes(app: Hono, eventStore: EventStore, _gm?: GameMa
     const e = migrateLegacyEvent(event);
     const teams = leaderboardFromEvent(e);
     const { progressSummary, sceneMilestones } = computeSceneProgress(e);
+    const hybridPlayMode = e.config.hybridPlayMode ?? "room";
+    const prepChecklist = buildGeneratedPrepChecklist(e.room, {
+      joinCode: e.joinCode,
+      hybridPlayMode,
+    });
+    const posterKeyword = posterKeywordForOrganizer(e.room);
     return c.json({
       joinCode: e.joinCode,
       title: e.title,
@@ -173,6 +184,9 @@ export function mountEventRoutes(app: Hono, eventStore: EventStore, _gm?: GameMa
       progressSummary,
       sceneMilestones,
       teamVariable: e.teamVariable ? teamVariableToPublic(e.teamVariable) : undefined,
+      prepChecklist,
+      posterKeyword,
+      hybridPlayMode,
       players: teams,
     });
   });

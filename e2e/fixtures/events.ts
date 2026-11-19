@@ -13,7 +13,30 @@ export const SARA_EVENT = {
   yearLockAnswer: "1995",
 };
 
-export async function createEventFromLobby(page: Page): Promise<string> {
+export type CreateEventLobbyOpts = {
+  hybridPlayMode?: "room" | "mobile_only";
+};
+
+export type CreatedEvent = { joinCode: string; eventId: string };
+
+async function submitCreateEvent(page: Page): Promise<CreatedEvent> {
+  const waitCreate = page.waitForResponse(
+    (res) => res.url().includes("/api/events") && res.request().method() === "POST",
+  );
+  await page.getByTestId("escape-event-create-submit").click();
+  const res = await waitCreate;
+  expect(res.ok()).toBeTruthy();
+  const data = (await res.json()) as { preview: { joinCode: string; eventId: string } };
+  await page.getByTestId("escape-join-code-display").waitFor({ timeout: 60_000 });
+  const code = await page.getByTestId("escape-join-code-display").innerText();
+  expect(code.trim()).toBe(data.preview.joinCode);
+  return { joinCode: data.preview.joinCode.trim(), eventId: data.preview.eventId };
+}
+
+export async function createEventFromLobby(
+  page: Page,
+  opts?: CreateEventLobbyOpts,
+): Promise<string> {
   await page.goto("/");
   await page.getByTestId("escape-lobby-home").waitFor();
   await page.getByTestId("escape-mode-create").click();
@@ -26,11 +49,27 @@ export async function createEventFromLobby(page: Page): Promise<string> {
   await page.getByLabel(/Equipos/).fill(String(SARA_EVENT.teamCount));
   await page.getByLabel(/Duración/).selectOption(SARA_EVENT.durationMin);
 
-  await page.getByTestId("escape-event-create-submit").click();
-  await page.getByTestId("escape-join-code-display").waitFor({ timeout: 60_000 });
-  const code = await page.getByTestId("escape-join-code-display").innerText();
-  expect(code).toMatch(/^[A-Z0-9]{6}$/);
-  return code.trim();
+  if (opts?.hybridPlayMode === "mobile_only") {
+    await page.getByTestId("escape-hybrid-play-mode").selectOption("mobile_only");
+  }
+
+  const created = await submitCreateEvent(page);
+  expect(created.joinCode).toMatch(/^[A-Z0-9]{6}$/);
+  return created.joinCode;
+}
+
+export async function createMysteryEventFromLobby(page: Page): Promise<CreatedEvent> {
+  await page.goto("/");
+  await page.getByTestId("escape-lobby-home").waitFor();
+  await page.getByTestId("escape-mode-create").click();
+  await page.getByText("Misterio", { exact: true }).click();
+  await page.getByLabel(/Nombre central/).fill(SARA_EVENT.subjectName);
+  await page.getByLabel(/Apodo/).fill(SARA_EVENT.nickname);
+  await page.getByLabel(/Datos jugables/).fill("Sospechoso en el muelle\nHora 23:00\nLlave perdida");
+  await page.getByLabel(/Título del evento/).fill("Caso E2E");
+  await page.getByLabel(/Equipos/).fill("2");
+  await page.getByLabel(/Duración/).selectOption("45");
+  return submitCreateEvent(page);
 }
 
 export async function joinEventAsTeam(

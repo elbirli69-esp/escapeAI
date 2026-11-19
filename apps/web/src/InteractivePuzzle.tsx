@@ -5,7 +5,9 @@ import Webcam from "react-webcam";
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 import { LocationStation } from "./LocationStation";
 import { PermissionGate } from "./PermissionGate";
+import { HybridStationSteps, puzzleUsesHybridSteps } from "./HybridStationHints";
 import { PuzzleInstructionCard } from "./PuzzleInstructionCard";
+import { WhodunitPanel } from "./WhodunitPanel";
 import { fetchFalImage, fetchPexelsImage } from "./api";
 
 type ActionSender = (
@@ -28,20 +30,66 @@ export function InteractivePuzzle(props: {
   onAnswerChange: (v: string) => void;
   busy: boolean;
   onAction: ActionSender;
+  /** Objetos en inventario del jugador (estación híbrida acto 2). */
+  inventoryItemIds?: string[];
+  clueNoteIds?: string[];
 }) {
   const { puzzle } = props;
 
-  if (puzzle.puzzleType === "code" || puzzle.puzzleType === "inventory") {
+  if (puzzle.puzzleType === "deduction") {
     return (
       <div className="interactive-puzzle">
         <PuzzleInstructionCard puzzle={puzzle} />
-        <ClassicPuzzleForm
+        <WhodunitPanel
           puzzle={puzzle}
-          answer={props.answer}
+          clueIds={props.clueNoteIds ?? []}
           busy={props.busy}
-          onAnswerChange={props.onAnswerChange}
-          onAction={props.onAction}
+          onAccuse={(suspectId) =>
+            props.onAction({
+              type: "submit_answer",
+              puzzleId: puzzle.id,
+              value: suspectId,
+            })
+          }
         />
+      </div>
+    );
+  }
+
+  if (puzzle.puzzleType === "code" || puzzle.puzzleType === "inventory") {
+    const hybrid = puzzleUsesHybridSteps(puzzle.interactionHints);
+    const inventoryReady =
+      puzzle.puzzleType === "inventory"
+        ? Boolean(props.inventoryItemIds?.includes("token"))
+        : true;
+    return (
+      <div className="interactive-puzzle">
+        <PuzzleInstructionCard puzzle={puzzle} />
+        {hybrid ? (
+          <HybridStationSteps
+            puzzle={puzzle}
+            salaDone={inventoryReady}
+            inventoryHasRequiredItem={inventoryReady}
+          >
+            <ClassicPuzzleForm
+              puzzle={puzzle}
+              answer={props.answer}
+              busy={props.busy}
+              onAnswerChange={props.onAnswerChange}
+              onAction={props.onAction}
+              submitDisabled={!inventoryReady}
+              hideHints
+            />
+          </HybridStationSteps>
+        ) : (
+          <ClassicPuzzleForm
+            puzzle={puzzle}
+            answer={props.answer}
+            busy={props.busy}
+            onAnswerChange={props.onAnswerChange}
+            onAction={props.onAction}
+          />
+        )}
       </div>
     );
   }
@@ -56,7 +104,12 @@ export function InteractivePuzzle(props: {
         <VisualStation puzzle={puzzle} busy={props.busy} onAction={props.onAction} />
       )}
       {puzzle.puzzleType === "camera" && (
-        <CameraStation puzzle={puzzle} busy={props.busy} onAction={props.onAction} />
+        <CameraStation
+          puzzle={puzzle}
+          busy={props.busy}
+          onAction={props.onAction}
+          inventoryItemIds={props.inventoryItemIds}
+        />
       )}
       {puzzle.puzzleType === "voice" && (
         <VoiceStation
@@ -99,8 +152,11 @@ function canSubmitAnswer(puzzle: PublicPuzzle): boolean {
       return puzzle.completedSteps.includes("listen");
     case "voice":
       return puzzle.completedSteps.includes("speak");
-    case "camera":
+    case "camera": {
+      const hybrid = puzzleUsesHybridSteps(puzzle.interactionHints);
+      if (hybrid && !puzzle.completedSteps.includes("room_ready")) return false;
       return puzzle.completedSteps.includes("capture");
+    }
     case "visual":
       return puzzle.completedSteps.includes("view");
     case "location":
@@ -118,6 +174,7 @@ function ClassicPuzzleForm(props: {
   onAction: ActionSender;
   submitDisabled?: boolean;
   answerPlaceholder?: string;
+  hideHints?: boolean;
 }) {
   const { puzzle } = props;
   const showPrompt =
@@ -547,7 +604,11 @@ function CameraStation(props: {
   puzzle: PublicPuzzle;
   busy: boolean;
   onAction: ActionSender;
+  inventoryItemIds?: string[];
 }) {
+  const hybrid = puzzleUsesHybridSteps(props.puzzle.interactionHints);
+  const roomReady = props.puzzle.completedSteps.includes("room_ready");
+  const salaDone = !hybrid || roomReady;
   const webcamRef = useRef<Webcam>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [cameraErr, setCameraErr] = useState<string | null>(null);
@@ -648,12 +709,8 @@ function CameraStation(props: {
     };
   }, []);
 
-  return (
-    <InteractionPanel
-      title="Cámara · entorno real"
-      done={captured}
-      data-testid="escape-camera-station"
-    >
+  const cameraBody = (
+    <>
       <p className="muted">{props.puzzle.cameraPrompt}</p>
       {cameraErr && <p className="error sm">{cameraErr}</p>}
       {!preview ? (
@@ -724,8 +781,37 @@ function CameraStation(props: {
           )}
         </>
       )}
+    </>
+  );
+
+  const panel = (
+    <InteractionPanel
+      title="Cámara · entorno real"
+      done={captured}
+      data-testid="escape-camera-station"
+    >
+      {hybrid ? (
+        <HybridStationSteps
+          puzzle={props.puzzle}
+          salaDone={salaDone}
+          salaBusy={props.busy}
+          onConfirmSala={() =>
+            props.onAction({
+              type: "complete_interaction",
+              puzzleId: props.puzzle.id,
+              step: "room_ready",
+            })
+          }
+        >
+          {cameraBody}
+        </HybridStationSteps>
+      ) : (
+        cameraBody
+      )}
     </InteractionPanel>
   );
+
+  return panel;
 }
 
 function VoiceStation(props: {

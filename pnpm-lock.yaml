@@ -138,6 +138,10 @@ importers:
         version: 2.1.9(@types/node@22.20.5)(terser@5.51.2)
 
   e2e:
+    dependencies:
+      '@escapeai/escape-content':
+        specifier: workspace:*
+        version: link:../packages/escape-content
     devDependencies:
       '@escapeai/escape-content':
         specifier: workspace:*
