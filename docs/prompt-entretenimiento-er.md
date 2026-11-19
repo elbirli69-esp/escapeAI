@@ -244,7 +244,8 @@ Arquitectura: `apps/api/src/flavor/` + tests de validación.
 
 ### P6 — Ideas desde catálogo online (ERL, #YoEscapoEnCasa)
 
-Estudio completo: `docs/estudio-erl-online-gratis.md` (45 títulos indexados en la guía ERL).
+Estudio completo: `docs/estudio-erl-online-gratis.md` (45 títulos indexados en la guía ERL).  
+**Plan de adopción (fases, PRs, criterios):** `docs/plan-adopcion-tecnicas-erl.md`.
 
 - [ ] **P6-A — Whodunit generado:** pantalla/tablas de sospechosos + código final desde clues (Firulais, *Justicia criminal*, *Investigando Covid*).
 - [ ] **P6-B — Roles asimétricos:** dos (o N) paneles de pista complementaria en el mismo evento (*La cura del virus*, *Suero Javinski*).
