@@ -45,6 +45,7 @@ import {
 import { recordGmIntervention, recordGmLlmAttempt } from "./metrics.js";
 import { validateIntervention } from "./validation.js";
 import { GM_DIRECTOR_FAQ_COOLDOWN_MS, GM_DIRECTOR_FAQ_MAX } from "./director-faq.js";
+import { filterOrchestrationTriggers } from "./orchestration.js";
 import { sortTriggersByPriority } from "./trigger-priority.js";
 
 const MAX_LLM_PER_SESSION = Number(process.env.GM_MAX_LLM_CALLS ?? 40);
@@ -123,13 +124,15 @@ export class GameMasterService {
   ): Promise<NarrativeIntervention[]> {
     if (triggers.length === 0) return [];
 
+    const coalesced = filterOrchestrationTriggers(triggers, session);
+
     const created: NarrativeIntervention[] = [];
     const existing = await this.store.list(session.sessionId);
     let meta = await this.store.loadMeta(session.sessionId);
     const forbidden = collectForbiddenAnswerTokens(session);
     const pacing = computeGmPacing(session);
 
-    for (const trigger of sortTriggersByPriority(triggers)) {
+    for (const trigger of sortTriggersByPriority(coalesced)) {
       const failNudge =
         trigger.type === "PUZZLE_FAILED" && isPuzzleFailNudgeEligible(session, trigger, meta);
       if (trigger.type === "PUZZLE_FAILED" && TRIGGER_POLICY.PUZZLE_FAILED === "silent" && !failNudge) {

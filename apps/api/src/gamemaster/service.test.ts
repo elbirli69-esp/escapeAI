@@ -85,6 +85,7 @@ describe("GameMasterService", () => {
     });
     expect(result.events.some((e) => e.type === "puzzle_solved")).toBe(true);
     expect(created.some((i) => i.meta.provider === "static")).toBe(true);
+    expect(created.some((i) => String(i.meta.trigger).startsWith("TEAM_STUCK"))).toBe(false);
   });
 });
 
