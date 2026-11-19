@@ -13,7 +13,14 @@ export const SARA_EVENT = {
   yearLockAnswer: "1995",
 };
 
-export async function createEventFromLobby(page: Page): Promise<string> {
+export type CreateEventLobbyOpts = {
+  hybridPlayMode?: "room" | "mobile_only";
+};
+
+export async function createEventFromLobby(
+  page: Page,
+  opts?: CreateEventLobbyOpts,
+): Promise<string> {
   await page.goto("/");
   await page.getByTestId("escape-lobby-home").waitFor();
   await page.getByTestId("escape-mode-create").click();
@@ -25,6 +32,10 @@ export async function createEventFromLobby(page: Page): Promise<string> {
   await page.getByLabel(/Título del evento/).fill(SARA_EVENT.eventTitle);
   await page.getByLabel(/Equipos/).fill(String(SARA_EVENT.teamCount));
   await page.getByLabel(/Duración/).selectOption(SARA_EVENT.durationMin);
+
+  if (opts?.hybridPlayMode === "mobile_only") {
+    await page.getByTestId("escape-hybrid-play-mode").selectOption("mobile_only");
+  }
 
   await page.getByTestId("escape-event-create-submit").click();
   await page.getByTestId("escape-join-code-display").waitFor({ timeout: 60_000 });

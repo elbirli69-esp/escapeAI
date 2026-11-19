@@ -276,8 +276,9 @@ Cualquier PR bajo este prompt debería declarar cómo valida:
 2. Si toca motor: esquema en `room-definition.ts` + tests `applyAction` + migración gradual en YAML.
 3. Si toca generador: fixture fijo en `generate-adventure.test.ts` + playtest mental del clue ledger.
 4. Si toca GM: solo datos en `GmViewContext`; nunca mutar sesión desde LLM.
-5. Manual: grabar **2 min** de partida (lobby → victoria) o walkthrough según [walkthrough-artifacts skill] si hay UI.
-6. No regresar coherencia: `pnpm audit-coherence` verde.
+5. **Prueba funcional obligatoria:** además de `pnpm test` en paquetes afectados, añadir o extender un spec en `e2e/specs/` que recorra la UI/API del cambio (`pnpm test:e2e` verde). Sin spec nuevo si el flujo ya está cubierto por otro e2e documentado en el PR.
+6. Manual (UI visible): grabar **2 min** o walkthrough según skill walkthrough-artifacts cuando el cambio sea principalmente UX.
+7. No regresar coherencia: `pnpm audit-coherence` verde.
 
 ---
 
