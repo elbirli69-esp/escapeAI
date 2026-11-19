@@ -29,9 +29,12 @@ export type GmSessionMeta = {
   bonusHintGrantedPuzzleIds: string[];
   /** Empujón GM tras 2º fallo en puzzle (catálogo, una vez por puzzle). */
   catalogFailNudgePuzzleIds: string[];
+  /** Preguntas al director (chips FAQ, GM-6). */
+  directorFaqCount: number;
+  directorFaqLastMsById: Record<string, number>;
 };
 
-const defaultMeta = (): GmSessionMeta => ({
+export const defaultGmSessionMeta = (): GmSessionMeta => ({
   sequence: 0,
   dedupeKeys: [],
   llmCallCount: 0,
@@ -46,6 +49,8 @@ const defaultMeta = (): GmSessionMeta => ({
   aheadFlavorIssued: false,
   bonusHintGrantedPuzzleIds: [],
   catalogFailNudgePuzzleIds: [],
+  directorFaqCount: 0,
+  directorFaqLastMsById: {},
 });
 
 export interface GmInterventionStore {
@@ -91,7 +96,7 @@ export class MemoryGmInterventionStore implements GmInterventionStore {
   }
 
   async loadMeta(sessionId: string): Promise<GmSessionMeta> {
-    return { ...(this.meta.get(sessionId) ?? defaultMeta()) };
+    return { ...(this.meta.get(sessionId) ?? defaultGmSessionMeta()) };
   }
 
   async saveMeta(sessionId: string, meta: GmSessionMeta): Promise<void> {
@@ -103,7 +108,7 @@ export class MemoryGmInterventionStore implements GmInterventionStore {
   async tryDedupe(sessionId: string, key: string): Promise<boolean> {
     let accepted = false;
     await this.withLock(sessionId, async () => {
-      const m = this.meta.get(sessionId) ?? defaultMeta();
+      const m = this.meta.get(sessionId) ?? defaultGmSessionMeta();
       if (m.dedupeKeys.includes(key)) {
         accepted = false;
         return;
@@ -118,7 +123,7 @@ export class MemoryGmInterventionStore implements GmInterventionStore {
   async bumpSequence(sessionId: string): Promise<number> {
     let seq = 0;
     await this.withLock(sessionId, async () => {
-      const m = this.meta.get(sessionId) ?? defaultMeta();
+      const m = this.meta.get(sessionId) ?? defaultGmSessionMeta();
       seq = m.sequence + 1;
       m.sequence = seq;
       this.meta.set(sessionId, m);
@@ -166,15 +171,15 @@ class RedisGmInterventionStore implements GmInterventionStore {
 
   async loadMeta(sessionId: string): Promise<GmSessionMeta> {
     const raw = await this.redis.get<string | GmSessionMeta>(this.metaKey(sessionId));
-    if (!raw) return defaultMeta();
+    if (!raw) return defaultGmSessionMeta();
     if (typeof raw === "string") {
       try {
-        return { ...defaultMeta(), ...JSON.parse(raw) };
+        return { ...defaultGmSessionMeta(), ...JSON.parse(raw) };
       } catch {
-        return defaultMeta();
+        return defaultGmSessionMeta();
       }
     }
-    return { ...defaultMeta(), ...raw };
+    return { ...defaultGmSessionMeta(), ...raw };
   }
 
   async saveMeta(sessionId: string, meta: GmSessionMeta): Promise<void> {

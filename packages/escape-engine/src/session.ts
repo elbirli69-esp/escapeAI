@@ -2,12 +2,14 @@ import { randomUUID } from "node:crypto";
 import type {
   AiContext,
   ApplyResult,
+  DirectorFaqId,
   GameAction,
   GameEvent,
   InteractionStep,
   PublicState,
   VoiceMatchMode,
 } from "@escapeai/shared";
+import { DIRECTOR_FAQ_IDS } from "@escapeai/shared";
 import { matchPlayerAnswer, sanitizePlayerUtterance, validatePlayerAtTarget } from "@escapeai/shared";
 import type { PlayerContext } from "./player-context.js";
 import {
@@ -200,6 +202,14 @@ export function applyAction(
         return { ok: false, error: talk.error, state: toPublicState(session, nowMs), events };
       }
       events.push(talk.event!);
+      break;
+    }
+    case "director_faq": {
+      const faq = directorFaq(session, action.faqId);
+      if (faq.error) {
+        return { ok: false, error: faq.error, state: toPublicState(session, nowMs), events };
+      }
+      events.push(faq.event!);
       break;
     }
   }
@@ -576,6 +586,19 @@ function requireInteractionSteps(session: SessionRecord, puzzle: RoomPuzzle): st
     }
   }
   return undefined;
+}
+
+function directorFaq(
+  session: SessionRecord,
+  faqId: DirectorFaqId,
+): { event?: GameEvent; error?: string } {
+  if (session.status !== "playing") {
+    return { error: "La partida ya ha terminado." };
+  }
+  if (!DIRECTOR_FAQ_IDS.includes(faqId)) {
+    return { error: "Pregunta no reconocida." };
+  }
+  return { event: { type: "director_faq", faqId } };
 }
 
 function talkToCharacter(

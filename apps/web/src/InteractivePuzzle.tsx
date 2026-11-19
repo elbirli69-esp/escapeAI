@@ -167,6 +167,7 @@ function ClassicPuzzleForm(props: {
       <button
         type="button"
         className="ghost"
+        data-testid="escape-request-hint"
         disabled={props.busy}
         onClick={() => props.onAction({ type: "request_hint", puzzleId: puzzle.id })}
       >

@@ -21,6 +21,8 @@ import {
 } from "./event-session.js";
 import { isGeneratedEventSession } from "@escapeai/escape-engine";
 import { computeGmPacing } from "./pacing.js";
+import { directorFaqStaticCopy } from "./director-faq.js";
+import type { DirectorFaqId } from "@escapeai/shared";
 
 const STATIC_META: NarrativeInterventionMeta = { provider: "static", fallback: true };
 
@@ -222,6 +224,14 @@ export function staticInterventionText(
           : `«${label}» resiste. Buscad otro ángulo antes de insistir.`;
       return {
         text,
+        kind: "notification",
+        meta: STATIC_META,
+      };
+    }
+    case "DIRECTOR_FAQ": {
+      const faqId = String(trigger.payload?.faqId ?? "stuck_no_spoiler") as DirectorFaqId;
+      return {
+        text: directorFaqStaticCopy(session, faqId),
         kind: "notification",
         meta: STATIC_META,
       };

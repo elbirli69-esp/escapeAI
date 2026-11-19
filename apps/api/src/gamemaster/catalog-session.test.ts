@@ -3,26 +3,10 @@ import { loadRoomById } from "@escapeai/escape-content";
 import { applyAction, createSession, getExitAvailability } from "@escapeai/escape-engine";
 import { MemoryGmInterventionStore, GameMasterService } from "./index.js";
 import { isCatalogFailNudgeEligible, markCatalogFailNudged } from "./catalog-session.js";
-import type { GmSessionMeta } from "./persistence.js";
+import { defaultGmSessionMeta, type GmSessionMeta } from "./persistence.js";
 
 function metaBase(overrides: Partial<GmSessionMeta> = {}): GmSessionMeta {
-  return {
-    sequence: 0,
-    dedupeKeys: [],
-    llmCallCount: 0,
-    lastLlmCallMs: 0,
-    visitedSceneIds: [],
-    lastProgressMs: 0,
-    stuckNotifiedPuzzleIds: [],
-    characterTurnCount: 0,
-    lastCharacterTurnMs: 0,
-    paceNudgeIssued: false,
-    stuckAmbientIssuedPuzzleIds: [],
-    aheadFlavorIssued: false,
-    bonusHintGrantedPuzzleIds: [],
-    catalogFailNudgePuzzleIds: [],
-    ...overrides,
-  };
+  return { ...defaultGmSessionMeta(), ...overrides };
 }
 
 describe("catalog GameMaster assist", () => {
