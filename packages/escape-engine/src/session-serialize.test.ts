@@ -25,4 +25,19 @@ describe("serializeSession", () => {
     expect([...restored.solvedPuzzles]).toEqual([...session.solvedPuzzles]);
     expect(toPublicState(restored).narrative).toEqual(toPublicState(session).narrative);
   });
+
+  it("conserva puzzleHintsUsed tras round-trip (Caso L)", () => {
+    const room = parseRoomDefinition(pilotYaml);
+    const session = createSession(room);
+    const hinted = applyAction(session, { type: "request_hint", puzzleId: "lockbox" });
+    expect(hinted.ok).toBe(true);
+    expect(session.puzzleHintsUsed.get("lockbox")).toBe(1);
+
+    const restored = deserializeSession(serializeSession(session));
+    expect(restored.puzzleHintsUsed.get("lockbox")).toBe(1);
+
+    const second = applyAction(restored, { type: "request_hint", puzzleId: "lockbox" });
+    expect(second.ok).toBe(true);
+    expect(restored.puzzleHintsUsed.get("lockbox")).toBe(2);
+  });
 });
