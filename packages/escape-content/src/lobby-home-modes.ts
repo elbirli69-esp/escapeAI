@@ -1,4 +1,4 @@
-export type LobbyHomeModeId = "scan" | "create" | "join" | "organizer" | "catalog";
+export type LobbyHomeModeId = "demo" | "scan" | "create" | "join" | "organizer" | "catalog";
 
 export type LobbyHomeModeInfo = {
   mode: LobbyHomeModeId;
@@ -13,6 +13,15 @@ export type LobbyHomeModeInfo = {
 /** Tarjetas del lobby inicial; Pexels sustituye portada en API si hay PEXELS_API_KEY. */
 export function listLobbyHomeModes(): LobbyHomeModeInfo[] {
   return [
+    {
+      mode: "demo",
+      title: "Prueba gratis · 15 min",
+      description: "Michelón de recuerdos — 1 o 2 jugadores, sin código ni registro",
+      imageAlt: "Mesa con vajilla, ambiente cálido de mesón",
+      coverImage: "/media/lighthouse-dock.jpg",
+      pexelsQuery: "cozy dinner table kitchen warm light",
+      pexelsPage: 1,
+    },
     {
       mode: "scan",
       title: "Escanear espacio",

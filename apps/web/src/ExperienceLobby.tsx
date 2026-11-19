@@ -42,6 +42,8 @@ const ScannerFlow = lazy(() =>
 
 type LobbyMode = "home" | "create" | "join" | "organizer" | "catalog" | "scan";
 
+const PUBLIC_DEMO_ROOM_ID = "demo-michelon";
+
 const HOME_MODES: Array<{
   mode: HomeModeId;
   title: string;
@@ -49,6 +51,13 @@ const HOME_MODES: Array<{
   image: string;
   imageAlt: string;
 }> = [
+  {
+    mode: "demo",
+    title: "Prueba gratis · 15 min",
+    description: "Michelón de recuerdos — 1 o 2 jugadores, sin código ni registro",
+    image: "/media/lighthouse-dock.jpg",
+    imageAlt: "Mesa con vajilla, ambiente cálido de mesón",
+  },
   {
     mode: "scan",
     title: "Escanear espacio",
@@ -111,8 +120,11 @@ export function ExperienceLobby(props: {
   pendingResumeRoomId?: string | null;
   onContinuePendingSession?: () => void;
   onAbandonPendingSession?: () => void;
+  onQuickDemoStart?: () => void;
+  initialLobbyMode?: LobbyMode | null;
+  onLobbyIntentConsumed?: () => void;
 }) {
-  const [mode, setMode] = useState<LobbyMode>("home");
+  const [mode, setMode] = useState<LobbyMode>(props.initialLobbyMode ?? "home");
   const [adventureType, setAdventureType] = useState<AdventureType>("celebration");
   const [teamCount, setTeamCount] = useState(4);
   const [durationMin, setDurationMin] = useState<EventDurationMin>(45);
@@ -139,6 +151,12 @@ export function ExperienceLobby(props: {
     setMode("join");
     stripJoinParamFromUrl();
   }, []);
+
+  useEffect(() => {
+    if (!props.initialLobbyMode) return;
+    setMode(props.initialLobbyMode);
+    props.onLobbyIntentConsumed?.();
+  }, [props.initialLobbyMode, props.onLobbyIntentConsumed]);
 
   useEffect(() => {
     if (mode === "organizer" && organizerBoardCode) return;
@@ -320,24 +338,31 @@ export function ExperienceLobby(props: {
                 className={homeModeAccentClass(card.mode)}
                 ariaLabel={`${card.title}: ${card.description}`}
                 data-testid={
-                  card.mode === "catalog"
-                    ? "escape-mode-catalog"
-                    : card.mode === "create"
-                      ? "escape-mode-create"
-                      : card.mode === "scan"
-                        ? "escape-mode-scan"
-                        : card.mode === "join"
-                        ? "escape-mode-join"
-                        : card.mode === "organizer"
-                          ? "escape-mode-organizer"
-                          : undefined
+                  card.mode === "demo"
+                    ? "escape-mode-demo"
+                    : card.mode === "catalog"
+                      ? "escape-mode-catalog"
+                      : card.mode === "create"
+                        ? "escape-mode-create"
+                        : card.mode === "scan"
+                          ? "escape-mode-scan"
+                          : card.mode === "join"
+                            ? "escape-mode-join"
+                            : card.mode === "organizer"
+                              ? "escape-mode-organizer"
+                              : undefined
                 }
                 onClick={() => {
+                  if (card.mode === "demo") {
+                    props.onSelectRoom(PUBLIC_DEMO_ROOM_ID);
+                    props.onQuickDemoStart?.();
+                    return;
+                  }
                   if (card.mode === "organizer") {
-                  setOrganizerBoardCode(null);
-                  setOrganizerDraft("");
-                  setFormError(null);
-                }
+                    setOrganizerBoardCode(null);
+                    setOrganizerDraft("");
+                    setFormError(null);
+                  }
                   setMode(card.mode);
                 }}
               />
@@ -770,6 +795,7 @@ export function ExperienceLobby(props: {
       <ul className="room-grid room-grid-visual">
         {props.rooms.map((room) => {
           const metaParts = [
+            room.isPublicDemo ? "Demo gratis" : null,
             roomThemeLabel(room.theme),
             formatRoomDuration(room.timeLimitSec),
             room.sceneCount != null ? `${room.sceneCount} escenas` : null,

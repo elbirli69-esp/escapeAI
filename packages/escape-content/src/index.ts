@@ -3,11 +3,12 @@ import { fileURLToPath } from "node:url";
 import { loadRoomFromFile, type RoomDefinition } from "@escapeai/escape-engine";
 import { generateAdventureRoom, listAdventureTemplates } from "./generate-adventure.js";
 import { applyCatalogDailyVariant } from "./daily-variant.js";
-import { ROOM_CATALOG, ROOM_FILES, type RoomId } from "./rooms.js";
+import { PUBLIC_DEMO_ROOM_ID, ROOM_CATALOG, ROOM_FILES, type RoomId } from "./rooms.js";
 
-const roomsDir = join(dirname(fileURLToPath(import.meta.url)), "rooms");
+const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+const roomsDir = join(packageRoot, "rooms");
 
-export { ROOM_CATALOG, ROOM_FILES, type RoomId };
+export { PUBLIC_DEMO_ROOM_ID, ROOM_CATALOG, ROOM_FILES, type RoomId };
 export {
   listLobbyHomeModes,
   type LobbyHomeModeId,
