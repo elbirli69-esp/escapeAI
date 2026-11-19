@@ -8,19 +8,20 @@ Referencia: [gm-dialogo-er-plan.md](./gm-dialogo-er-plan.md) §10.3. Estado tras
 | B | `clue-ledger.test.ts`, `hint-levels.test.ts` | PASS |
 | C | `e2e/specs/gm-dialogo-matrix.spec.ts` | PASS |
 | D | `e2e/specs/gm-dialogo-matrix.spec.ts` | PASS |
-| E | manual LLM off / copy estable | MANUAL |
+| E | `gm-dialogo-case-e.spec.ts`, `characters.test.ts` (LLM off) | PASS |
 | F | `experience-metrics.spec.ts` | PASS |
 | G | `orchestration.test.ts` | PASS |
 | H | `orchestration.test.ts`, `service.test.ts` | PASS |
 | I | `orchestration.test.ts` | PASS |
 | J | `hint-levels.test.ts` | PASS |
 | K | `e2e/specs/gm-dialogo-matrix.spec.ts` | PASS |
-| L | `gamemaster-reload.spec.ts` | PARCIAL (GM; hints en reload opcional) |
+| L | `gamemaster-reload.spec.ts`, `session-serialize.test.ts` | PASS |
 
 ## E2E dedicados
 
 - `director-faq.spec.ts` — FAQ director (Fase E)
 - `gm-dialogo-case-a.spec.ts` — atasco candado sin pista (A)
+- `gm-dialogo-case-e.spec.ts` — hipótesis falsa al conserje (E)
 - `gm-dialogo-matrix.spec.ts` — NPC límites (C, D, K)
 - `partidas-reales-runner.spec.ts` — GM + director en partidas sintéticas
 

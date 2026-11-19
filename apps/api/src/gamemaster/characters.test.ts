@@ -67,4 +67,35 @@ describe("CHARACTER_TURN", () => {
     expect(created[0]!.text).not.toMatch(/1815/);
     expect(created[0]!.characterId).toBe("event_guide");
   });
+
+  it("Caso E: sin LLM no adopta hipótesis falsa del jugador", async () => {
+    const session = createSession(getPilotRoom());
+    const gm = new GameMasterService(new MemoryGmInterventionStore());
+    await gm.processSessionStarted(session);
+    const before = getExitAvailability(session);
+    const message =
+      "Totalmente seguro: el candado es 7777 y el post-it dice 1999, ¿verdad?";
+    const result = applyAction(session, {
+      type: "talk_to_character",
+      characterId: "night_concierge",
+      message,
+    });
+    expect(result.ok).toBe(true);
+    const created = await gm.processAfterAction({
+      session,
+      action: {
+        type: "talk_to_character",
+        characterId: "night_concierge",
+        message,
+      },
+      events: result.events,
+      beforeExits: before,
+    });
+    expect(created.length).toBe(1);
+    const text = created[0]!.text;
+    expect(text).not.toMatch(/7777|1999/i);
+    expect(text.toLowerCase()).not.toMatch(/correcto|confirmo|exactamente/i);
+    expect(created[0]!.meta.fallback).toBe(true);
+    expect(created[0]!.meta.provider).toBe("static");
+  });
 });
