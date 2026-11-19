@@ -3,6 +3,7 @@ import type { AdventureType, CreateEventRequest, EventSubject } from "@escapeai/
 import { durationMinToSec, resolveDurationMin } from "@escapeai/shared";
 import type { RoomBeat, RoomDefinition } from "@escapeai/escape-engine";
 import { buildProceduralSoundIntro } from "./sound-digit-clues.js";
+import { applyMysteryWhodunit } from "./whodunit.js";
 
 type AdventureVisual = {
   cover: string;
@@ -157,7 +158,7 @@ export function generateAdventureRoom(
     factSnippet: factA,
   });
 
-  return {
+  const room: RoomDefinition = {
     id: `generated-${eventId.slice(0, 8)}`,
     name: title,
     tagline: introTone.tagline,
@@ -397,6 +398,9 @@ export function generateAdventureRoom(
       },
     },
   };
+
+  applyMysteryWhodunit(room, input, eventId);
+  return room;
 }
 
 function defaultTitle(type: AdventureType, subject: EventSubject): string {

@@ -167,6 +167,18 @@ function runGeneratedWinPath(room: RoomDefinition): { ok: boolean; step?: string
   if (!applyAction(session, { type: "submit_answer", puzzleId: "visual_gallery", value: p.visual_gallery!.answer! }).ok) {
     return { ok: false, step: "visual_gallery" };
   }
+
+  if (p.case_accusation) {
+    const acc = applyAction(session, {
+      type: "submit_answer",
+      puzzleId: "case_accusation",
+      value: p.case_accusation.answer!,
+    });
+    if (!acc.ok) return { ok: false, step: "case_accusation" };
+    if (acc.state.status !== "won") return { ok: false, step: "won status" };
+    return { ok: true };
+  }
+
   const final = applyAction(session, {
     type: "submit_answer",
     puzzleId: "final_code",

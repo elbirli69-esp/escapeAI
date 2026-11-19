@@ -93,7 +93,20 @@ export type PublicPuzzleType =
   | "voice"
   | "camera"
   | "visual"
-  | "location";
+  | "location"
+  | "deduction";
+
+export type PublicDeductionTrait = {
+  id: string;
+  label: string;
+  clearingClueId: string;
+};
+
+export type PublicDeductionSuspect = {
+  id: string;
+  name: string;
+  traits: PublicDeductionTrait[];
+};
 
 export type PublicItem = {
   id: string;
@@ -156,6 +169,7 @@ export type PublicPuzzle = {
   maxAccuracyMeters?: number;
   waypointLabel?: string;
   quizPrompt?: string;
+  deductionSuspects?: PublicDeductionSuspect[];
 };
 
 export type PublicExit = {

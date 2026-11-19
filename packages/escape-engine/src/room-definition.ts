@@ -11,7 +11,26 @@ export type PuzzleType =
   | "voice"
   | "camera"
   | "visual"
-  | "location";
+  | "location"
+  | "deduction";
+
+export type DeductionTrait = {
+  id: string;
+  label: string;
+  clearingClueId: string;
+};
+
+export type DeductionSuspect = {
+  id: string;
+  name: string;
+  traits: DeductionTrait[];
+};
+
+export type RoomPuzzleDeduction = {
+  suspects: DeductionSuspect[];
+  /** Todas deben estar en el cuaderno antes de acusar. */
+  requiredClueIds?: string[];
+};
 
 export type RoomPuzzle = {
   id: string;
@@ -68,6 +87,8 @@ export type RoomPuzzle = {
   quizPrompt?: string;
   /** Tras resolver: anota una pista jugable en el diario (sin exponer answers al cliente vía API dedicada). */
   onSolve?: { grantClue?: { id: string; text: string } };
+  /** P6-A whodunit: acusación a un sospechoso (`answer` = id del culpable). */
+  deduction?: RoomPuzzleDeduction;
 };
 
 export type RoomBeatAfter = "session_started" | "puzzle_solved" | "scene_entered";

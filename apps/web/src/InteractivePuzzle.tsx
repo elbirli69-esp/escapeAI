@@ -7,6 +7,7 @@ import { LocationStation } from "./LocationStation";
 import { PermissionGate } from "./PermissionGate";
 import { HybridStationSteps, puzzleUsesHybridSteps } from "./HybridStationHints";
 import { PuzzleInstructionCard } from "./PuzzleInstructionCard";
+import { WhodunitPanel } from "./WhodunitPanel";
 import { fetchFalImage, fetchPexelsImage } from "./api";
 
 type ActionSender = (
@@ -31,8 +32,29 @@ export function InteractivePuzzle(props: {
   onAction: ActionSender;
   /** Objetos en inventario del jugador (estación híbrida acto 2). */
   inventoryItemIds?: string[];
+  clueNoteIds?: string[];
 }) {
   const { puzzle } = props;
+
+  if (puzzle.puzzleType === "deduction") {
+    return (
+      <div className="interactive-puzzle">
+        <PuzzleInstructionCard puzzle={puzzle} />
+        <WhodunitPanel
+          puzzle={puzzle}
+          clueIds={props.clueNoteIds ?? []}
+          busy={props.busy}
+          onAccuse={(suspectId) =>
+            props.onAction({
+              type: "submit_answer",
+              puzzleId: puzzle.id,
+              value: suspectId,
+            })
+          }
+        />
+      </div>
+    );
+  }
 
   if (puzzle.puzzleType === "code" || puzzle.puzzleType === "inventory") {
     const hybrid = puzzleUsesHybridSteps(puzzle.interactionHints);

@@ -41,6 +41,7 @@ const HARDWARE_BY_TYPE: Record<PuzzleType, string[]> = {
   camera: ["Cámara trasera"],
   visual: ["Pantalla (imagen remota o generada)"],
   location: ["GPS / sensores de posición"],
+  deduction: ["Pantalla táctil / ratón (acusación)"],
 };
 
 const INTERACTION_BY_TYPE: Partial<Record<PuzzleType, string>> = {
