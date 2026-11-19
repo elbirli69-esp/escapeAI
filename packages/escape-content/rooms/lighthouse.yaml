@@ -52,6 +52,7 @@ scenes:
       veces seguidas cuando la marea trepa. En el poste una placa oxidadísima
       advierte: «Solo con la marea alta se abre el almacén» — la aguja en HIGH.
     puzzles: [fog_horn, tide_lock]
+    characters: [dock_keeper]
     exits:
       - toSceneId: supply
         label: Entrar al almacén
@@ -99,6 +100,26 @@ scenes:
       de grabarlo en el panel maestro.
     puzzles: [keeper_hail, beacon_sequence]
     exits: []
+characters:
+  dock_keeper:
+    id: dock_keeper
+    displayName: Guardián del muelle
+    voiceTone: Brusco marino; no dicta códigos.
+    backstoryPublic: Vigila la marea desde hace años; conoce rumores del faro.
+    greeting: "La noche está fea. Preguntad lo que queráis, pero el candado no sale de mi boca."
+    spokenReplies: true
+    voiceLocale: es-ES
+    authorizedKnowledge:
+      - La placa del poste habla de marea alta en inglés, no de números.
+      - La sirena suena en parejas; conviene escuchar antes de mirar cerraduras.
+      - El almacén solo abre cuando la compuerta reconoce la marea.
+    forbiddenTopics:
+      - HIGH
+      - código del almacén
+      - dígitos exactos
+    fallbackLines:
+      - Mirad la placa y el diario; yo no repito contraseñas.
+      - Si la niebla aprieta, pedid pista oficial al reto activo.
 puzzles:
   fog_horn:
     id: fog_horn

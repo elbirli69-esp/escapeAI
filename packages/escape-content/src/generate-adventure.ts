@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { AdventureType, CreateEventRequest, EventSubject } from "@escapeai/shared";
 import { durationMinToSec, resolveDurationMin } from "@escapeai/shared";
-import type { RoomBeat, RoomDefinition } from "@escapeai/escape-engine";
+import type { RoomBeat, RoomCharacter, RoomDefinition } from "@escapeai/escape-engine";
 import { buildProceduralSoundIntro } from "./sound-digit-clues.js";
 
 type AdventureVisual = {
@@ -154,6 +154,8 @@ export function generateAdventureRoom(
     factSnippet: factA,
   });
 
+  const characters = buildGeneratedCharacters(input.adventureType, nickname, factA, factB);
+
   return {
     id: `generated-${eventId.slice(0, 8)}`,
     name: title,
@@ -164,6 +166,7 @@ export function generateAdventureRoom(
     startSceneId: "start",
     winCondition: { type: "puzzle_solved", puzzleId: "final_code" },
     beats: buildGeneratedBeats(introTone, nickname, input.adventureType),
+    characters,
     items: {
       token: {
         name: `Recuerdo de ${nickname}`,
@@ -178,6 +181,7 @@ export function generateAdventureRoom(
         mood: introTone.mood1,
         description: `${introTone.scene1Body} ${factA}`,
         puzzles: ["sound_intro", "entry_lock"],
+        characters: [EVENT_GUIDE_ID],
         exits: [
           {
             toSceneId: "middle",
@@ -408,6 +412,97 @@ function pickLetterCode(fullName: string): string {
   }
   const n = fullName.replace(/\s+/g, "").toUpperCase();
   return n.slice(0, 4).padEnd(4, "X");
+}
+
+const EVENT_GUIDE_ID = "event_guide";
+
+function buildGeneratedCharacters(
+  adventureType: AdventureType,
+  nickname: string,
+  factA: string,
+  factB: string,
+): Record<string, RoomCharacter> {
+  const forbiddenTopics = [
+    "código exacto del candado",
+    "cuatro cifras completas",
+    "respuesta del puzzle final",
+    "dígitos del candado",
+  ];
+
+  const pack: Record<
+    AdventureType,
+    {
+      displayName: string;
+      voiceTone: string;
+      greeting: string;
+      knowledge: string[];
+      fallbacks: string[];
+    }
+  > = {
+    mystery: {
+      displayName: "Informante del muelle",
+      voiceTone: "Voz baja, costera; nunca da códigos.",
+      greeting: "La niebla trae rumores, no contraseñas. ¿Qué necesitáis?",
+      knowledge: [
+        `El misterio vincula a ${nickname} con hechos recogidos en el evento.`,
+        factA,
+        "El mensaje sonoro del acto inicial solo entrega un prefijo de dos cifras.",
+        "Anotad en el diario antes de forzar el candado de cuatro dígitos.",
+      ],
+      fallbacks: ["Yo escucho olas, no guardo números.", "Revisad el audio y el cuaderno."],
+    },
+    birthday: {
+      displayName: `Anfitrión de ${nickname}`,
+      voiceTone: "Cálido y bromista; sin spoilers.",
+      greeting: `¡Bienvenidos al homenaje de ${nickname}! Preguntad con calma.`,
+      knowledge: [
+        `Celebramos a ${nickname}; los datos del grupo inspiran los retos.`,
+        factA,
+        factB,
+        "El sonido de bienvenida es pista, no la solución entera del candado.",
+      ],
+      fallbacks: ["Disfrutad la sala; yo no resuelvo acertijos por vosotros.", "Mirad objetos y diario."],
+    },
+    celebration: {
+      displayName: "Maestro de ceremonias",
+      voiceTone: "Festivo; orienta sin resolver.",
+      greeting: "¿Quién trae energía al grupo? Yo traigo contexto, no códigos.",
+      knowledge: [
+        `La fiesta gira en torno a ${nickname} y a los datos que compartisteis.`,
+        factA,
+        "El prefijo del audio enlaza con el año o cifra simbólica del evento.",
+      ],
+      fallbacks: ["Brindis sí, contraseñas no.", "Explorad la escena con calma."],
+    },
+    team: {
+      displayName: "Árbitro del reto",
+      voiceTone: "Directo, competitivo; fair play.",
+      greeting: "Equipos listos: preguntad, pero juego limpio con las pistas oficiales.",
+      knowledge: [
+        `Reto por equipos centrado en ${nickname}.`,
+        factA,
+        "El ranking premia ritmo: una pista mal pedida cuesta tiempo.",
+        factB,
+      ],
+      fallbacks: ["Usad «Pedir pista» en cada panel; yo no doy dígitos.", "Seguid el flujo sonido → candado → token."],
+    },
+  };
+
+  const tone = pack[adventureType];
+  return {
+    [EVENT_GUIDE_ID]: {
+      id: EVENT_GUIDE_ID,
+      displayName: tone.displayName,
+      voiceTone: tone.voiceTone,
+      backstoryPublic: `Personaje del evento generado; conoce contexto social, no soluciones del motor.`,
+      greeting: tone.greeting,
+      spokenReplies: true,
+      voiceLocale: "es-ES",
+      authorizedKnowledge: tone.knowledge,
+      forbiddenTopics,
+      fallbackLines: tone.fallbacks,
+    },
+  };
 }
 
 function sanitizeFact(fact: string | undefined, name: string): string {

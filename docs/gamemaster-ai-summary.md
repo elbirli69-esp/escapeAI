@@ -24,6 +24,7 @@ El **Escape Engine** es la fuente de verdad del juego. GameMasterAI **observa** 
 | **GM-5** | #44 | Ritmo adaptativo, `PACE_NUDGE`, política LLM → [gm5](./gamemaster-ai-gm5.md) |
 | **GM-6** | — | FAQ director (chips), `director_faq`, prioridad triggers → [gm6](./gamemaster-ai-gm6.md) |
 | **GM-7** | — | Clue ledger `clueHistory`, linter N3 → [gm7](./gamemaster-ai-gm7.md) |
+| **GM-8** | — | NPC `event_guide` en eventos + lighthouse → [gm8](./gamemaster-ai-gm8.md) |
 
 ## Triggers principales
 

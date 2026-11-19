@@ -328,6 +328,16 @@ test.describe("partidas reales (prompt §6)", () => {
     await submitAnswer(page, "1815");
     evidencePush(evidence, "solve", "candado 1815", "entry_lock");
 
+    await expect(page.getByTestId("escape-character-chat")).toBeVisible();
+    const gmLinesBeforeNpc = await page.getByTestId("escape-gm-line").count();
+    await page.getByTestId("escape-character-input").fill("¿Qué sabes del caso?");
+    await page.getByTestId("escape-character-chat").getByRole("button", { name: "Enviar" }).click();
+    await expect(page.getByTestId("escape-narrative-log")).toContainText(/Informante del muelle/i);
+    await expect
+      .poll(async () => page.getByTestId("escape-gm-line").count(), { timeout: 15_000 })
+      .toBeGreaterThan(gmLinesBeforeNpc);
+    evidencePush(evidence, "npc", "charla event_guide acto 1");
+
     appendPartidasRealesRun({
       executionMode: "real_session_partial",
       gameKind: "event",
