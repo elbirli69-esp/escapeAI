@@ -72,6 +72,10 @@ Los contadores son **por instancia de proceso** (serverless: no agregan entre r�
 
 - **Pilot:** conserje `night_concierge` (escena `entrance`), pistas YAML, voz opcional.
 
+## Producto — plan de diálogo ER
+
+Plan maestro (GM-6+): [gm-dialogo-er-plan.md](./gm-dialogo-er-plan.md).
+
 ## Pendiente / fuera del roadmap GM-0
 
 - Personajes en salas generadas automáticamente.
