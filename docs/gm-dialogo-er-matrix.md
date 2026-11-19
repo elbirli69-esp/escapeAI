@@ -4,7 +4,7 @@ Referencia: [gm-dialogo-er-plan.md](./gm-dialogo-er-plan.md) §10.3. Estado tras
 
 | Caso | Automatización | Estado |
 | ---- | -------------- | ------ |
-| A | `partidas-reales-runner` (pilot novatos) | PARCIAL |
+| A | `gm-dialogo-case-a.spec.ts`, `partidas-reales-runner` (novatos) | PASS |
 | B | `clue-ledger.test.ts`, `hint-levels.test.ts` | PASS |
 | C | `e2e/specs/gm-dialogo-matrix.spec.ts` | PASS |
 | D | `e2e/specs/gm-dialogo-matrix.spec.ts` | PASS |
@@ -20,6 +20,7 @@ Referencia: [gm-dialogo-er-plan.md](./gm-dialogo-er-plan.md) §10.3. Estado tras
 ## E2E dedicados
 
 - `director-faq.spec.ts` — FAQ director (Fase E)
+- `gm-dialogo-case-a.spec.ts` — atasco candado sin pista (A)
 - `gm-dialogo-matrix.spec.ts` — NPC límites (C, D, K)
 - `partidas-reales-runner.spec.ts` — GM + director en partidas sintéticas
 
