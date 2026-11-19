@@ -1,15 +1,17 @@
 import type {
   AdventureTemplateInfo,
   AdventureType,
+  CreateEventRequest,
   EventPreview,
   JoinEventResponse,
   PublicState,
 } from "@escapeai/shared";
 import { useMutation } from "@tanstack/react-query";
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { EventDurationMin } from "@escapeai/shared";
 import {
   createCustomEvent,
+  fetchEventLeaderboard,
   type LobbyHomeCard,
   joinEventAsTeam,
   startEventSession,
@@ -18,8 +20,22 @@ import {
 import { EventJoinQr } from "./EventJoinQr";
 import { EventOrganizerBoard } from "./EventOrganizerBoard";
 import { AdventureTemplateCard } from "./AdventureTemplateCard";
+import { LobbyHomeSkeleton } from "./LobbyHomeSkeleton";
+import { LobbyShell } from "./LobbyShell";
 import { formatRoomDuration, VisualCard } from "./VisualCard";
 import { readJoinCodeFromLocation, stripJoinParamFromUrl } from "./lib/event-join-url";
+import { isJoinCodeValid, normalizeJoinCodeInput } from "./lib/join-code";
+import { homeModeAccentClass, type HomeModeId } from "./lib/home-mode-accent";
+import { roomThemeLabel } from "./lib/room-theme-label";
+import { CreateEventLoadingPanel } from "./CreateEventLoadingPanel";
+import { mapCreateEventClientError } from "./lib/create-event-loading";
+import { useElapsedMsWhile } from "./lib/useElapsedMsWhile";
+import {
+  clampTeamCount,
+  parsePlayableFacts,
+  validateCreateEventClient,
+} from "./lib/validate-create-event";
+import { scrollToLobbySection } from "./lib/scroll-to-lobby-section";
 const ScannerFlow = lazy(() =>
   import("./scanner/ScannerFlow").then((m) => ({ default: m.ScannerFlow })),
 );
@@ -27,7 +43,7 @@ const ScannerFlow = lazy(() =>
 type LobbyMode = "home" | "create" | "join" | "organizer" | "catalog" | "scan";
 
 const HOME_MODES: Array<{
-  mode: LobbyMode;
+  mode: HomeModeId;
   title: string;
   description: string;
   image: string;
@@ -36,21 +52,21 @@ const HOME_MODES: Array<{
   {
     mode: "scan",
     title: "Escanear espacio",
-    description: "ScannerAI: inventario local sin subir fotos",
+    description: "Escanea la habitación y arma pistas sin subir fotos",
     image: "/media/pilot-basement.jpg",
     imageAlt: "Habitación con objetos para escanear",
   },
   {
     mode: "create",
     title: "Crear experiencia",
-    description: "Tipo, nombre central, datos → código para invitar",
+    description: "Diseña la fiesta y recibe un código para invitar",
     image: "/media/pilot-control.jpg",
     imageAlt: "Panel de control iluminado, ambiente de misterio urbano",
   },
   {
     mode: "join",
     title: "Entrar como equipo",
-    description: "Código del organizador + nombre del equipo",
+    description: "Introduce el código del organizador y el nombre de tu equipo",
     image: "/media/pilot-entrance.jpg",
     imageAlt: "Entrada de edificio con luces de neón",
   },
@@ -64,7 +80,7 @@ const HOME_MODES: Array<{
   {
     mode: "catalog",
     title: "Catálogo clásico",
-    description: "Pilot, Faro y demás salas YAML",
+    description: "Conserje, faro y salas de demostración",
     image: "/media/lighthouse-cover.jpg",
     imageAlt: "Faro en la costa, tormenta inminente",
   },
@@ -76,6 +92,7 @@ function themeClass(theme?: string): string {
 
 export function ExperienceLobby(props: {
   homeCards?: LobbyHomeCard[];
+  homeCardsLoading?: boolean;
   homeCardsError?: boolean;
   adventureTemplates?: AdventureTemplateInfo[];
   adventureTemplatesLoading?: boolean;
@@ -109,6 +126,8 @@ export function ExperienceLobby(props: {
   const [joinCode, setJoinCode] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  const [createErrorRetryable, setCreateErrorRetryable] = useState(false);
+  const lastCreatePayload = useRef<CreateEventRequest | null>(null);
   /** Código activo del panel organizador (solo tras enviar el formulario). */
   const [organizerBoardCode, setOrganizerBoardCode] = useState<string | null>(null);
   const [organizerDraft, setOrganizerDraft] = useState("");
@@ -121,6 +140,33 @@ export function ExperienceLobby(props: {
     stripJoinParamFromUrl();
   }, []);
 
+  useEffect(() => {
+    if (mode === "organizer" && organizerBoardCode) return;
+    const scrollByMode: Partial<
+      Record<LobbyMode, { id: string; focusSelector?: string } | undefined>
+    > = {
+      create: { id: "escape-wizard-create" },
+      join: { id: "escape-join-wizard", focusSelector: "input" },
+      organizer: { id: "escape-organizer-wizard", focusSelector: "input" },
+      catalog: { id: "escape-catalog-actions" },
+    };
+    const target = scrollByMode[mode];
+    if (!target) return;
+    const timer = window.setTimeout(() => {
+      scrollToLobbySection(target.id, { focusSelector: target.focusSelector });
+    }, 80);
+    return () => window.clearTimeout(timer);
+  }, [mode, organizerBoardCode]);
+
+  function selectAdventureTemplate(id: AdventureType) {
+    setAdventureType(id);
+    window.setTimeout(() => {
+      scrollToLobbySection("escape-wizard-create-fields", {
+        focusSelector: "input, select, textarea",
+      });
+    }, 80);
+  }
+
   const homeImageByMode = useMemo(() => {
     const map = new Map<string, string>();
     for (const card of props.homeCards ?? []) {
@@ -130,13 +176,21 @@ export function ExperienceLobby(props: {
   }, [props.homeCards]);
 
   const createMutation = useMutation({
-    mutationFn: createCustomEvent,
+    mutationFn: (body: CreateEventRequest) => createCustomEvent(body),
+    retry: false,
     onSuccess: (preview) => {
       setCreated(preview);
       setFormError(null);
+      setCreateErrorRetryable(false);
     },
-    onError: (e: Error) => setFormError(e.message),
+    onError: (e: Error) => {
+      const mapped = mapCreateEventClientError(e);
+      setFormError(mapped.message);
+      setCreateErrorRetryable(mapped.retryable);
+    },
   });
+
+  const createElapsedMs = useElapsedMsWhile(createMutation.isPending);
 
   const joinMutation = useMutation({
     mutationFn: async (): Promise<JoinEventResponse> => joinEventAsTeam(joinCode, displayName),
@@ -161,7 +215,35 @@ export function ExperienceLobby(props: {
     onError: (e: Error) => setFormError(e.message),
   });
 
+  const organizerVerifyMutation = useMutation({
+    mutationFn: (code: string) => fetchEventLeaderboard(code),
+    onSuccess: (_, code) => {
+      setFormError(null);
+      setOrganizerBoardCode(code);
+    },
+    onError: () =>
+      setFormError("No encontramos ese código. Pídelo a quien creó el evento o crea uno nuevo."),
+  });
+
   const templates = props.adventureTemplates ?? [];
+  const joinCodeValue = joinCode || created?.joinCode || "";
+  const joinCodeReady = isJoinCodeValid(joinCodeValue);
+  const teamNameReady = displayName.trim().length >= 2;
+  const canSubmitJoin = joinCodeReady && teamNameReady;
+
+  const createDraftError = useMemo(
+    () =>
+      validateCreateEventClient({
+        adventureType,
+        teamCount,
+        durationMin,
+        subjectName,
+        facts,
+      }),
+    [adventureType, teamCount, durationMin, subjectName, facts],
+  );
+  const canSubmitCreate = createDraftError === undefined;
+  const factLines = useMemo(() => parsePlayableFacts(facts), [facts]);
 
   function applyTemplate(t: AdventureTemplateInfo) {
     setAdventureType(t.id);
@@ -179,8 +261,10 @@ export function ExperienceLobby(props: {
   }
 
   if (mode === "home") {
+    const showHomeSkeleton =
+      props.homeCardsLoading && !props.homeCardsError && (props.homeCards?.length ?? 0) === 0;
     return (
-      <main className="shell lobby" data-testid="escape-lobby-home">
+      <LobbyShell mode="home" testId="escape-lobby-home">
         <header className="lobby-hero">
           <p className="eyebrow">escapeAI</p>
           <h1 className="display">Tu escape, a tu medida</h1>
@@ -220,40 +304,47 @@ export function ExperienceLobby(props: {
             </div>
           </section>
         )}
-        <div className="mode-grid mode-grid-visual">
-          {HOME_MODES.map((card) => (
-            <VisualCard
-              key={card.mode}
-              title={card.title}
-              description={card.description}
-              imageSrc={props.homeCardsError ? card.image : homeImageByMode.get(card.mode)}
-              imageAlt={card.imageAlt}
-              imagePriority
-              layout="stack"
-              data-testid={
-                card.mode === "catalog"
-                  ? "escape-mode-catalog"
-                  : card.mode === "create"
-                    ? "escape-mode-create"
-                    : card.mode === "scan"
-                      ? "escape-mode-scan"
-                      : card.mode === "join"
-                      ? "escape-mode-join"
-                      : card.mode === "organizer"
-                        ? "escape-mode-organizer"
-                        : undefined
-              }
-              onClick={() => {
-                if (card.mode === "organizer") {
+        {showHomeSkeleton ? (
+          <LobbyHomeSkeleton />
+        ) : (
+          <div className="mode-grid mode-grid-visual">
+            {HOME_MODES.map((card) => (
+              <VisualCard
+                key={card.mode}
+                title={card.title}
+                description={card.description}
+                imageSrc={props.homeCardsError ? card.image : homeImageByMode.get(card.mode)}
+                imageAlt={card.imageAlt}
+                imagePriority
+                layout="stack"
+                className={homeModeAccentClass(card.mode)}
+                ariaLabel={`${card.title}: ${card.description}`}
+                data-testid={
+                  card.mode === "catalog"
+                    ? "escape-mode-catalog"
+                    : card.mode === "create"
+                      ? "escape-mode-create"
+                      : card.mode === "scan"
+                        ? "escape-mode-scan"
+                        : card.mode === "join"
+                        ? "escape-mode-join"
+                        : card.mode === "organizer"
+                          ? "escape-mode-organizer"
+                          : undefined
+                }
+                onClick={() => {
+                  if (card.mode === "organizer") {
                   setOrganizerBoardCode(null);
                   setOrganizerDraft("");
+                  setFormError(null);
                 }
-                setMode(card.mode);
-              }}
-            />
-          ))}
-        </div>
-      </main>
+                  setMode(card.mode);
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </LobbyShell>
     );
   }
 
@@ -261,27 +352,58 @@ export function ExperienceLobby(props: {
 
   if (mode === "create") {
     return (
-      <main className={`shell lobby ${themeClass(selectedTemplate?.theme)}`}>
-        <button type="button" className="ghost sm back-link" onClick={() => setMode("home")}>
+      <LobbyShell mode="create" className={themeClass(selectedTemplate?.theme)}>
+        <button
+          type="button"
+          className="ghost sm back-link"
+          onClick={() => {
+            if (createMutation.isPending) createMutation.reset();
+            setMode("home");
+          }}
+        >
           ← Volver
         </button>
         <header className="lobby-hero">
           <p className="eyebrow">Evento a medida</p>
           <h1 className="display">Configurar aventura</h1>
-          <p className="lede muted">Elige el tono visual; los datos del grupo se convierten en pistas.</p>
+          <p className="lede muted">
+            Toca una plantilla y completa los datos del formulario debajo para generar tu código.
+          </p>
         </header>
-        {formError && <p className="error">{formError}</p>}
+        {formError && (
+          <div className="create-error-banner" role="alert">
+            <p className="error">{formError}</p>
+            {createErrorRetryable && lastCreatePayload.current && !createMutation.isPending && (
+              <button
+                type="button"
+                className="ghost sm"
+                data-testid="escape-event-create-retry"
+                onClick={() => {
+                  setFormError(null);
+                  createMutation.mutate(lastCreatePayload.current!);
+                }}
+              >
+                Reintentar
+              </button>
+            )}
+          </div>
+        )}
 
         {!created ? (
           <form
-            className="wizard wizard-wide"
+            id="escape-wizard-create"
+            className={`wizard wizard-wide wizard-create lobby-form-anchor${createMutation.isPending ? " is-busy" : ""}`}
+            aria-busy={createMutation.isPending}
             onSubmit={(e) => {
               e.preventDefault();
-              const factLines = facts
-                .split("\n")
-                .map((l) => l.trim())
-                .filter(Boolean);
-              createMutation.mutate({
+              if (!canSubmitCreate) {
+                setFormError(createDraftError ?? "Revisa el formulario.");
+                setCreateErrorRetryable(false);
+                return;
+              }
+              setFormError(null);
+              setCreateErrorRetryable(false);
+              const payload: CreateEventRequest = {
                 adventureType,
                 teamCount,
                 durationMin,
@@ -293,9 +415,13 @@ export function ExperienceLobby(props: {
                 },
                 facts: factLines,
                 eventTitle: eventTitle.trim() || undefined,
-              });
+              };
+              lastCreatePayload.current = payload;
+              createMutation.mutate(payload);
             }}
           >
+            {createMutation.isPending && <CreateEventLoadingPanel elapsedMs={createElapsedMs} />}
+            <div className="wizard-create-body">
             <fieldset className="template-picker">
               <legend className="picker-legend">Tipo de aventura</legend>
               {props.adventureTemplatesLoading ? (
@@ -307,7 +433,7 @@ export function ExperienceLobby(props: {
                       <AdventureTemplateCard
                         template={t}
                         active={adventureType === t.id}
-                        onSelect={() => setAdventureType(t.id)}
+                        onSelect={() => selectAdventureTemplate(t.id)}
                       />
                     </li>
                   ))}
@@ -315,14 +441,23 @@ export function ExperienceLobby(props: {
               )}
             </fieldset>
             {selectedTemplate && (
-              <p className="template-detail muted">
-                {selectedTemplate.description}{" "}
+              <details className="template-detail-collapsible">
+                <summary>{selectedTemplate.tagline ?? "Más sobre esta plantilla"}</summary>
+                <p className="muted">{selectedTemplate.description}</p>
                 <button type="button" className="ghost sm" onClick={() => applyTemplate(selectedTemplate)}>
                   Usar datos sugeridos
                 </button>
-              </p>
+              </details>
             )}
 
+            <section
+              id="escape-wizard-create-fields"
+              className="wizard-create-fields lobby-form-anchor"
+              aria-labelledby="escape-wizard-create-fields-title"
+            >
+              <p id="escape-wizard-create-fields-title" className="eyebrow wizard-step-label">
+                Datos de tu evento
+              </p>
             <label>
               Equipos en competición (2–5)
               <input
@@ -330,7 +465,7 @@ export function ExperienceLobby(props: {
                 min={2}
                 max={5}
                 value={teamCount}
-                onChange={(e) => setTeamCount(Number(e.target.value))}
+                onChange={(e) => setTeamCount(clampTeamCount(Number(e.target.value)))}
               />
             </label>
             <label>
@@ -357,8 +492,19 @@ export function ExperienceLobby(props: {
             </label>
             <label>
               Nombre central (persona, pareja o nombre del evento)
-              <input value={subjectName} onChange={(e) => setSubjectName(e.target.value)} required />
+              <input
+                value={subjectName}
+                onChange={(e) => setSubjectName(e.target.value)}
+                placeholder="Ej: Laura y Miguel"
+                aria-invalid={subjectName.length > 0 && subjectName.trim().length < 2}
+                required
+              />
             </label>
+            {subjectName.length > 0 && subjectName.trim().length < 2 && (
+              <p className="field-hint error sm" role="alert">
+                El nombre central necesita al menos 2 caracteres.
+              </p>
+            )}
             <label>
               Apodo o forma corta (opcional)
               <input value={nickname} onChange={(e) => setNickname(e.target.value)} />
@@ -369,30 +515,55 @@ export function ExperienceLobby(props: {
             </label>
             <label>
               Datos jugables (fechas, lugares, frases — uno por línea)
-              <textarea rows={4} value={facts} onChange={(e) => setFacts(e.target.value)} required />
+              <textarea
+                rows={4}
+                value={facts}
+                onChange={(e) => setFacts(e.target.value)}
+                placeholder={"Ej: Nos conocimos en 2018\nFrase: «¡A por el récord!»"}
+                aria-invalid={facts.length > 0 && factLines.length < 1}
+                required
+              />
             </label>
+            {facts.length > 0 && factLines.length < 1 && (
+              <p className="field-hint error sm" role="alert">
+                Escribe al menos una línea con contenido (sin espacios vacíos).
+              </p>
+            )}
             <label>
               Título del evento (opcional)
-              <input value={eventTitle} onChange={(e) => setEventTitle(e.target.value)} />
+              <input
+                value={eventTitle}
+                onChange={(e) => setEventTitle(e.target.value)}
+                placeholder="Ej: Misterio de cumpleaños"
+              />
             </label>
-            <button
-              type="submit"
-              className="primary wide"
-              data-testid="escape-event-create-submit"
-              disabled={createMutation.isPending}
-            >
-              {createMutation.isPending ? "Generando sala…" : "Generar y obtener código"}
-            </button>
+            </section>
+            </div>
+            <div className="wizard-create-dock">
+              <button
+                type="submit"
+                className="primary wide"
+                data-testid="escape-event-create-submit"
+                disabled={!canSubmitCreate || createMutation.isPending}
+                aria-describedby={createMutation.isPending ? "escape-event-create-loading" : undefined}
+              >
+                {createMutation.isPending ? "Generando…" : "Generar y obtener código"}
+              </button>
+            </div>
           </form>
         ) : (
           <>
-            <div className={`event-poster join-card-poster ${themeClass(created.theme)}`}>
+            <div
+              className={`event-poster join-card-poster poster-cartel ${themeClass(created.theme)}`}
+            >
               {created.coverImage && (
                 <img src={created.coverImage} alt="" className="event-poster-bg" loading="eager" />
               )}
               <div className="event-poster-scrim" aria-hidden />
               <div className="event-poster-body">
-                <p className="eyebrow">Código para compartir</p>
+                <p className="eyebrow poster-eyebrow">
+                  {selectedTemplate?.tagline ?? "Tu escape está listo"}
+                </p>
                 <div className="event-poster-invite">
                   <div className="event-poster-invite-copy">
                     <p className="join-code poster-code" data-testid="escape-join-code-display">
@@ -433,7 +604,7 @@ export function ExperienceLobby(props: {
             </div>
           </>
         )}
-      </main>
+      </LobbyShell>
     );
   }
 
@@ -442,18 +613,29 @@ export function ExperienceLobby(props: {
     return (
       <>
         {!code ? (
-          <main className="shell lobby">
+          <LobbyShell mode="organizer">
             <button type="button" className="ghost sm back-link" onClick={() => setMode("home")}>
               ← Volver
             </button>
-            <h1 className="display">Panel organizador</h1>
+            <header className="lobby-hero">
+              <p className="eyebrow">Modo proyección</p>
+              <h1 className="display">Panel organizador</h1>
+              <p className="lede muted">Ranking en vivo para TV o proyector. Un código por evento.</p>
+            </header>
+            {formError && mode === "organizer" && !code && (
+              <p className="error" role="alert">
+                {formError}
+              </p>
+            )}
             <form
-              className="wizard"
+              id="escape-organizer-wizard"
+              className="wizard lobby-form-anchor"
               onSubmit={(e) => {
                 e.preventDefault();
-                const next = organizerDraft.trim().toUpperCase();
-                if (!next) return;
-                setOrganizerBoardCode(next);
+                const next = normalizeJoinCodeInput(organizerDraft);
+                if (!isJoinCodeValid(next)) return;
+                setFormError(null);
+                organizerVerifyMutation.mutate(next);
               }}
             >
               <label>
@@ -461,15 +643,24 @@ export function ExperienceLobby(props: {
                 <input
                   data-testid="escape-organizer-code-input"
                   value={organizerDraft}
-                  onChange={(e) => setOrganizerDraft(e.target.value.toUpperCase())}
+                  onChange={(e) => setOrganizerDraft(normalizeJoinCodeInput(e.target.value))}
+                  placeholder="Ej: X7K2M9"
+                  maxLength={6}
+                  autoCapitalize="characters"
+                  spellCheck={false}
                   required
                 />
               </label>
-              <button type="submit" className="primary wide" data-testid="escape-organizer-open">
-                Ver ranking
+              <button
+                type="submit"
+                className="primary wide"
+                data-testid="escape-organizer-open"
+                disabled={!isJoinCodeValid(organizerDraft) || organizerVerifyMutation.isPending}
+              >
+                {organizerVerifyMutation.isPending ? "Comprobando código…" : "Ver ranking"}
               </button>
             </form>
-          </main>
+          </LobbyShell>
         ) : (
           <EventOrganizerBoard
             joinCode={code}
@@ -486,14 +677,15 @@ export function ExperienceLobby(props: {
 
   if (mode === "join") {
     return (
-      <main className="shell lobby">
+      <LobbyShell mode="join">
         <button type="button" className="ghost sm back-link" onClick={() => setMode("home")}>
           ← Volver
         </button>
         <h1 className="display">Unirse como equipo</h1>
         {formError && <p className="error">{formError}</p>}
         <form
-          className="wizard"
+          id="escape-join-wizard"
+          className="wizard lobby-form-anchor"
           onSubmit={(e) => {
             e.preventDefault();
             setFormError(null);
@@ -506,25 +698,47 @@ export function ExperienceLobby(props: {
             Código del evento
             <input
               data-testid="escape-join-code-input"
-              value={joinCode || created?.joinCode || ""}
-              onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-              placeholder="ABCDEF"
+              value={joinCodeValue}
+              onChange={(e) => setJoinCode(normalizeJoinCodeInput(e.target.value))}
+              placeholder="Ej: X7K2M9"
+              inputMode="text"
+              autoComplete="off"
+              autoCapitalize="characters"
+              spellCheck={false}
+              maxLength={6}
+              aria-invalid={joinCodeValue.length > 0 && !joinCodeReady}
               required
             />
           </label>
+          {joinCodeValue.length > 0 && !joinCodeReady && (
+            <p className="field-hint error sm" role="alert">
+              El código tiene 6 caracteres (letras A–F y números).
+            </p>
+          )}
           <label>
             Nombre del equipo
-            <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
+            <input
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Ej: Los detectives"
+              minLength={2}
+              required
+            />
           </label>
+          {displayName.length > 0 && !teamNameReady && (
+            <p className="field-hint error sm" role="alert">
+              El nombre del equipo necesita al menos 2 caracteres.
+            </p>
+          )}
           <button
             type="submit"
             className="primary wide"
-            disabled={joinMutation.isPending || startMutation.isPending}
+            disabled={!canSubmitJoin || joinMutation.isPending || startMutation.isPending}
           >
             {joinMutation.isPending || startMutation.isPending ? "Entrando…" : "Empezar partida del equipo"}
           </button>
         </form>
-      </main>
+      </LobbyShell>
     );
   }
 
@@ -532,7 +746,7 @@ export function ExperienceLobby(props: {
   const catalogTheme = themeClass(selectedRoom?.theme);
 
   return (
-    <main className={`shell lobby ${catalogTheme}`}>
+    <LobbyShell mode="catalog" className={catalogTheme}>
       <button type="button" className="ghost sm back-link" onClick={() => setMode("home")}>
         ← Volver
       </button>
@@ -545,13 +759,20 @@ export function ExperienceLobby(props: {
       </header>
       {props.classicError && <p className="error">{props.classicError}</p>}
       {props.roomsLoading ? (
-        <p className="muted">Cargando salas…</p>
+        <ul className="room-grid room-grid-visual" aria-busy="true" aria-label="Cargando salas">
+          {Array.from({ length: 4 }, (_, i) => (
+            <li key={i}>
+              <div className="lobby-card-skeleton lobby-card-skeleton-catalog" />
+            </li>
+          ))}
+        </ul>
       ) : (
       <ul className="room-grid room-grid-visual">
         {props.rooms.map((room) => {
           const metaParts = [
+            roomThemeLabel(room.theme),
             formatRoomDuration(room.timeLimitSec),
-            room.sceneCount != null ? `${room.sceneCount} esc.` : null,
+            room.sceneCount != null ? `${room.sceneCount} escenas` : null,
           ].filter(Boolean);
           return (
             <li key={room.id}>
@@ -560,27 +781,35 @@ export function ExperienceLobby(props: {
                 description={room.tagline ?? room.summary}
                 imageSrc={room.coverImage}
                 imageAlt={`Portada: ${room.title}`}
+                ariaLabel={`Sala ${room.title}: ${room.tagline ?? room.summary}. ${metaParts.join(", ")}`}
                 meta={metaParts.join(" · ")}
                 active={room.id === props.selectedRoomId}
                 layout="stack"
                 variant="compact"
                 data-testid={`escape-room-${room.id}`}
-                onClick={() => props.onSelectRoom(room.id)}
+                onClick={() => {
+                  props.onSelectRoom(room.id);
+                  window.setTimeout(() => {
+                    scrollToLobbySection("escape-catalog-actions", { focusSelector: "button" });
+                  }, 80);
+                }}
               />
             </li>
           );
         })}
       </ul>
       )}
-      <button
-        type="button"
-        className="primary wide"
-        data-testid="escape-start-classic"
-        disabled={props.roomsLoading || props.classicBusy}
-        onClick={props.onClassicStart}
-      >
-        {props.classicBusy ? "Preparando…" : "Empezar partida"}
-      </button>
-    </main>
+      <div id="escape-catalog-actions" className="catalog-start-block lobby-form-anchor">
+        <button
+          type="button"
+          className="primary wide"
+          data-testid="escape-start-classic"
+          disabled={props.roomsLoading || props.classicBusy}
+          onClick={props.onClassicStart}
+        >
+          {props.classicBusy ? "Preparando…" : "Empezar partida"}
+        </button>
+      </div>
+    </LobbyShell>
   );
 }

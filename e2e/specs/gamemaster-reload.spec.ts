@@ -1,6 +1,14 @@
 import { test, expect } from "@playwright/test";
 import { createEventFromLobby, joinEventAsTeam } from "../fixtures/events.js";
-import { clearGameStorage } from "../fixtures/game.js";
+import {
+  clearGameStorage,
+  completeSoundListen,
+  requestHint,
+  selectPuzzle,
+  startClassicRoom,
+  submitAnswer,
+} from "../fixtures/game.js";
+import { playPilotToWin } from "../fixtures/pilot-win.js";
 import { stubMediaRoutes } from "../fixtures/routes.js";
 
 test.describe("GameMaster PWA", () => {
@@ -25,15 +33,44 @@ test.describe("GameMaster PWA", () => {
     await expect(gmAfter).toContainText("Misterio de Sara");
   });
 
-  test("partida clásica muestra director sin API keys", async ({ page }) => {
+  test("partida clásica conserva GM y victoria tras recargar", async ({ page }) => {
     await stubMediaRoutes(page);
     await clearGameStorage(page);
-    await page.goto("/");
-    await page.getByTestId("escape-lobby-home").waitFor();
-    await page.getByTestId("escape-mode-catalog").click();
-    await page.getByTestId("escape-room-pilot").click();
-    await page.getByTestId("escape-start-classic").click();
-    await page.getByTestId(/escape-puzzle-tab-/).first().waitFor({ timeout: 30_000 });
+    await startClassicRoom(page, "pilot");
     await expect(page.getByTestId("escape-gm-line").first()).toBeVisible({ timeout: 15_000 });
+
+    await selectPuzzle(page, "intercom_tone");
+    await completeSoundListen(page);
+    await submitAnswer(page, "1");
+    await selectPuzzle(page, "lockbox");
+    await submitAnswer(page, "1984");
+
+    await page.reload();
+    await expect(page.getByTestId(/escape-puzzle-tab-/).first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("escape-gm-line").first()).toBeVisible({ timeout: 15_000 });
+
+    await playPilotToWin(page, { phase: "after-lockbox", withWrongLockbox: false });
+  });
+
+  test("Caso L: puzzleHintsUsed y nivel de pista tras recargar", async ({ page }) => {
+    await stubMediaRoutes(page);
+    await clearGameStorage(page);
+    await startClassicRoom(page, "pilot");
+    await selectPuzzle(page, "lockbox");
+
+    await requestHint(page);
+    await expect(page.getByTestId("escape-narrative-log")).toContainText(
+      /distópico muy citado en libros/i,
+    );
+    await expect(page.getByTestId("escape-request-hint")).toContainText("1/3");
+
+    await page.reload();
+    await expect(page.getByTestId(/escape-puzzle-tab-/).first()).toBeVisible({ timeout: 30_000 });
+    await selectPuzzle(page, "lockbox");
+    await expect(page.getByTestId("escape-request-hint")).toContainText("1/3");
+
+    await requestHint(page);
+    await expect(page.getByTestId("escape-narrative-log")).toContainText(/empieza por 19/i);
+    await expect(page.getByTestId("escape-request-hint")).toContainText("2/3");
   });
 });

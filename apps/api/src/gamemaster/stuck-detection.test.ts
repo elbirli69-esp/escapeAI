@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { generateAdventureRoom } from "@escapeai/escape-content";
 import { createSession, type PlayerContext } from "@escapeai/escape-engine";
-import type { GmSessionMeta } from "./persistence.js";
+import { defaultGmSessionMeta, type GmSessionMeta } from "./persistence.js";
 import {
   detectTeamStuckTrigger,
   markStuckNotified,
@@ -9,22 +9,7 @@ import {
 } from "./stuck-detection.js";
 
 function metaBase(overrides: Partial<GmSessionMeta> = {}): GmSessionMeta {
-  return {
-    sequence: 0,
-    dedupeKeys: [],
-    llmCallCount: 0,
-    lastLlmCallMs: 0,
-    visitedSceneIds: [],
-    lastProgressMs: 0,
-    stuckNotifiedPuzzleIds: [],
-    characterTurnCount: 0,
-    lastCharacterTurnMs: 0,
-    paceNudgeIssued: false,
-    stuckAmbientIssuedPuzzleIds: [],
-    aheadFlavorIssued: false,
-    bonusHintGrantedPuzzleIds: [],
-    ...overrides,
-  };
+  return { ...defaultGmSessionMeta(), ...overrides };
 }
 
 function loadRoom() {
@@ -76,7 +61,7 @@ describe("stuck-detection", () => {
   it("actualiza foco y progreso tras fallos", () => {
     const room = loadRoom();
     const session = createSession(room);
-    const base = metaBase();
+    const base = metaBase({ lastProgressMs: 0 });
     const next = updateProgressMeta(
       session,
       { type: "submit_answer", puzzleId: "entry_lock", value: "x" },
@@ -104,6 +89,22 @@ describe("stuck-detection", () => {
       3000,
     );
     expect(cleared.stuckNotifiedPuzzleIds).not.toContain("entry_lock");
+  });
+
+  it("catálogo: segundo TEAM_STUCK ambient tras primer aviso", async () => {
+    const { loadRoomById } = await import("@escapeai/escape-content");
+    const session = createSession(loadRoomById("pilot"));
+    const puzzleId = "lockbox";
+    session.puzzleAttempts.set(puzzleId, 7);
+
+    const meta = metaBase({
+      focusedPuzzleId: puzzleId,
+      lastProgressMs: 0,
+      stuckNotifiedPuzzleIds: [puzzleId],
+    });
+
+    const trigger = detectTeamStuckTrigger(session, meta, Date.now());
+    expect(trigger?.payload?.assistTier).toBe("ambient");
   });
 
   it("evento: segundo TEAM_STUCK ambient tras primer aviso", () => {

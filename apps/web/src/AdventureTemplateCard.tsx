@@ -15,6 +15,7 @@ export function AdventureTemplateCard(props: {
       description={template.tagline ?? template.description}
       imageSrc={cover}
       imageAlt={`Plantilla: ${template.title}`}
+      ariaLabel={`Plantilla ${template.title}: ${template.tagline ?? template.description}`}
       active={props.active}
       layout="stack"
       variant="compact"

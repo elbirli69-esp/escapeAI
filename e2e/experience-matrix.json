@@ -1,0 +1,162 @@
+{
+  "version": 1,
+  "rubric": {
+    "scaleMin": 0,
+    "scaleMax": 10,
+    "weights": {
+      "hook": 0.2,
+      "fun": 0.25,
+      "challenge": 0.2,
+      "variety": 0.15,
+      "flow": 0.1,
+      "closure": 0.1
+    },
+    "e2eFailCap": 4.0
+  },
+  "dimensions": [
+    {
+      "id": "hook",
+      "label": "Gancho",
+      "description": "Promesa, curiosidad inicial, tiempo hasta primer reto"
+    },
+    {
+      "id": "fun",
+      "label": "Diversión",
+      "description": "Ritmo, narrativa, sensación de juego"
+    },
+    {
+      "id": "challenge",
+      "label": "Reto",
+      "description": "Profundidad y fricción recuperable"
+    },
+    {
+      "id": "variety",
+      "label": "Variedad",
+      "description": "Mecánicas y escenas distintas"
+    },
+    {
+      "id": "flow",
+      "label": "Fluidez UX",
+      "description": "UI, errores, permisos"
+    },
+    {
+      "id": "closure",
+      "label": "Cierre",
+      "description": "Victoria y payoff narrativo"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "catalog-pilot",
+      "label": "La oficina del conserje (pilot)",
+      "mode": "catalog",
+      "roomId": "pilot",
+      "priority": "P0",
+      "weight": 1.25,
+      "e2eSpecs": ["specs/catalog-pilot-win.spec.ts", "specs/smoke.spec.ts"],
+      "params": {
+        "simulateWrongAttempts": 1,
+        "measureTimeToFirstPuzzle": true,
+        "captureGmLines": true
+      }
+    },
+    {
+      "id": "catalog-lighthouse",
+      "label": "El faro de Punta Norte",
+      "mode": "catalog",
+      "roomId": "lighthouse",
+      "priority": "P0",
+      "weight": 1.25,
+      "e2eSpecs": ["specs/catalog-lighthouse-win.spec.ts"],
+      "params": {
+        "simulateWrongAttempts": 1,
+        "measureTimeToFirstPuzzle": true
+      }
+    },
+    {
+      "id": "interactive-lab",
+      "label": "Laboratorio sensorial",
+      "mode": "catalog",
+      "roomId": "interactive-lab",
+      "priority": "P1",
+      "weight": 0.75,
+      "e2eSpecs": ["specs/interactive-lab-partial.spec.ts"],
+      "params": {
+        "mockCamera": true,
+        "simulateWrongAttempts": 1
+      },
+      "notes": "Diversión capada solo si no hay victoria E2E en métricas."
+    },
+    {
+      "id": "geo-lab",
+      "label": "Rally GPS (demo)",
+      "mode": "catalog",
+      "roomId": "geo-lab",
+      "priority": "P1",
+      "weight": 0.6,
+      "e2eSpecs": ["specs/geo-lab-mocked.spec.ts"],
+      "params": {
+        "mockGeo": true,
+        "simulateWrongAttempts": 1
+      }
+    },
+    {
+      "id": "event-generated",
+      "label": "Evento generado (MVP)",
+      "mode": "event",
+      "eventPreset": "SARA_EVENT",
+      "priority": "P0",
+      "weight": 1.1,
+      "e2eSpecs": [
+        "specs/events-mvp.spec.ts",
+        "specs/events-full-win.spec.ts",
+        "specs/organizer-panel.spec.ts"
+      ],
+      "params": {
+        "captureGmLines": true,
+        "simulateWrongAttempts": 1
+      }
+    },
+    {
+      "id": "session-resume",
+      "label": "Reanudar sesión",
+      "mode": "catalog",
+      "roomId": "pilot",
+      "priority": "P2",
+      "weight": 0.35,
+      "e2eSpecs": ["specs/resume-session-banner.spec.ts"],
+      "evaluateDimensions": ["flow"]
+    },
+    {
+      "id": "gm-dialogo-matrix",
+      "label": "GM diálogo ER (NPC límites)",
+      "mode": "catalog",
+      "roomId": "pilot",
+      "priority": "P1",
+      "weight": 0.55,
+      "e2eSpecs": [
+        "specs/gm-dialogo-case-a.spec.ts",
+        "specs/gm-dialogo-case-e.spec.ts",
+        "specs/gm-dialogo-matrix.spec.ts",
+        "specs/director-faq.spec.ts",
+        "specs/gamemaster-reload.spec.ts"
+      ],
+      "evaluateDimensions": ["fairplay", "flow", "fun"]
+    },
+    {
+      "id": "gamemaster-persistence",
+      "label": "GameMaster tras recarga",
+      "mode": "catalog",
+      "roomId": "pilot",
+      "priority": "P2",
+      "weight": 0.4,
+      "e2eSpecs": ["specs/gamemaster-reload.spec.ts"],
+      "evaluateDimensions": ["fun", "flow"]
+    }
+  ],
+  "adventureTypeVarietyAudit": {
+    "description": "Revisar diferenciación sin e2e completo por tipo",
+    "types": ["birthday", "celebration", "mystery", "team"],
+    "command": "pnpm audit-coherence"
+  }
+}

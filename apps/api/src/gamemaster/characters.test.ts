@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { getPilotRoom } from "@escapeai/escape-content";
+import { generateAdventureRoom, getPilotRoom } from "@escapeai/escape-content";
+import type { CreateEventRequest } from "@escapeai/shared";
 import { applyAction, createSession, getExitAvailability } from "@escapeai/escape-engine";
 import { MemoryGmInterventionStore, GameMasterService } from "./index.js";
 
@@ -30,5 +31,71 @@ describe("CHARACTER_TURN", () => {
     expect(created[0].characterId).toBe("night_concierge");
     expect(created[0].text.toLowerCase()).not.toContain("1984");
     expect(created[0].presentation).toBe("tts");
+  });
+
+  it("NPC en evento mystery generado sin revelar candado", async () => {
+    const room = generateAdventureRoom(
+      {
+        adventureType: "mystery",
+        teamCount: 2,
+        subject: { name: "Ada", nickname: "Ada" },
+        facts: ["Nació en 1815", "Le gustan los puzzles costeros"],
+        eventTitle: "Caso prueba",
+      } as CreateEventRequest,
+      "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    );
+    const session = createSession(room);
+    const gm = new GameMasterService(new MemoryGmInterventionStore());
+    const before = getExitAvailability(session);
+    const result = applyAction(session, {
+      type: "talk_to_character",
+      characterId: "event_guide",
+      message: "¿Cuál es el candado?",
+    });
+    expect(result.ok).toBe(true);
+    const created = await gm.processAfterAction({
+      session,
+      action: {
+        type: "talk_to_character",
+        characterId: "event_guide",
+        message: "¿Cuál es el candado?",
+      },
+      events: result.events,
+      beforeExits: before,
+    });
+    expect(created.length).toBe(1);
+    expect(created[0]!.text).not.toMatch(/1815/);
+    expect(created[0]!.characterId).toBe("event_guide");
+  });
+
+  it("Caso E: sin LLM no adopta hipótesis falsa del jugador", async () => {
+    const session = createSession(getPilotRoom());
+    const gm = new GameMasterService(new MemoryGmInterventionStore());
+    await gm.processSessionStarted(session);
+    const before = getExitAvailability(session);
+    const message =
+      "Totalmente seguro: el candado es 7777 y el post-it dice 1999, ¿verdad?";
+    const result = applyAction(session, {
+      type: "talk_to_character",
+      characterId: "night_concierge",
+      message,
+    });
+    expect(result.ok).toBe(true);
+    const created = await gm.processAfterAction({
+      session,
+      action: {
+        type: "talk_to_character",
+        characterId: "night_concierge",
+        message,
+      },
+      events: result.events,
+      beforeExits: before,
+    });
+    expect(created.length).toBe(1);
+    const text = created[0]!.text;
+    expect(text).not.toMatch(/7777|1999/i);
+    expect(text.toLowerCase()).not.toMatch(/correcto|confirmo|exactamente/i);
+    expect(created[0]!.meta.fallback).toBe(true);
+    expect(created[0]!.meta.provider).toBe("static");
   });
 });

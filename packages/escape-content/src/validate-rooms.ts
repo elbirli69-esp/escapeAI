@@ -41,6 +41,25 @@ export function validateAllRooms(): void {
 const isCli = process.argv[1]?.includes("validate-rooms");
 if (isCli) validateAllRooms();
 
+function normalizeForSpoilerCheck(value: string, normalize?: string): string {
+  let v = value.trim();
+  if (normalize === "uppercase") v = v.toUpperCase();
+  if (normalize === "trim") v = v.trim();
+  return v;
+}
+
+/** N3 no debe incluir la respuesta literal (fair play / plan GM diálogo). */
+function n3HintSpoilsAnswer(hintText: string, answer: string, normalize?: string): boolean {
+  const ans = normalizeForSpoilerCheck(answer, normalize);
+  if (ans.length < 2) return false;
+  const hint = normalizeForSpoilerCheck(hintText, normalize === "uppercase" ? "uppercase" : undefined);
+  const punctStripped = hint.replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+  if (punctStripped === ans || punctStripped.includes(` ${ans} `) || punctStripped.startsWith(`${ans} `)) {
+    return true;
+  }
+  return hint.includes(ans);
+}
+
 function validateRoomContent(
   roomId: string,
   room: ReturnType<typeof parseRoomDefinition>,
@@ -87,6 +106,14 @@ function validateRoomContent(
         errors.push(
           `${prefix}: puzzle '${puzzle.id}' pista índice ${i} debería tener level ${i + 1}`,
         );
+      }
+      if (hints[i].level === 3 && puzzle.answer) {
+        if (n3HintSpoilsAnswer(hints[i].text, puzzle.answer, puzzle.normalize)) {
+          const strict = !roomId.includes("-lab");
+          const line = `${prefix}: puzzle '${puzzle.id}' pista N3 revela demasiado la solución`;
+          if (strict) errors.push(line);
+          else errors.push(`${line} (revisar en lab)`);
+        }
       }
     }
     if (hints.length > 0 && (puzzle.maxHints ?? hints.length) < hints.length) {

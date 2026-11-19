@@ -68,6 +68,9 @@ describe("clue ledger and beats", () => {
     const move = applyAction(session, { type: "move", sceneId: "f" });
     expect(move.ok).toBe(true);
     expect(move.state.clueNotes?.some((c) => c.id === "year_note")).toBe(true);
+    expect(move.state.clueHistory?.some((c) => c.kind === "beat_clue" && c.id === "year_note")).toBe(
+      true,
+    );
     expect(move.state.status).toBe("won");
   });
 });

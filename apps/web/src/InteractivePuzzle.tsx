@@ -200,13 +200,17 @@ function ClassicPuzzleForm(props: {
           props.onAnswerChange("");
         }}
       >
+        <label className="sr-only" htmlFor={`escape-answer-${puzzle.id}`}>
+          Respuesta para {puzzle.label ?? puzzle.id}
+        </label>
         <input
+          id={`escape-answer-${puzzle.id}`}
           data-testid="escape-answer-input"
           value={props.answer}
           onChange={(e) => props.onAnswerChange(e.target.value)}
           placeholder={props.answerPlaceholder ?? "Tu respuesta"}
           autoComplete="off"
-          disabled={props.submitDisabled}
+          disabled={props.submitDisabled || props.busy}
         />
         <button
           type="submit"
@@ -220,6 +224,7 @@ function ClassicPuzzleForm(props: {
       <button
         type="button"
         className="ghost"
+        data-testid="escape-request-hint"
         disabled={props.busy}
         onClick={() => props.onAction({ type: "request_hint", puzzleId: puzzle.id })}
       >
@@ -536,8 +541,15 @@ function VisualStation(props: {
     return () => clearInterval(t);
   }, [url, viewed]);
 
+  const autoViewDispatchedRef = useRef(false);
+
   useEffect(() => {
-    if (dwellSec >= 2 && !viewed && url) {
+    autoViewDispatchedRef.current = false;
+  }, [props.puzzle.id]);
+
+  useEffect(() => {
+    if (dwellSec >= 2 && !viewed && url && !autoViewDispatchedRef.current) {
+      autoViewDispatchedRef.current = true;
       props.onAction({
         type: "complete_interaction",
         puzzleId: props.puzzle.id,

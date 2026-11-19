@@ -3,11 +3,13 @@ import { createSession, parseRoomDefinition } from "@escapeai/escape-engine";
 import type { PlayerContext } from "@escapeai/escape-engine";
 import {
   eventPaceNudgeCopy,
+  eventPuzzleFailedCopy,
   eventTeamStuckCopy,
   isEventSession,
   maybeGrantBonusHintFromGm,
 } from "./event-session.js";
-import type { GmSessionMeta } from "./persistence.js";
+import { isPuzzleFailNudgeEligible } from "./catalog-session.js";
+import { defaultGmSessionMeta, type GmSessionMeta } from "./persistence.js";
 import { staticInterventionText } from "./fallbacks.js";
 
 const miniRoom = parseRoomDefinition(`
@@ -85,26 +87,38 @@ describe("event adaptive fallbacks", () => {
     expect(eventPaceNudgeCopy("critical", "team")).toMatch(/equipos|ranking|puzzle/i);
   });
 
+  it("maybeGrantBonusHintFromGm en catálogo pilot", async () => {
+    const { loadRoomById } = await import("@escapeai/escape-content");
+    const session = createSession(loadRoomById("pilot"));
+    const meta = defaultGmSessionMeta();
+    const next = maybeGrantBonusHintFromGm(session, meta, "lockbox");
+    expect(next.bonusHintGrantedPuzzleIds).toContain("lockbox");
+    expect(session.bonusHintLevels.get("lockbox")).toBe(1);
+  });
+
   it("maybeGrantBonusHintFromGm solo en sala generated con join", () => {
     const session = createSession(miniRoom, eventCtx);
     session.room = { ...session.room, id: "generated-abc12345" };
-    const meta: GmSessionMeta = {
-      sequence: 0,
-      dedupeKeys: [],
-      llmCallCount: 0,
-      lastLlmCallMs: 0,
-      visitedSceneIds: [],
-      lastProgressMs: 0,
-      stuckNotifiedPuzzleIds: [],
-      characterTurnCount: 0,
-      lastCharacterTurnMs: 0,
-      paceNudgeIssued: false,
-      stuckAmbientIssuedPuzzleIds: [],
-      aheadFlavorIssued: false,
-      bonusHintGrantedPuzzleIds: [],
-    };
+    const meta: GmSessionMeta = defaultGmSessionMeta();
     const next = maybeGrantBonusHintFromGm(session, meta, "p1");
     expect(next.bonusHintGrantedPuzzleIds).toContain("p1");
     expect(session.bonusHintLevels.get("p1")).toBe(1);
+  });
+
+  it("eventPuzzleFailedCopy sugiere audio en entry_lock", () => {
+    expect(eventPuzzleFailedCopy("entry_lock", "Candado", "birthday")).toMatch(/sonoro/i);
+  });
+
+  it("isPuzzleFailNudgeEligible en evento generado", () => {
+    const session = createSession(miniRoom, eventCtx);
+    session.room = { ...session.room, id: "generated-abc12345" };
+    const trigger = {
+      type: "PUZZLE_FAILED" as const,
+      sourceEventId: "x",
+      payload: { puzzleId: "entry_lock", attempts: 2 },
+    };
+    expect(
+      isPuzzleFailNudgeEligible(session, trigger, defaultGmSessionMeta()),
+    ).toBe(true);
   });
 });

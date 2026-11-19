@@ -5,12 +5,15 @@
   "type": "module",
   "scripts": {
     "e2e": "playwright test",
-    "e2e:ui": "playwright test --ui"
+    "e2e:ui": "playwright test --ui",
+    "experience:signals": "tsx scripts/experience-signals.ts",
+    "experience:score": "tsx scripts/experience-score.ts",
+    "experience:report": "tsx scripts/experience-report.ts"
   },
   "devDependencies": {
-    "@playwright/test": "^1.49.1"
-  },
-  "dependencies": {
-    "@escapeai/escape-content": "workspace:*"
+    "@playwright/test": "^1.49.1",
+    "@escapeai/escape-content": "workspace:*",
+    "@escapeai/escape-engine": "workspace:*",
+    "tsx": "^4.19.2"
   }
 }

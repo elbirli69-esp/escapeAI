@@ -2,18 +2,22 @@ import { randomUUID } from "node:crypto";
 import type {
   AiContext,
   ApplyResult,
+  DirectorFaqId,
   GameAction,
   GameEvent,
   InteractionStep,
   PublicState,
   VoiceMatchMode,
 } from "@escapeai/shared";
+import { DIRECTOR_FAQ_IDS } from "@escapeai/shared";
 import { matchPlayerAnswer, sanitizePlayerUtterance, validatePlayerAtTarget } from "@escapeai/shared";
 import type { PlayerContext } from "./player-context.js";
 import {
   effectiveHintCap,
+  maybeCatalogFailForward,
   maybeGeneratedFailForward,
 } from "./adaptive-assist.js";
+import { buildClueHistory } from "./clue-ledger.js";
 import type { Condition, RoomBeat, RoomDefinition, RoomPuzzle } from "./room-definition.js";
 
 export type SessionRecord = {
@@ -42,6 +46,8 @@ export type SessionRecord = {
   failForwardSoundIntro?: boolean;
   /** Rama narrativa precocinada (beats `branch: compress`) en salas generadas. */
   assistNarrativeMode?: "compress";
+  /** Claves idempotentes de fail-forward en catálogo (pilot / lighthouse). */
+  catalogAssistKeys?: Set<string>;
 };
 
 export function createSession(room: RoomDefinition, playerContext?: PlayerContext): SessionRecord {
@@ -199,6 +205,14 @@ export function applyAction(
       events.push(talk.event!);
       break;
     }
+    case "director_faq": {
+      const faq = directorFaq(session, action.faqId);
+      if (faq.error) {
+        return { ok: false, error: faq.error, state: toPublicState(session, nowMs), events };
+      }
+      events.push(faq.event!);
+      break;
+    }
   }
 
   if (checkWin(session)) {
@@ -307,6 +321,7 @@ function submitAnswer(
   ) {
     session.narrative.push("Respuesta incorrecta.");
     maybeGeneratedFailForward(session, puzzleId);
+    maybeCatalogFailForward(session, puzzleId);
     return { event: { type: "puzzle_failed", puzzleId, attempts } };
   }
 
@@ -593,6 +608,19 @@ function requireInteractionSteps(session: SessionRecord, puzzle: RoomPuzzle): st
   return undefined;
 }
 
+function directorFaq(
+  session: SessionRecord,
+  faqId: DirectorFaqId,
+): { event?: GameEvent; error?: string } {
+  if (session.status !== "playing") {
+    return { error: "La partida ya ha terminado." };
+  }
+  if (!DIRECTOR_FAQ_IDS.includes(faqId)) {
+    return { error: "Pregunta no reconocida." };
+  }
+  return { event: { type: "director_faq", faqId } };
+}
+
 function talkToCharacter(
   session: SessionRecord,
   characterId: string,
@@ -750,6 +778,7 @@ export function toPublicState(session: SessionRecord, nowMs = Date.now()): Publi
     spatialSiteMap,
     spatialRoomLabel: spatialRoom?.label,
     clueNotes: [...session.grantedClues.entries()].map(([id, text]) => ({ id, text })),
+    clueHistory: buildClueHistory(session),
     teamProgress: session.teamProgress,
     sceneCharacters: buildSceneCharacters(session),
   };

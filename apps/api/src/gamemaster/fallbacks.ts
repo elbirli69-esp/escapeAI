@@ -2,16 +2,27 @@ import type { SessionRecord } from "@escapeai/escape-engine";
 import type { GmPacingMode, GmProcessTrigger, NarrativeInterventionMeta } from "@escapeai/shared";
 import { getRoomCharacter, pickCharacterFallback } from "./characters.js";
 import {
+  catalogPaceNudgeCopy,
+  catalogPuzzleFailedCopy,
+  catalogPuzzleSolvedCopy,
+  catalogTeamStuckCopy,
+  isCatalogSession,
+} from "./catalog-session.js";
+import {
   clueNotebookHint,
   eventAdventureType,
   eventAheadPuzzleSolvedCopy,
   eventPaceNudgeCopy,
+  eventPuzzleFailedCopy,
   eventSessionStartedCopy,
   eventTeamStuckCopy,
   eventTimeWarningCopy,
   isEventSession,
 } from "./event-session.js";
+import { isGeneratedEventSession } from "@escapeai/escape-engine";
 import { computeGmPacing } from "./pacing.js";
+import { directorFaqStaticCopy } from "./director-faq.js";
+import type { DirectorFaqId } from "@escapeai/shared";
 
 const STATIC_META: NarrativeInterventionMeta = { provider: "static", fallback: true };
 
@@ -81,6 +92,12 @@ export function staticInterventionText(
         text = team
           ? `${team} habéis cerrado «${label}». Actualizad el cuaderno y seguid el hilo.`
           : `Avance en «${label}». El cuaderno de pistas es vuestra brújula.`;
+      } else if (isCatalogSession(session)) {
+        text =
+          catalogPuzzleSolvedCopy(session.room.id, puzzleId, label) ??
+          (team
+            ? `${team} habéis descifrado «${label}». El hilo se tensa, seguid.`
+            : `Avance logrado en «${label}». El camino continúa.`);
       } else {
         text = team
           ? `${team} habéis descifrado «${label}». El hilo se tensa, seguid.`
@@ -163,9 +180,11 @@ export function staticInterventionText(
         : "behind") as GmPacingMode;
       const text = isEventSession(session)
         ? eventPaceNudgeCopy(mode, eventAdventureType(session))
-        : mode === "critical"
-          ? "El reloj apremia: concentrad energía en el reto que tenéis delante antes de explorar más."
-          : "El director nota que el tiempo corre más rápido que los avances. Priorizad un puzzle abierto.";
+        : isCatalogSession(session)
+          ? catalogPaceNudgeCopy(mode, session.room.id)
+          : mode === "critical"
+            ? "El reloj apremia: concentrad energía en el reto que tenéis delante antes de explorar más."
+            : "El director nota que el tiempo corre más rápido que los avances. Priorizad un puzzle abierto.";
       return {
         text,
         kind: "notification",
@@ -184,9 +203,35 @@ export function staticInterventionText(
             assistTier,
             clueNotebookHint(session),
           )
-        : `Lleváis un rato en «${label}». Si necesitáis ayuda, usad «Pedir pista» — el conserje no revelará más de lo autorizado.`;
+        : isCatalogSession(session)
+          ? catalogTeamStuckCopy(session.room.id, label, assistTier)
+          : `Lleváis un rato en «${label}». Si necesitáis ayuda, usad «Pedir pista» — el conserje no revelará más de lo autorizado.`;
       return {
         text,
+        kind: "notification",
+        meta: STATIC_META,
+      };
+    }
+    case "PUZZLE_FAILED": {
+      const puzzleId = String(trigger.payload?.puzzleId ?? "");
+      const puzzle = session.room.puzzles[puzzleId];
+      const label = puzzle?.label ?? puzzleId;
+      const text = isCatalogSession(session)
+        ? (catalogPuzzleFailedCopy(session.room.id, puzzleId, label) ??
+          `«${label}» no cede todavía. Repasad lo que lleváis anotado.`)
+        : isGeneratedEventSession(session)
+          ? eventPuzzleFailedCopy(puzzleId, label, eventAdventureType(session))
+          : `«${label}» resiste. Buscad otro ángulo antes de insistir.`;
+      return {
+        text,
+        kind: "notification",
+        meta: STATIC_META,
+      };
+    }
+    case "DIRECTOR_FAQ": {
+      const faqId = String(trigger.payload?.faqId ?? "stuck_no_spoiler") as DirectorFaqId;
+      return {
+        text: directorFaqStaticCopy(session, faqId),
         kind: "notification",
         meta: STATIC_META,
       };

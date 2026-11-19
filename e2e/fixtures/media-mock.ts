@@ -28,7 +28,10 @@ export async function mockCameraForPlaywright(page: Page): Promise<void> {
 }
 
 export async function captureCameraThroughUi(page: Page): Promise<void> {
-  await page.getByRole("button", { name: "Continuar", exact: true }).click();
+  const continuar = page.getByRole("button", { name: "Continuar", exact: true });
+  if (await continuar.isVisible().catch(() => false)) {
+    await continuar.click();
+  }
   const capture = page.getByTestId("escape-camera-capture");
   await expect(capture).toBeEnabled({ timeout: 20_000 });
   const actionWait = page.waitForResponse(
@@ -41,4 +44,28 @@ export async function captureCameraThroughUi(page: Page): Promise<void> {
   await expect(page.getByTestId("escape-narrative-log")).toContainText("Foto registrada", {
     timeout: 15_000,
   });
+}
+
+/** Estaciones keyword/count: captura si hace falta y confirmación manual local. */
+export async function satisfyCameraStep(page: Page): Promise<void> {
+  const continuar = page.getByRole("button", { name: "Continuar", exact: true });
+  if (await continuar.isVisible().catch(() => false)) {
+    await continuar.click();
+  }
+  const capture = page.getByTestId("escape-camera-capture");
+  if (await capture.isVisible().catch(() => false)) {
+    await expect(capture).toBeEnabled({ timeout: 20_000 });
+    const actionWait = page.waitForResponse(
+      (res) => res.url().includes("/actions") && res.request().method() === "POST",
+      { timeout: 30_000 },
+    );
+    await capture.click();
+    await actionWait;
+    await expect(page.locator(".camera-shot")).toBeVisible({ timeout: 15_000 });
+  }
+  const manual = page.getByTestId("escape-camera-manual-confirm");
+  if (await manual.isVisible().catch(() => false)) {
+    await manual.click();
+  }
+  await expect(page.getByTestId("escape-answer-input")).toBeEnabled({ timeout: 15_000 });
 }

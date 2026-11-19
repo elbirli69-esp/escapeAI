@@ -1,6 +1,6 @@
 import type { NarrativeIntervention, PublicItem, PublicState } from "@escapeai/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   createSession,
   fetchAdventureTemplates,
@@ -10,6 +10,8 @@ import {
   sendAction,
 } from "./api";
 import { ExperienceLobby } from "./ExperienceLobby";
+import { GameSessionSkeleton } from "./GameSessionSkeleton";
+import { DirectorFaqPanel } from "./DirectorFaqPanel.js";
 import { InteractivePuzzle } from "./InteractivePuzzle";
 import { SceneHero } from "./SceneHero";
 import { SpatialSitePlayMap } from "./SpatialSitePlayMap";
@@ -61,8 +63,12 @@ function formatTime(sec: number): string {
 
 function ProgressRail(props: { order: string[]; current: string; theme?: string }) {
   const idx = props.order.indexOf(props.current);
+  const total = props.order.length;
   return (
     <nav className="progress-rail" aria-label="Progreso por escenas">
+      <p className="sr-only">
+        Escena {idx + 1} de {total}
+      </p>
       {props.order.map((id, i) => (
         <span
           key={id}
@@ -70,6 +76,8 @@ function ProgressRail(props: { order: string[]; current: string; theme?: string 
             i < idx ? "progress-dot done" : i === idx ? "progress-dot active" : "progress-dot"
           }
           title={id}
+          aria-current={i === idx ? "step" : undefined}
+          aria-hidden="true"
         />
       ))}
     </nav>
@@ -289,10 +297,23 @@ export function App() {
     return selectedInScene?.id ?? open?.id ?? null;
   }, [state, selectedPuzzle]);
 
+  const dispatchAction = useCallback(
+    (action: Parameters<typeof sendAction>[1]) => {
+      actionMutation.mutate(action);
+    },
+    [actionMutation.mutate],
+  );
+
+  useEffect(() => {
+    if (!state) return;
+    setSelectedPuzzle(null);
+  }, [state?.currentSceneId]);
+
   if (!sessionId) {
     return (
       <ExperienceLobby
         homeCards={homeCardsQuery.data}
+        homeCardsLoading={homeCardsQuery.isPending && !homeCardsQuery.data}
         homeCardsError={homeCardsQuery.isError}
         adventureTemplates={adventuresQuery.data}
         adventureTemplatesLoading={adventuresQuery.isPending && !adventuresQuery.data}
@@ -303,7 +324,7 @@ export function App() {
         classicBusy={startGame.isPending}
         classicError={
           startGame.isError || roomsQuery.isError
-            ? "No se pudo conectar con la API o crear la partida."
+            ? "No se pudo conectar con el servidor o crear la partida."
             : null
         }
         onClassicStart={() => startGame.mutate(selectedRoomId)}
@@ -326,32 +347,32 @@ export function App() {
 
   if (stateQuery.isError) {
     return (
-      <main className="shell lobby">
-        <p className="error">
-          Esta partida ya no está en el servidor (caducó o el navegador guardó un enlace viejo).
-        </p>
-        <button type="button" className="primary wide" onClick={clearSessionAndReturnHome}>
-          Volver al inicio
-        </button>
+      <main className="shell lobby lobby-panel">
+        <section className="panel glass" role="alert">
+          <p className="error">
+            Esta partida ya no está en el servidor (caducó o el navegador guardó un enlace viejo).
+          </p>
+          <button type="button" className="primary wide" onClick={clearSessionAndReturnHome}>
+            Volver al inicio
+          </button>
+        </section>
       </main>
     );
   }
 
   if (stateQuery.isLoading && !state) {
-    return (
-      <main className="shell">
-        <p className="muted">Cargando sesión…</p>
-      </main>
-    );
+    return <GameSessionSkeleton />;
   }
 
   if (!state) {
     return (
-      <main className="shell lobby">
-        <p className="muted">Preparando partida…</p>
-        <button type="button" className="ghost wide" onClick={clearSessionAndReturnHome}>
-          Cancelar
-        </button>
+      <main className="shell lobby lobby-panel" aria-busy="true">
+        <section className="panel glass">
+          <p className="muted">Preparando partida…</p>
+          <button type="button" className="ghost wide" onClick={clearSessionAndReturnHome}>
+            Cancelar
+          </button>
+        </section>
       </main>
     );
   }
@@ -363,7 +384,7 @@ export function App() {
       answer={answer}
       onAnswerChange={setAnswer}
       onSelectPuzzle={setSelectedPuzzle}
-      onAction={(action) => actionMutation.mutate(action)}
+      onAction={dispatchAction}
       busy={actionMutation.isPending}
       actionError={actionError}
       onDismissError={() => setActionError(null)}
@@ -430,6 +451,8 @@ function CharacterChat(props: {
             <button
               key={c.id}
               type="button"
+              role="tab"
+              aria-selected={c.id === characterId}
               className={c.id === characterId ? "tab active" : "tab"}
               onClick={() => setCharacterId(c.id)}
             >
@@ -505,6 +528,7 @@ function GameView(props: {
   const sceneItemItems = state.sceneItemItems ?? [];
   const activePuzzle = state.puzzles.find((p) => p.id === props.activePuzzleId);
   const [puzzleFocus, setPuzzleFocus] = useState(true);
+  const [clueCopyStatus, setClueCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
   const puzzlesInView = puzzleFocus
     ? state.puzzles.filter((p) => p.id === props.activePuzzleId)
     : state.puzzles;
@@ -530,7 +554,10 @@ function GameView(props: {
   }, [props.busy, armFromGesture, armGmSpeech]);
 
   return (
-    <main className={`shell game ${themeClass(state.roomTheme)}`}>
+    <main
+      className={`shell game lobby-panel ${themeClass(state.roomTheme)}${props.busy ? " game-is-busy" : ""}`}
+      aria-busy={props.busy}
+    >
       <header className="game-head">
         <div>
           <p className="eyebrow">
@@ -554,6 +581,12 @@ function GameView(props: {
             {formatTime(state.timeRemainingSec)}
           </div>
           <span className="progress-label">{progress}% recorrido</span>
+          {props.busy && (
+            <p className="game-busy-hint sm" role="status" aria-live="polite">
+              <span className="game-busy-spinner" aria-hidden />
+              Procesando…
+            </p>
+          )}
           {!reducedMotion && (
             <>
               <button
@@ -629,13 +662,26 @@ function GameView(props: {
                 data-testid="escape-clue-copy"
                 onClick={() => {
                   const text = state.clueNotes!.map((n) => `• ${n.text}`).join("\n");
-                  void navigator.clipboard?.writeText(text);
+                  void navigator.clipboard?.writeText(text).then(
+                    () => {
+                      setClueCopyStatus("copied");
+                      window.setTimeout(() => setClueCopyStatus("idle"), 2500);
+                    },
+                    () => setClueCopyStatus("failed"),
+                  );
                 }}
               >
                 Copiar
               </button>
             )}
           </div>
+          <p className="sr-only" aria-live="polite">
+            {clueCopyStatus === "copied"
+              ? "Pistas copiadas al portapapeles"
+              : clueCopyStatus === "failed"
+                ? "No se pudieron copiar las pistas"
+                : ""}
+          </p>
           {(state.clueNotes?.length ?? 0) === 0 ? (
             <p className="muted sm">Las pistas que ganes al resolver retos aparecerán aquí.</p>
           ) : (
@@ -646,6 +692,13 @@ function GameView(props: {
             </ul>
           )}
         </section>
+      )}
+
+      {state.status === "playing" && (
+        <DirectorFaqPanel
+          busy={props.busy}
+          onFaq={(faqId) => props.onAction({ type: "director_faq", faqId })}
+        />
       )}
 
       {(state.sceneCharacters?.length ?? 0) > 0 && (
@@ -714,7 +767,7 @@ function GameView(props: {
       )}
 
       {state.puzzles.length > 0 && (
-        <section className="panel glass panel-puzzle">
+        <section className={`panel glass panel-puzzle${props.busy ? " is-busy" : ""}`}>
           <div className="puzzle-panel-head">
             <h2>Retos</h2>
             {state.puzzles.length > 1 && (
@@ -729,11 +782,13 @@ function GameView(props: {
               </button>
             )}
           </div>
-          <div className="puzzle-tabs">
+          <div className="puzzle-tabs" role="tablist" aria-label="Retos de la escena">
             {puzzlesInView.map((p) => (
               <button
                 key={p.id}
                 type="button"
+                role="tab"
+                aria-selected={p.id === props.activePuzzleId}
                 className={p.id === props.activePuzzleId ? "tab active" : "tab"}
                 data-testid={`escape-puzzle-tab-${p.id}`}
                 disabled={p.solved}

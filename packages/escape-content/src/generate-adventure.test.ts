@@ -48,6 +48,20 @@ describe("generateAdventureRoom", () => {
     expect(mystery.winCondition).toEqual({ type: "puzzle_solved", puzzleId: "case_accusation" });
   });
 
+  it("incluye NPC event_guide en escena start", () => {
+    const room = generateAdventureRoom(baseInput, "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+    expect(room.characters?.event_guide?.displayName).toBeTruthy();
+    expect(room.scenes.start.characters).toEqual(["event_guide"]);
+    const mystery = generateAdventureRoom(
+      { ...baseInput, adventureType: "mystery" },
+      "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    );
+    expect(mystery.characters?.event_guide?.displayName).toMatch(/Informante/);
+    expect(mystery.characters?.event_guide?.forbiddenTopics).toContain(
+      "cuatro cifras completas",
+    );
+  });
+
   it("sound_intro procedural con tts o beeps", () => {
     const room = generateAdventureRoom(baseInput, "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
     const sound = room.puzzles.sound_intro;

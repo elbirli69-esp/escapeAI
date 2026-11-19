@@ -293,6 +293,10 @@ function collectStats(snapshots: RoomSnapshot[]) {
     for (const plan of p.puzzles) {
       for (const cat of plan.objectCategories) categoriesUsed.add(cat);
     }
+    for (const label of p.objectsUsed) {
+      const hit = sampleEnv.objects.find((obj) => obj.label === label || obj.category === label);
+      categoriesUsed.add(hit?.category ?? "unknown");
+    }
   }
 
   return { byMode, globalTypes, cameraModes, locationModes, items, categoriesUsed, mechanicsUsed };

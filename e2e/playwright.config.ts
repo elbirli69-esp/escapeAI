@@ -9,7 +9,11 @@ export default defineConfig({
   workers: 1,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
-  reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : [["list"]],
+  reporter: [
+    ...(process.env.CI ? ([["github"]] as const) : ([["list"]] as const)),
+    ["json", { outputFile: ".cache/playwright-results.json" }],
+    ...(process.env.CI ? ([["html", { open: "never" }]] as const) : []),
+  ],
   timeout: 60_000,
   use: {
     baseURL: `http://127.0.0.1:${webPort}`,

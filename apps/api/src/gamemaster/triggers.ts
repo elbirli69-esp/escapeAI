@@ -21,6 +21,7 @@ export const TRIGGER_POLICY: Record<string, TriggerMode> = {
   HINT_GRANTED: "llm_optional",
   CHARACTER_TURN: "llm_optional",
   PACE_NUDGE: "static",
+  DIRECTOR_FAQ: "static",
 };
 
 export function collectTriggersFromGameplay(input: {
@@ -41,6 +42,16 @@ export function collectTriggersFromGameplay(input: {
           characterId: action.characterId,
           message: action.message,
         },
+      },
+    ];
+  }
+
+  if (action.type === "director_faq") {
+    return [
+      {
+        type: "DIRECTOR_FAQ",
+        sourceEventId: randomUUID(),
+        payload: { faqId: action.faqId },
       },
     ];
   }

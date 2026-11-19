@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "description": "Cada dimensión suma componentes con maxPoints; score_dim = (sum/maxTotal)*10",
+  "improvementHints": {
+    "c_tagline": "Añadir o acortar tagline en YAML/catálogo (máx. impacto en gancho).",
+    "c_firstSceneCopy": "Enriquecer description/mood de la escena inicial (≥120 caracteres útiles).",
+    "c_stakesBeat": "Añadir beats[] con after: session_started en RoomDefinition.",
+    "c_timeToFirstPuzzle": "Acortar flujo lobby→escape-start-classic; precargar sala en API.",
+    "c_narrativeBeats": "Añadir beats por puzzle_solved y scene_entered (ritmo dramático).",
+    "c_sceneDepth": "Añadir escenas al grafo o copy de transición entre salas.",
+    "c_gmPresence": "Garantizar intervención GM/fallback antes del primer acierto (triggers SESSION_STARTED).",
+    "c_winCoverage": "Completar spec E2E de victoria o ampliar recorrido jugable.",
+    "c_puzzleDepth": "Añadir puzzles obligatorios en win-path o dependencias compuestas.",
+    "c_timePressure": "Definir timeLimitSec acorde al público objetivo.",
+    "c_failForward": "Asegurar feedback en narrative[] tras submit_answer incorrecto.",
+    "c_typeSpread": "Introducir tipos de puzzle adicionales (sound, visual, inventory…).",
+    "c_sensoryMix": "Incluir al menos un puzzle sensorial/geo en salas de catálogo.",
+    "c_e2eSpecsGreen": "Corregir producto/specs Playwright del perfil.",
+    "c_uiStability": "Eliminar flash-error; revisar pestañas y permisos.",
+    "c_victoryPayoff": "Alcanzar status won en E2E y enriquecer endGameMessage.",
+    "c_victoryNarrativeLength": "Epílogo victoria ≥80 caracteres con stakes.",
+    "c_victoryTaglineEcho": "Inyectar roomTagline en cuerpo de victoria (ya soportado en App).",
+    "c_demoImmersion": "Reetiquetar lab como demo o añadir premisa narrativa mínima.",
+    "c_eventFullWin": "Añadir E2E victoria completa para evento generado."
+  },
+  "dimensions": {
+    "hook": {
+      "components": [
+        { "id": "c_tagline", "maxPoints": 2, "rule": "taglineWords>=6" },
+        { "id": "c_firstSceneCopy", "maxPoints": 2, "rule": "min(firstSceneDescChars,120)/120*2" },
+        { "id": "c_stakesBeat", "maxPoints": 2, "rule": "sessionStartedBeats>=1" },
+        { "id": "c_timeToFirstPuzzle", "maxPoints": 4, "rule": "piecewise_ms" }
+      ]
+    },
+    "fun": {
+      "components": [
+        { "id": "c_narrativeBeats", "maxPoints": 2.5, "rule": "min(beatCount/4,1)*2.5" },
+        { "id": "c_sceneDepth", "maxPoints": 2.5, "rule": "min(sceneCount/4,1)*2.5" },
+        { "id": "c_gmPresence", "maxPoints": 2.5, "rule": "min(gmLinesBeforeFirstSolve/2,1)*2.5" },
+        { "id": "c_winCoverage", "maxPoints": 2.5, "rule": "wonInE2e?2.5:partialWin?1.25:0" }
+      ]
+    },
+    "challenge": {
+      "components": [
+        { "id": "c_puzzleDepth", "maxPoints": 2.5, "rule": "min(winPathPuzzles/5,1)*2.5" },
+        { "id": "c_sceneDepth", "maxPoints": 2, "rule": "min(sceneCount/3,1)*2" },
+        { "id": "c_timePressure", "maxPoints": 1.5, "rule": "hasTimeLimit?1.5:0" },
+        { "id": "c_failForward", "maxPoints": 2, "rule": "wrongAttemptFeedback?2:0" },
+        { "id": "c_typeSpread", "maxPoints": 2, "rule": "(puzzleTypesDistinct/min(puzzleCount,4))*2" }
+      ]
+    },
+    "variety": {
+      "components": [
+        { "id": "c_typeSpread", "maxPoints": 4, "rule": "(puzzleTypesDistinct/min(max(puzzleCount,1),6))*4" },
+        { "id": "c_sensoryMix", "maxPoints": 3, "rule": "min(sensoryTypeCount/3,1)*3" },
+        { "id": "c_sceneDepth", "maxPoints": 3, "rule": "min(sceneCount/3,1)*3" }
+      ]
+    },
+    "flow": {
+      "components": [
+        { "id": "c_e2eSpecsGreen", "maxPoints": 6, "rule": "allSpecsPass?6:0" },
+        { "id": "c_uiStability", "maxPoints": 2, "rule": "wrongAttemptNoFlash?2:0" },
+        { "id": "c_partialUx", "maxPoints": 2, "rule": "resumeOrGmSpecPass?2:profileSpecific" }
+      ]
+    },
+    "closure": {
+      "components": [
+        { "id": "c_victoryPayoff", "maxPoints": 4, "rule": "wonInE2e?4:0" },
+        { "id": "c_victoryNarrativeLength", "maxPoints": 2.5, "rule": "min(victoryBodyChars/80,1)*2.5" },
+        { "id": "c_victoryTaglineEcho", "maxPoints": 1.75, "rule": "victoryIncludesTagline?1.75:0" },
+        { "id": "c_victoryRoomEcho", "maxPoints": 1.75, "rule": "victoryIncludesRoomName?1.75:0" }
+      ]
+    }
+  },
+  "timeToFirstPuzzleMs": [
+    { "maxMs": 5000, "points": 4 },
+    { "maxMs": 15000, "points": 3.5 },
+    { "maxMs": 30000, "points": 2.5 },
+    { "maxMs": 60000, "points": 1.5 },
+    { "maxMs": null, "points": 0.5 }
+  ]
+}

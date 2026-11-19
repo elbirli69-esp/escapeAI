@@ -21,10 +21,18 @@ beats:
     after: puzzle_solved
     puzzleId: lockbox
     text: "La puerta del conserje cede; el ascensor sigue muerto, pero el sótano zumba."
+  - id: pilot_mailroom
+    after: scene_entered
+    sceneId: mailroom
+    text: "El cuarto de correspondencia huele a papel mojado; un mural agrietado parece contar tuberías."
   - id: pilot_basement
     after: scene_entered
     sceneId: basement
     text: "Falta el fusible: sin él el edificio entero permanecerá a oscuras."
+  - id: pilot_power
+    after: puzzle_solved
+    puzzleId: fuse_slot
+    text: "Un zumbido recorre el cableado; la sala de control espera la palabra final."
 scenes:
   entrance:
     id: entrance
@@ -35,14 +43,30 @@ scenes:
       El ascensor lleva horas averiado. La puerta del conserje luce un candado
       numérico recién pasado a moderno; junto a ella, un post-it con tinta
       borrada por la humedad insiste en recordar algo importante.
-    puzzles: [lockbox]
+    puzzles: [intercom_tone, concierge_hail, lockbox]
     characters: [night_concierge]
+    exits:
+      - toSceneId: mailroom
+        label: Cuarto de correspondencia
+        when:
+          type: puzzle_solved
+          puzzleId: lockbox
+  mailroom:
+    id: mailroom
+    title: Cuarto de correspondencia
+    image: /media/pilot-basement.jpg
+    mood: Montones de sobres empapados; un mural industrial cruza la pared húmeda.
+    description: >
+      Buzones oxidad y certificados ilegibles se amontonan junto a un mural
+      que dibuja la red de tuberías del edificio; conviene contrastarlo antes
+      de bajar al sótano.
+    puzzles: [mural_glance]
     exits:
       - toSceneId: basement
         label: Bajar al sótano
         when:
           type: puzzle_solved
-          puzzleId: lockbox
+          puzzleId: mural_glance
   basement:
     id: basement
     title: Sótano
@@ -89,6 +113,51 @@ characters:
       - Mirad el post-it; yo no guardo cifras en la cabeza.
       - El ascensor lleva muerto todo el día, no me preguntes por eso.
 puzzles:
+  concierge_hail:
+    id: concierge_hail
+    type: voice
+    label: Susurro del conserje
+    cardImage: /media/pilot-entrance.jpg
+    prompt: Pregunta al conserje quién vigila el portal (demo en texto).
+    answer: conserje
+    normalize: lowercase
+    voiceMatchMode: fuzzy
+    allowTextFallback: true
+    voiceOffline: true
+    voiceLocale: es-ES
+    maxHints: 1
+    hints:
+      - level: 1
+        text: La respuesta es una sola palabra, el oficio que escuchas.
+  intercom_tone:
+    id: intercom_tone
+    type: sound
+    label: Timbre del portal
+    cardImage: /media/pilot-entrance.jpg
+    prompt: Escucha el timbre del intercomunicador (1 pitido = cifra 1). Una pista para el candado.
+    soundMode: beeps
+    beepPattern: [200]
+    minListenSec: 1
+    answer: "1"
+    normalize: trim
+    maxHints: 1
+    hints:
+      - level: 1
+        text: Un solo pitido corto.
+  mural_glance:
+    id: mural_glance
+    type: visual
+    label: Mural del sótano
+    cardImage: /media/pilot-basement.jpg
+    visualLayout: single
+    prompt: "Foto de referencia: ¿cuántas tuberías horizontales ves? (demo: 2)"
+    pexelsQuery: basement pipes industrial
+    answer: "2"
+    normalize: trim
+    maxHints: 1
+    hints:
+      - level: 1
+        text: En demo, responde 2.
   lockbox:
     id: lockbox
     type: code
@@ -106,7 +175,7 @@ puzzles:
       - level: 2
         text: El año tiene cuatro dígitos y empieza por 19.
       - level: 3
-        text: Prueba 1984.
+        text: El apellido del autor es Orwell; el título de su novela distópica es el mismo año en cuatro cifras — escríbelo en el candado.
   fuse_slot:
     id: fuse_slot
     type: inventory
@@ -133,4 +202,4 @@ puzzles:
       - level: 2
         text: La palabra es corta y en español, cuatro letras.
       - level: 3
-        text: La solución es LUZ.
+        text: Cuatro letras en mayúsculas; en español, lo primero que recupera un edificio cuando el cuadro vuelve a funcionar.

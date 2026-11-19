@@ -1,24 +1,78 @@
 id: interactive-lab
 name: Laboratorio sensorial
-tagline: Sonido, voz, cámara e imágenes — prueba todas las pistas.
+tagline: Sonido, voz, cámara e imágenes — recorre las tres cámaras del laboratorio.
 theme: urban
 coverImage: /media/pilot-basement.jpg
 timeLimitSec: 1800
-startSceneId: hub
+startSceneId: sensory_hub
 winCondition:
   type: puzzle_solved
   puzzleId: voice_finale
+beats:
+  - id: lab_open
+    after: session_started
+    text: "Tres cámaras parpadean: oído y vista primero; la cámara y la voz sellan el circuito."
+  - id: lab_sound
+    after: puzzle_solved
+    puzzleId: sound_station
+    text: "El morse quedó grabado; gira el dial hacia el enigma visual."
+  - id: lab_visual
+    after: puzzle_solved
+    puzzleId: visual_station
+    text: "Puertas contadas; el pasillo de ópticas pide tres lecturas con la cámara."
+  - id: lab_camera_bay
+    after: scene_entered
+    sceneId: camera_bay
+    text: "Lentes humean: OCR, objeto vivo y sillas en fila — la sala marca SENSOR."
+  - id: lab_sigil
+    after: puzzle_solved
+    puzzleId: sigil_lock
+    text: "El panel verde acepta la palabra; una voz debe pronunciar el cierre."
+  - id: lab_voice_chamber
+    after: scene_entered
+    sceneId: voice_chamber
+    text: "Aislamiento acústico. Solo la frase correcta apaga las luces del laboratorio."
 items: {}
 scenes:
-  hub:
-    id: hub
-    title: Hub de pruebas
+  sensory_hub:
+    id: sensory_hub
+    title: Cubículo oído y vista
     image: /media/pilot-control.jpg
     mood: Luces LED y altavoces ocultos en la pared.
     description: >
-      Cuatro estaciones esperan: una emite un código en Morse (simplificado a dígitos
-      hablados), otra exige tu voz, otra la cámara y la última una imagen enigma.
-    puzzles: [sound_station, visual_station, camera_station, camera_object_lab, camera_count_lab, voice_finale]
+      La primera cámara combina audición y comparación visual. Demuestra que el
+      hardware capta señales antes de avanzar al carril de cámaras reales.
+    puzzles: [sound_station, visual_station]
+    exits:
+      - toSceneId: camera_bay
+        label: Abrir el pasillo de ópticas
+        when:
+          type: puzzle_solved
+          puzzleId: visual_station
+  camera_bay:
+    id: camera_bay
+    title: Pasillo de ópticas
+    image: /media/pilot-basement.jpg
+    mood: Cables colgando, tres cabinas con un letrero SENSOR en el suelo.
+    description: >
+      Tres estaciones: texto con OCR, detección de objeto y conteo de sillas.
+      Cuando las tres cedan, el panel de acceso al aislamiento acústico se enciende.
+    puzzles: [camera_station, camera_object_lab, camera_count_lab]
+    exits:
+      - toSceneId: voice_chamber
+        label: Ir al aislamiento acústico
+        when:
+          type: puzzle_solved
+          puzzleId: camera_station
+  voice_chamber:
+    id: voice_chamber
+    title: Aislamiento acústico
+    image: /media/pilot-cover.jpg
+    mood: Espuma en las paredes; un micrófono rojo espera la frase de cierre.
+    description: >
+      Primero valida la palabra clave del panel verde (siete letras), luego
+      pronuncia la frase mágica que apaga el laboratorio.
+    puzzles: [sigil_lock, voice_finale]
     exits: []
 puzzles:
   sound_station:
@@ -37,7 +91,7 @@ puzzles:
       - level: 1
         text: Las cifras se anuncian en voz alta al acabar el efecto.
       - level: 2
-        text: Prueba 4268 (solo en demo; cambia en tu sala generada).
+        text: La respuesta es una sola cifra, 3.
   visual_station:
     id: visual_station
     type: visual
@@ -96,6 +150,22 @@ puzzles:
     prompt: En demo escribe 2 como respuesta.
     answer: "2"
     normalize: trim
+    maxHints: 1
+    hints:
+      - level: 1
+        text: Dos sillas bastan en la demo.
+  sigil_lock:
+    id: sigil_lock
+    type: code
+    label: Panel SENSOR
+    cardImage: /media/pilot-entrance.jpg
+    prompt: La palabra en el suelo del pasillo de ópticas (siete letras, mayúsculas).
+    answer: SENSOR
+    normalize: uppercase
+    maxHints: 1
+    hints:
+      - level: 1
+        text: Es la abreviatura de «sensorial» en el letrero del pasillo.
   voice_finale:
     id: voice_finale
     type: voice

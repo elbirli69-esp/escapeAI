@@ -97,7 +97,8 @@ export type GmTriggerType =
   | "TEAM_STUCK"
   | "HINT_GRANTED"
   | "CHARACTER_TURN"
-  | "PACE_NUDGE";
+  | "PACE_NUDGE"
+  | "DIRECTOR_FAQ";
 
 export type GmProcessTrigger = {
   type: GmTriggerType;

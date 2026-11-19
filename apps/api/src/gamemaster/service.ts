@@ -1,6 +1,7 @@
 import {
   activateCompressNarrative,
   getExitAvailability,
+  isGeneratedEventSession,
   toPublicState,
   type SessionRecord,
 } from "@escapeai/escape-engine";
@@ -21,6 +22,10 @@ import {
   markPaceNudgeIssued,
   resolveAdaptivePolicy,
 } from "./pacing.js";
+import {
+  isPuzzleFailNudgeEligible,
+  markPuzzleFailNudged,
+} from "./catalog-session.js";
 import { isEventSession, maybeGrantBonusHintFromGm } from "./event-session.js";
 import {
   detectTeamStuckTrigger,
@@ -39,6 +44,9 @@ import {
 } from "./triggers.js";
 import { recordGmIntervention, recordGmLlmAttempt } from "./metrics.js";
 import { validateIntervention } from "./validation.js";
+import { GM_DIRECTOR_FAQ_COOLDOWN_MS, GM_DIRECTOR_FAQ_MAX } from "./director-faq.js";
+import { filterOrchestrationTriggers } from "./orchestration.js";
+import { sortTriggersByPriority } from "./trigger-priority.js";
 
 const MAX_LLM_PER_SESSION = Number(process.env.GM_MAX_LLM_CALLS ?? 40);
 const LLM_COOLDOWN_MS = Number(process.env.GM_LLM_COOLDOWN_MS ?? 3000);
@@ -56,7 +64,15 @@ export class GameMasterService {
     const meta = await this.store.loadMeta(session.sessionId);
     meta.visitedSceneIds = [...new Set([...meta.visitedSceneIds, session.room.startSceneId])];
     await this.store.saveMeta(session.sessionId, meta);
-    return this.processTriggers(session, [sessionStartedTrigger()], ["SESSION_STARTED"]);
+    const triggers: GmProcessTrigger[] = [
+      sessionStartedTrigger(),
+      {
+        type: "SCENE_ENTERED",
+        sourceEventId: randomUUID(),
+        payload: { sceneId: session.room.startSceneId },
+      },
+    ];
+    return this.processTriggers(session, triggers, ["SESSION_STARTED", "SCENE_ENTERED"]);
   }
 
   async processAfterAction(input: {
@@ -108,18 +124,25 @@ export class GameMasterService {
   ): Promise<NarrativeIntervention[]> {
     if (triggers.length === 0) return [];
 
+    const coalesced = filterOrchestrationTriggers(triggers, session);
+
     const created: NarrativeIntervention[] = [];
     const existing = await this.store.list(session.sessionId);
     let meta = await this.store.loadMeta(session.sessionId);
     const forbidden = collectForbiddenAnswerTokens(session);
     const pacing = computeGmPacing(session);
 
-    for (const trigger of triggers) {
-      if (trigger.type === "PUZZLE_FAILED" && TRIGGER_POLICY.PUZZLE_FAILED === "silent") {
+    for (const trigger of sortTriggersByPriority(coalesced)) {
+      const failNudge =
+        trigger.type === "PUZZLE_FAILED" && isPuzzleFailNudgeEligible(session, trigger, meta);
+      if (trigger.type === "PUZZLE_FAILED" && TRIGGER_POLICY.PUZZLE_FAILED === "silent" && !failNudge) {
         continue;
       }
 
-      const basePolicy = TRIGGER_POLICY[trigger.type] ?? "static";
+      const basePolicy =
+        failNudge
+          ? "static"
+          : (TRIGGER_POLICY[trigger.type] ?? "static");
       const policy = resolveAdaptivePolicy(trigger.type, basePolicy, pacing);
       if (policy === "silent") continue;
 
@@ -157,6 +180,23 @@ export class GameMasterService {
         meta.visitedSceneIds = [...new Set([...meta.visitedSceneIds, sceneId])];
         await this.store.saveMeta(session.sessionId, meta);
       }
+      if (trigger.type === "PUZZLE_FAILED" && failNudge && trigger.payload?.puzzleId) {
+        meta = markPuzzleFailNudged(meta, String(trigger.payload.puzzleId));
+        await this.store.saveMeta(session.sessionId, meta);
+      }
+      if (
+        trigger.type === "PUZZLE_FAILED" &&
+        failNudge &&
+        isGeneratedEventSession(session) &&
+        trigger.payload?.puzzleId
+      ) {
+        const puzzleId = String(trigger.payload.puzzleId);
+        const attempts = Number(trigger.payload.attempts ?? 0);
+        if (attempts >= 4) {
+          meta = maybeGrantBonusHintFromGm(session, meta, puzzleId);
+          await this.store.saveMeta(session.sessionId, meta);
+        }
+      }
       if (trigger.type === "TEAM_STUCK" && trigger.payload?.puzzleId) {
         const puzzleId = String(trigger.payload.puzzleId);
         if (trigger.payload.assistTier === "ambient") {
@@ -170,6 +210,12 @@ export class GameMasterService {
       if (trigger.type === "CHARACTER_TURN") {
         meta.characterTurnCount += 1;
         meta.lastCharacterTurnMs = Date.now();
+        await this.store.saveMeta(session.sessionId, meta);
+      }
+      if (trigger.type === "DIRECTOR_FAQ" && trigger.payload?.faqId) {
+        const faqId = String(trigger.payload.faqId);
+        meta.directorFaqCount += 1;
+        meta.directorFaqLastMsById = { ...meta.directorFaqLastMsById, [faqId]: Date.now() };
         await this.store.saveMeta(session.sessionId, meta);
       }
       if (trigger.type === "PACE_NUDGE") {
@@ -195,11 +241,24 @@ export class GameMasterService {
     policy: string,
   ): Promise<{ intervention: NarrativeIntervention | null; llmAttempted: boolean }> {
     let llmAttempted = false;
+    const now = Date.now();
+    if (trigger.type === "DIRECTOR_FAQ") {
+      const faqId = String(trigger.payload?.faqId ?? "");
+      if (meta.directorFaqCount >= GM_DIRECTOR_FAQ_MAX) {
+        return { intervention: null, llmAttempted: false };
+      }
+      const last = meta.directorFaqLastMsById[faqId] ?? 0;
+      if (faqId && now - last < GM_DIRECTOR_FAQ_COOLDOWN_MS) {
+        return { intervention: null, llmAttempted: false };
+      }
+    }
+
     const dedupe = `${trigger.type}:${
       trigger.payload?.puzzleId ??
       trigger.payload?.sceneId ??
       trigger.payload?.itemId ??
       trigger.payload?.characterId ??
+      trigger.payload?.faqId ??
       trigger.sourceEventId
     }${trigger.payload?.assistTier ? `:${trigger.payload.assistTier}` : ""}`;
     if (recentInterventions.some((i) => i.meta.trigger === dedupe)) {
@@ -229,7 +288,6 @@ export class GameMasterService {
       clueRefs = [{ puzzleId, hintLevel: level }];
     }
 
-    const now = Date.now();
     const characterBudgetOk =
       trigger.type !== "CHARACTER_TURN" || meta.characterTurnCount < MAX_CHARACTER_LLM;
     const characterCooldownOk =

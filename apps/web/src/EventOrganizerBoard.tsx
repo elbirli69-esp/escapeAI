@@ -29,6 +29,7 @@ function readProjectorFromUrl(): boolean {
 
 export function EventOrganizerBoard(props: { joinCode: string; onBack?: () => void }) {
   const [projectorTv, setProjectorTv] = useState(readProjectorFromUrl);
+  const [projectorLinkCopied, setProjectorLinkCopied] = useState(false);
 
   const syncProjectorUrl = useCallback((on: boolean) => {
     const url = new URL(window.location.href);
@@ -44,11 +45,24 @@ export function EventOrganizerBoard(props: { joinCode: string; onBack?: () => vo
   const q = useQuery({
     queryKey: ["leaderboard", props.joinCode],
     queryFn: () => fetchEventLeaderboard(props.joinCode),
-    refetchInterval: 8_000,
+    retry: 1,
+    refetchInterval: (query) => (query.state.error ? false : 8_000),
   });
 
   const board = q.data as EventLeaderboard | undefined;
   const shareLine = `QR o código ${props.joinCode} — cada equipo elige su nombre al entrar.`;
+
+  async function copyProjectorLink() {
+    const url = new URL(window.location.href);
+    url.searchParams.set("projector", "1");
+    try {
+      await navigator.clipboard.writeText(url.toString());
+      setProjectorLinkCopied(true);
+      window.setTimeout(() => setProjectorLinkCopied(false), 2500);
+    } catch {
+      window.prompt("Copia este enlace para el televisor:", url.toString());
+    }
+  }
 
   return (
     <main
@@ -69,11 +83,19 @@ export function EventOrganizerBoard(props: { joinCode: string; onBack?: () => vo
         >
           {projectorTv ? "Modo TV activo" : "Activar modo TV"}
         </button>
-        {projectorTv && (
-          <span className="meta">Tipografía ampliada · comparte la URL con ?projector=1</span>
-        )}
+        <button
+          type="button"
+          className="ghost sm"
+          data-testid="escape-organizer-copy-tv-link"
+          onClick={() => void copyProjectorLink()}
+        >
+          {projectorLinkCopied ? "Enlace copiado" : "Copiar enlace TV"}
+        </button>
+        <span className="meta organizer-toolbar-hint">
+          En el proyector abre el enlace copiado (incluye <code>?projector=1</code>)
+        </span>
       </div>
-      <div className="event-poster organizer-poster">
+      <div className={`event-poster organizer-poster poster-cartel ${projectorTv ? "poster-cartel-tv" : ""}`}>
         {board?.coverImage && (
           <img
             src={board.coverImage}
@@ -85,8 +107,12 @@ export function EventOrganizerBoard(props: { joinCode: string; onBack?: () => vo
         )}
         <div className="event-poster-scrim" aria-hidden />
         <div className="event-poster-body">
-          <p className="eyebrow">Invitación al escape</p>
-          <h1 className="display-sm">{board?.title ?? "Cargando evento…"}</h1>
+          <p className="eyebrow poster-eyebrow">{projectorTv ? "Ranking en vivo" : "Invitación al escape"}</p>
+          <h1 className="display-sm">
+            {q.isError
+              ? "Evento no encontrado"
+              : board?.title ?? (q.isLoading ? "Cargando evento…" : "—")}
+          </h1>
           <div className="event-poster-invite">
             <div className="event-poster-invite-copy">
               <p className="join-code poster-code" aria-label={`Código del evento: ${props.joinCode}`}>
@@ -132,8 +158,16 @@ export function EventOrganizerBoard(props: { joinCode: string; onBack?: () => vo
           </button>
         </section>
       )}
-      {q.isError && <p className="error">No se pudo cargar el evento.</p>}
-      {q.isLoading && <p className="muted">Actualizando equipos…</p>}
+      {q.isError && (
+        <p className="error" role="alert" data-testid="escape-organizer-not-found">
+          No encontramos un evento con el código <strong>{props.joinCode}</strong>. Compruébalo con quien
+          creó la partida.
+        </p>
+      )}
+      {q.isLoading && !q.isError && <p className="muted">Cargando ranking…</p>}
+      {q.isFetching && !q.isLoading && !q.isError && (
+        <p className="muted sm">Actualizando equipos…</p>
+      )}
       <ol className="leaderboard-list leaderboard-projector" data-testid="escape-leaderboard-list">
         {(board?.teams ?? []).map((t, i) => {
           const avatar = teamAvatarStyle(t.teamName);

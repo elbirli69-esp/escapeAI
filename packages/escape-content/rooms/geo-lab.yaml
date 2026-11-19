@@ -1,6 +1,6 @@
 id: geo-lab
 name: Rally GPS (demo)
-tagline: Llega al punto y responde preguntas del entorno.
+tagline: Llega al kilómetro cero, sigue las pistas urbanas y cierra el rally con el quiz GPS.
 theme: urban
 coverImage: /media/lighthouse-dock.jpg
 timeLimitSec: 2400
@@ -8,7 +8,35 @@ startSceneId: waypoint
 winCondition:
   type: puzzle_solved
   puzzleId: ciudad_quiz
-items: {}
+beats:
+  - id: geo_open
+    after: session_started
+    text: "El rally arranca en el kilómetro cero: primero llega, luego responde."
+  - id: geo_reach
+    after: puzzle_solved
+    puzzleId: llegar_sol
+    text: "Posición confirmada; la placa del oso guarda otra pista antes del quiz."
+  - id: geo_plaza
+    after: scene_entered
+    sceneId: plaza_clue
+    text: "El Kilómetro Cero susurra un código en bronce y un tono en la entrada del metro."
+  - id: geo_quiz
+    after: puzzle_solved
+    puzzleId: pedestal_code
+    text: "Listo para el quiz final: confirma otra vez el GPS y nombra la ciudad."
+  - id: geo_galeria
+    after: scene_entered
+    sceneId: galeria_rally
+    text: "Los carteles del rally cuentan letras ocultas; el quiz GPS exige la ciudad correcta."
+  - id: geo_pin
+    after: puzzle_solved
+    puzzleId: pin_board
+    text: "El pin en el corcho marca el último hito antes del quiz por GPS."
+items:
+  pin_rally:
+    name: Pin del rally
+    description: Chapa metálica del kilómetro cero para lucir en el corcho de la galería.
+    image: /media/pilot-control.jpg
 scenes:
   waypoint:
     id: waypoint
@@ -16,15 +44,46 @@ scenes:
     image: /media/lighthouse-dock.jpg
     mood: El móvil es tu brújula; el motor valida el GPS en servidor.
     description: >
-      Demo en Madrid (Km 0, Puerta del Sol). En producción defines lat/lon y radio
-      en el YAML de cada evento o sala generada.
+      Demo en Madrid (Km 0, Puerta del Sol). Acércate al punto, confirma posición
+      y sigue la cadena hasta el quiz del entorno.
     puzzles: [llegar_sol]
     exits:
-      - toSceneId: quiz_zone
-        label: Continuar al quiz del entorno
+      - toSceneId: plaza_clue
+        label: Ir a la placa del Oso y el Madroño
         when:
           type: puzzle_solved
           puzzleId: llegar_sol
+  plaza_clue:
+    id: plaza_clue
+    title: Placa del Kilómetro Cero
+    image: /media/pilot-entrance.jpg
+    mood: Turistas pasan; bajo tus pies brilla la referencia oficial de España.
+    description: >
+      El oso y el madroño del escudo cuidan el punto cero. Un panel sugiere dos pistas:
+      un código de tres letras en la placa y un pitido desde la boca del metro.
+    puzzles: [metro_ping, pedestal_code]
+    exits:
+      - toSceneId: galeria_rally
+        label: Pasar por la galería de carteles
+        when:
+          type: puzzle_solved
+          puzzleId: pedestal_code
+  galeria_rally:
+    id: galeria_rally
+    title: Galería del rally
+    image: /media/pilot-entrance.jpg
+    mood: Carteles vintage, graffiti discreto y luces de feria urbana.
+    description: >
+      Antes del quiz final, un cartel comparativo cuelga de la farola: cuenta
+      elementos visibles para validar que el GPS no es lo único que prueba el móvil.
+    items: [pin_rally]
+    puzzles: [cartel_visual, pin_board]
+    exits:
+      - toSceneId: quiz_zone
+        label: Ir al quiz del entorno
+        when:
+          type: puzzle_solved
+          puzzleId: pin_board
   quiz_zone:
     id: quiz_zone
     title: Quiz en el sitio
@@ -51,6 +110,59 @@ puzzles:
     hints:
       - level: 1
         text: Si estás en escritorio sin GPS, prueba en un móvil real al aire libre.
+  metro_ping:
+    id: metro_ping
+    type: sound
+    label: Eco del metro
+    cardImage: /media/pilot-basement.jpg
+    prompt: Escucha un pitido desde la entrada del metro (opcional, refuerza el rally).
+    soundMode: beeps
+    beepPattern: [120]
+    minListenSec: 1
+    answer: "1"
+    normalize: trim
+    maxHints: 1
+    hints:
+      - level: 1
+        text: Un solo tono corto.
+  cartel_visual:
+    id: cartel_visual
+    type: visual
+    label: Cartel del rally
+    cardImage: /media/pilot-control.jpg
+    visualLayout: single
+    prompt: Observa la foto unos segundos. ¿Cuántas letras tiene la palabra «RALLY» en el cartel? (número)
+    pexelsQuery: urban poster letters
+    answer: "5"
+    normalize: trim
+    maxHints: 1
+    hints:
+      - level: 1
+        text: R-A-L-L-Y son cinco letras.
+  pin_board:
+    id: pin_board
+    type: inventory
+    label: Corcho de la galería
+    cardImage: /media/pilot-entrance.jpg
+    prompt: Coloca el pin del rally en el corcho para marcar tu paso.
+    requiresItem: pin_rally
+    maxHints: 1
+    hints:
+      - level: 1
+        text: Coge la chapa en la sala y pulsa «Usar» en este panel.
+  pedestal_code:
+    id: pedestal_code
+    type: code
+    label: Placa del escudo
+    prompt: Tres letras del animal del escudo de Madrid (mayúsculas).
+    answer: OSO
+    normalize: uppercase
+    maxHints: 2
+    hints:
+      - level: 1
+        text: No es el árbol, sino el mamífero del símbolo.
+      - level: 2
+        text: OSO.
   ciudad_quiz:
     id: ciudad_quiz
     type: location
