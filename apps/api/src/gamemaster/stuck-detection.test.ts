@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { generateAdventureRoom } from "@escapeai/escape-content";
 import { createSession, type PlayerContext } from "@escapeai/escape-engine";
-import type { GmSessionMeta } from "./persistence.js";
+import { defaultGmSessionMeta, type GmSessionMeta } from "./persistence.js";
 import {
   detectTeamStuckTrigger,
   markStuckNotified,
@@ -9,23 +9,7 @@ import {
 } from "./stuck-detection.js";
 
 function metaBase(overrides: Partial<GmSessionMeta> = {}): GmSessionMeta {
-  return {
-    sequence: 0,
-    dedupeKeys: [],
-    llmCallCount: 0,
-    lastLlmCallMs: 0,
-    visitedSceneIds: [],
-    lastProgressMs: 0,
-    stuckNotifiedPuzzleIds: [],
-    characterTurnCount: 0,
-    lastCharacterTurnMs: 0,
-    paceNudgeIssued: false,
-    stuckAmbientIssuedPuzzleIds: [],
-    aheadFlavorIssued: false,
-    bonusHintGrantedPuzzleIds: [],
-    catalogFailNudgePuzzleIds: [],
-    ...overrides,
-  };
+  return { ...defaultGmSessionMeta(), ...overrides };
 }
 
 function loadRoom() {
