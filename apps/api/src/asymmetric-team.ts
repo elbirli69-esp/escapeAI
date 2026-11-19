@@ -5,8 +5,6 @@ const ASYMMETRIC_PLAYER_ROLES = ["researcher", "field"] as const satisfies reado
 import type { EventStore, StoredEvent, StoredTeam, StoredTeamMember } from "./event-store.js";
 import type { SessionStore } from "./session-store.js";
 
-const MAX_MEMBERS = ASYMMETRIC_PLAYER_ROLES.length;
-
 export function eventHasAsymmetricRoles(event: StoredEvent): boolean {
   return Boolean(event.config.asymmetricRoles);
 }
@@ -40,7 +38,7 @@ function mergedTeamClues(sessions: SessionRecord[]): Map<string, string> {
 }
 
 export async function loadTeamMemberSessions(
-  event: StoredEvent,
+  _event: StoredEvent,
   team: StoredTeam,
   sessionStore: SessionStore,
 ): Promise<SessionRecord[]> {

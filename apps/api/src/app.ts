@@ -1,6 +1,11 @@
 import { listRoomIds, loadRoomById, ROOM_CATALOG } from "@escapeai/escape-content";
 import { createSession, toAiContext } from "@escapeai/escape-engine";
-import type { CreateSessionRequest, GameAction, GameEvent } from "@escapeai/shared";
+import {
+  isPlayerRoleId,
+  type CreateSessionRequest,
+  type GameAction,
+  type GameEvent,
+} from "@escapeai/shared";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { runGameplayAction } from "./app-gm.js";
@@ -117,9 +122,18 @@ export async function createApp(store?: SessionStore): Promise<Hono> {
         sessionStore,
         gm,
         {
-          playerRole: "playerRole" in body ? body.playerRole : undefined,
-          memberName: "memberName" in body ? body.memberName : undefined,
-          memberId: "memberId" in body ? body.memberId : undefined,
+          playerRole:
+            "playerRole" in body &&
+            typeof body.playerRole === "string" &&
+            isPlayerRoleId(body.playerRole)
+              ? body.playerRole
+              : undefined,
+          memberName:
+            "memberName" in body && typeof body.memberName === "string"
+              ? body.memberName
+              : undefined,
+          memberId:
+            "memberId" in body && typeof body.memberId === "string" ? body.memberId : undefined,
         },
       );
       return c.json(result.body, result.status as 200 | 201 | 404);
