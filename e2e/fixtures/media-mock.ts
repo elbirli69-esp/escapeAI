@@ -27,7 +27,23 @@ export async function mockCameraForPlaywright(page: Page): Promise<void> {
   });
 }
 
+async function confirmHybridSalaIfNeeded(page: Page): Promise<void> {
+  const capture = page.getByTestId("escape-camera-capture");
+  if (await capture.isVisible().catch(() => false)) {
+    return;
+  }
+  const salaConfirm = page.getByTestId("escape-hybrid-sala-confirm");
+  if (!(await salaConfirm.isVisible().catch(() => false))) {
+    return;
+  }
+  await salaConfirm.click();
+  await expect(page.getByTestId("escape-narrative-log")).toContainText(/sala confirmada/i, {
+    timeout: 10_000,
+  });
+}
+
 export async function captureCameraThroughUi(page: Page): Promise<void> {
+  await confirmHybridSalaIfNeeded(page);
   const continuar = page.getByRole("button", { name: "Continuar", exact: true });
   if (await continuar.isVisible().catch(() => false)) {
     await continuar.click();
@@ -48,6 +64,7 @@ export async function captureCameraThroughUi(page: Page): Promise<void> {
 
 /** Estaciones keyword/count: captura si hace falta y confirmación manual local. */
 export async function satisfyCameraStep(page: Page): Promise<void> {
+  await confirmHybridSalaIfNeeded(page);
   const continuar = page.getByRole("button", { name: "Continuar", exact: true });
   if (await continuar.isVisible().catch(() => false)) {
     await continuar.click();

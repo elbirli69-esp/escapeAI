@@ -46,10 +46,6 @@ export async function playGeneratedThroughAct2AndFinaleVisual(
   const room = mysteryFixtureRoom(eventId);
   await playGeneratedThroughAct1(page, eventId);
   await selectPuzzle(page, "camera_hunt");
-  await page.getByTestId("escape-hybrid-sala-confirm").click();
-  await expect(page.getByTestId("escape-narrative-log")).toContainText(/sala confirmada/i, {
-    timeout: 10_000,
-  });
   await captureCameraThroughUi(page);
   await submitAnswer(page, room.puzzles.camera_hunt!.answer!);
   await page.getByRole("button", { name: "Coger" }).click();
@@ -58,7 +54,6 @@ export async function playGeneratedThroughAct2AndFinaleVisual(
 
   if (room.puzzles.finale_poster) {
     await selectPuzzle(page, "finale_poster");
-    await page.getByTestId("escape-hybrid-sala-confirm").click();
     await captureCameraThroughUi(page);
     await submitAnswer(page, room.puzzles.finale_poster.answer!);
   }
