@@ -38,18 +38,23 @@ export async function selectPuzzle(page: Page, puzzleId: string): Promise<void> 
   await tab.click();
 }
 
+async function waitGameIdle(page: Page): Promise<void> {
+  await expect(page.locator("main.shell.game")).toHaveAttribute("aria-busy", "false", {
+    timeout: 30_000,
+  });
+}
+
 export async function submitAnswer(page: Page, value: string): Promise<void> {
   await page.getByTestId("escape-answer-input").fill(value);
-  const submit = page.getByTestId("escape-submit-answer");
-  await submit.click();
-  await expect(submit).toBeEnabled({ timeout: 30_000 });
+  await page.getByTestId("escape-submit-answer").click();
+  await waitGameIdle(page);
 }
 
 export async function requestHint(page: Page): Promise<void> {
   const btn = page.getByTestId("escape-request-hint");
   await expect(btn).toBeEnabled({ timeout: 30_000 });
   await btn.click();
-  await expect(btn).toBeEnabled({ timeout: 30_000 });
+  await waitGameIdle(page);
 }
 
 export async function getSessionId(page: Page): Promise<string | null> {
