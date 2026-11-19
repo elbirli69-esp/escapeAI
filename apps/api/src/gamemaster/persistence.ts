@@ -29,6 +29,9 @@ export type GmSessionMeta = {
   bonusHintGrantedPuzzleIds: string[];
   /** Empujón GM tras 2º fallo en puzzle (catálogo, una vez por puzzle). */
   catalogFailNudgePuzzleIds: string[];
+  /** Preguntas al director (chips FAQ, GM-6). */
+  directorFaqCount: number;
+  directorFaqLastMsById: Record<string, number>;
 };
 
 const defaultMeta = (): GmSessionMeta => ({
@@ -46,6 +49,8 @@ const defaultMeta = (): GmSessionMeta => ({
   aheadFlavorIssued: false,
   bonusHintGrantedPuzzleIds: [],
   catalogFailNudgePuzzleIds: [],
+  directorFaqCount: 0,
+  directorFaqLastMsById: {},
 });
 
 export interface GmInterventionStore {

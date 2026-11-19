@@ -11,6 +11,7 @@ import {
 } from "./api";
 import { ExperienceLobby } from "./ExperienceLobby";
 import { GameSessionSkeleton } from "./GameSessionSkeleton";
+import { DirectorFaqPanel } from "./DirectorFaqPanel.js";
 import { InteractivePuzzle } from "./InteractivePuzzle";
 import { SceneHero } from "./SceneHero";
 import { SpatialSitePlayMap } from "./SpatialSitePlayMap";
@@ -691,6 +692,13 @@ function GameView(props: {
             </ul>
           )}
         </section>
+      )}
+
+      {state.status === "playing" && (
+        <DirectorFaqPanel
+          busy={props.busy}
+          onFaq={(faqId) => props.onAction({ type: "director_faq", faqId })}
+        />
       )}
 
       {(state.sceneCharacters?.length ?? 0) > 0 && (

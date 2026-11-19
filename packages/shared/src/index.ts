@@ -11,7 +11,8 @@ export type GameActionType =
   | "take_item"
   | "use_item"
   | "complete_interaction"
-  | "talk_to_character";
+  | "talk_to_character"
+  | "director_faq";
 
 export type InteractionStep = "listen" | "speak" | "capture" | "view" | "arrive";
 
@@ -66,6 +67,27 @@ export type TalkToCharacterAction = {
   message: string;
 };
 
+/** Chips «Ayuda del director» (GM-6) — sin texto libre del jugador. */
+export type DirectorFaqId =
+  | "time_ok"
+  | "puzzle_priority"
+  | "what_to_look"
+  | "stuck_no_spoiler"
+  | "should_request_hint";
+
+export const DIRECTOR_FAQ_IDS: DirectorFaqId[] = [
+  "time_ok",
+  "puzzle_priority",
+  "what_to_look",
+  "stuck_no_spoiler",
+  "should_request_hint",
+];
+
+export type DirectorFaqAction = {
+  type: "director_faq";
+  faqId: DirectorFaqId;
+};
+
 export type PublicCharacter = {
   id: string;
   displayName: string;
@@ -84,7 +106,8 @@ export type GameAction =
   | TakeItemAction
   | UseItemAction
   | CompleteInteractionAction
-  | TalkToCharacterAction;
+  | TalkToCharacterAction
+  | DirectorFaqAction;
 
 export type PublicPuzzleType =
   | "code"
@@ -212,7 +235,8 @@ export type GameEvent =
   | { type: "hint_requested"; puzzleId: string; level: number }
   | { type: "game_won" }
   | { type: "game_lost" }
-  | { type: "character_talk"; characterId: string; message: string };
+  | { type: "character_talk"; characterId: string; message: string }
+  | { type: "director_faq"; faqId: DirectorFaqId };
 
 export type ApplyResult = {
   ok: boolean;

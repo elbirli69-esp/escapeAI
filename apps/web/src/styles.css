@@ -729,6 +729,13 @@ button {
   flex-shrink: 0;
 }
 
+.faq-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
 .end {
   text-align: center;
   padding: 1.5rem 1rem;

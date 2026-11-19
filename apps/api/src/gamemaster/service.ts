@@ -44,6 +44,8 @@ import {
 } from "./triggers.js";
 import { recordGmIntervention, recordGmLlmAttempt } from "./metrics.js";
 import { validateIntervention } from "./validation.js";
+import { GM_DIRECTOR_FAQ_COOLDOWN_MS, GM_DIRECTOR_FAQ_MAX } from "./director-faq.js";
+import { sortTriggersByPriority } from "./trigger-priority.js";
 
 const MAX_LLM_PER_SESSION = Number(process.env.GM_MAX_LLM_CALLS ?? 40);
 const LLM_COOLDOWN_MS = Number(process.env.GM_LLM_COOLDOWN_MS ?? 3000);
@@ -127,7 +129,7 @@ export class GameMasterService {
     const forbidden = collectForbiddenAnswerTokens(session);
     const pacing = computeGmPacing(session);
 
-    for (const trigger of triggers) {
+    for (const trigger of sortTriggersByPriority(triggers)) {
       const failNudge =
         trigger.type === "PUZZLE_FAILED" && isPuzzleFailNudgeEligible(session, trigger, meta);
       if (trigger.type === "PUZZLE_FAILED" && TRIGGER_POLICY.PUZZLE_FAILED === "silent" && !failNudge) {
@@ -207,6 +209,12 @@ export class GameMasterService {
         meta.lastCharacterTurnMs = Date.now();
         await this.store.saveMeta(session.sessionId, meta);
       }
+      if (trigger.type === "DIRECTOR_FAQ" && trigger.payload?.faqId) {
+        const faqId = String(trigger.payload.faqId);
+        meta.directorFaqCount += 1;
+        meta.directorFaqLastMsById = { ...meta.directorFaqLastMsById, [faqId]: Date.now() };
+        await this.store.saveMeta(session.sessionId, meta);
+      }
       if (trigger.type === "PACE_NUDGE") {
         meta = markPaceNudgeIssued(meta);
         meta = maybeGrantBonusHintFromGm(session, meta, primaryOpenPuzzleId(session));
@@ -230,11 +238,24 @@ export class GameMasterService {
     policy: string,
   ): Promise<{ intervention: NarrativeIntervention | null; llmAttempted: boolean }> {
     let llmAttempted = false;
+    const now = Date.now();
+    if (trigger.type === "DIRECTOR_FAQ") {
+      const faqId = String(trigger.payload?.faqId ?? "");
+      if (meta.directorFaqCount >= GM_DIRECTOR_FAQ_MAX) {
+        return { intervention: null, llmAttempted: false };
+      }
+      const last = meta.directorFaqLastMsById[faqId] ?? 0;
+      if (faqId && now - last < GM_DIRECTOR_FAQ_COOLDOWN_MS) {
+        return { intervention: null, llmAttempted: false };
+      }
+    }
+
     const dedupe = `${trigger.type}:${
       trigger.payload?.puzzleId ??
       trigger.payload?.sceneId ??
       trigger.payload?.itemId ??
       trigger.payload?.characterId ??
+      trigger.payload?.faqId ??
       trigger.sourceEventId
     }${trigger.payload?.assistTier ? `:${trigger.payload.assistTier}` : ""}`;
     if (recentInterventions.some((i) => i.meta.trigger === dedupe)) {
@@ -264,7 +285,6 @@ export class GameMasterService {
       clueRefs = [{ puzzleId, hintLevel: level }];
     }
 
-    const now = Date.now();
     const characterBudgetOk =
       trigger.type !== "CHARACTER_TURN" || meta.characterTurnCount < MAX_CHARACTER_LLM;
     const characterCooldownOk =
