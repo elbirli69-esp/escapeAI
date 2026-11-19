@@ -83,6 +83,7 @@ Los contadores son **por instancia de proceso** (serverless: no agregan entre rÃ
 | --------- | --------- |
 | [gm-dialogo-er-plan.md](./gm-dialogo-er-plan.md) | Plan maestro |
 | [gm-dialogo-er-matrix.md](./gm-dialogo-er-matrix.md) | Estado casos Aâ€“L |
+| [gamemaster-ai-caso-a.md](./gamemaster-ai-caso-a.md) | Caso A (atasco sin pista) |
 | [gamemaster-ai-caso-e-l.md](./gamemaster-ai-caso-e-l.md) | Casos E y L |
 
 Plan maestro (GM-6+): [gm-dialogo-er-plan.md](./gm-dialogo-er-plan.md).
