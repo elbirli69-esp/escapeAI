@@ -61,7 +61,7 @@ describe("stuck-detection", () => {
   it("actualiza foco y progreso tras fallos", () => {
     const room = loadRoom();
     const session = createSession(room);
-    const base = metaBase();
+    const base = metaBase({ lastProgressMs: 0 });
     const next = updateProgressMeta(
       session,
       { type: "submit_answer", puzzleId: "entry_lock", value: "x" },

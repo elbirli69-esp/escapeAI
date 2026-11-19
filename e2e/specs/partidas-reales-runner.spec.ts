@@ -88,7 +88,7 @@ test.describe("partidas reales (prompt §6)", () => {
     await submitAnswer(page, "0000");
     wrongAttempts++;
     evidencePush(evidence, "attempt", "0000 en candado (orden malo)", "lockbox");
-    if (await page.getByRole("button", { name: /Pedir pista/ }).isEnabled().catch(() => false)) {
+    if (await page.getByTestId("escape-request-hint").isEnabled().catch(() => false)) {
       await requestHint(page);
       evidencePush(evidence, "hint", "pista candado", "lockbox");
     }
@@ -98,7 +98,7 @@ test.describe("partidas reales (prompt §6)", () => {
     await submitAnswer(page, "1234");
     wrongAttempts++;
     evidencePush(evidence, "attempt", "1234 en timbre", "intercom_tone");
-    if (await page.getByRole("button", { name: /Pedir pista/ }).isEnabled().catch(() => false)) {
+    if (await page.getByTestId("escape-request-hint").isEnabled().catch(() => false)) {
       await requestHint(page);
       evidencePush(evidence, "hint", "pista timbre", "intercom_tone");
     }
@@ -106,7 +106,7 @@ test.describe("partidas reales (prompt §6)", () => {
     evidencePush(evidence, "solve", "timbre resuelto", "intercom_tone");
 
     await selectPuzzle(page, "lockbox");
-    if (await page.getByRole("button", { name: /Pedir pista/ }).isEnabled().catch(() => false)) {
+    if (await page.getByTestId("escape-request-hint").isEnabled().catch(() => false)) {
       await requestHint(page);
       evidencePush(evidence, "hint", "pista candado N2+", "lockbox");
     }

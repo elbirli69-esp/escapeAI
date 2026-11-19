@@ -40,13 +40,16 @@ export async function selectPuzzle(page: Page, puzzleId: string): Promise<void> 
 
 export async function submitAnswer(page: Page, value: string): Promise<void> {
   await page.getByTestId("escape-answer-input").fill(value);
-  await page.getByTestId("escape-submit-answer").click();
+  const submit = page.getByTestId("escape-submit-answer");
+  await submit.click();
+  await expect(submit).toBeEnabled({ timeout: 30_000 });
 }
 
 export async function requestHint(page: Page): Promise<void> {
-  const btn = page.getByRole("button", { name: /Pedir pista/ });
-  await expect(btn).toBeEnabled({ timeout: 10_000 });
+  const btn = page.getByTestId("escape-request-hint");
+  await expect(btn).toBeEnabled({ timeout: 30_000 });
   await btn.click();
+  await expect(btn).toBeEnabled({ timeout: 30_000 });
 }
 
 export async function getSessionId(page: Page): Promise<string | null> {
