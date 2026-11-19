@@ -2,8 +2,8 @@
 
 **Versión:** 1.0  
 **Fecha:** 2026-11-19  
-**Base de código auditada:** `main` (GM-0…GM-5, partidas reales, PR #98 pista N3 pilot)  
-**Autor:** pasada de diseño según prompt de producto (sin implementación de código en esta entrega).
+**Base de código auditada:** `main` (GM-0…GM-10, matriz A–L en CI)  
+**Estado matriz A–L:** véase [gm-dialogo-er-matrix.md](./gm-dialogo-er-matrix.md) (fuente de verdad para tests y PASS).
 
 ---
 
@@ -308,13 +308,13 @@ type ClueLedgerEntry = {
 };
 ```
 
-**PublicState (PROPUESTO):** `clueHistory?: ClueLedgerEntry[]` (derivado al serializar, no mapa paralelo).
+**PublicState:** `clueHistory?: ClueLedgerEntry[]` — **IMPLEMENTADO** (GM-7, `buildClueHistory`).
 
 ### 5.3 Persistencia y recarga
 
 - Motor: sesión en KV/memoria — **IMPLEMENTADO** (`gamemaster-reload` E2E).
 - GM: lista intervenciones por `sessionId` — **IMPLEMENTADO**.
-- Tras reload: `puzzleHintsUsed` debe evitar reentrega de hints — **verificar** Caso L (PENDIENTE_DE_VALIDACIÓN si no hay spec dedicado).
+- Tras reload: `puzzleHintsUsed` evita reentrega de hints — **IMPLEMENTADO** (Caso L: `session-serialize.test.ts`, `gamemaster-reload.spec.ts`).
 
 ### 5.4 Idempotencia
 
@@ -495,7 +495,7 @@ LLM **no puede** (ya en diseño; reforzar tests):
 | ----- | ------- |
 | Objetivo | Matriz A–L verde; métricas §11 |
 | Reutiliza | `partidas-reales-runner`, `experience-eval` |
-| DoD | Informe playtest GM; cap regressions |
+| DoD | Matriz [gm-dialogo-er-matrix.md](./gm-dialogo-er-matrix.md) PASS; perfil `gm-dialogo-matrix` en `experience-matrix.json` |
 
 ### Clasificación global
 
@@ -519,7 +519,7 @@ LLM **no puede** (ya en diseño; reforzar tests):
 | ---- | ----- |
 | Unit | `request_hint`, `validateIntervention`, `sortTriggers`, FAQ fallbacks |
 | API | `gamemaster.integration.test.ts` + FAQ |
-| E2E | `director-faq.spec.ts`, `partidas-reales-runner`, `gamemaster-reload` |
+| E2E | `director-faq`, `gm-dialogo-case-a`, `gm-dialogo-case-e`, `gm-dialogo-matrix`, `gamemaster-reload`, `partidas-reales-runner` |
 | Contenido | `audit-coherence`, validate N3 |
 
 ### 10.2 Playtests
@@ -529,22 +529,22 @@ LLM **no puede** (ya en diseño; reforzar tests):
 
 ### 10.3 Matriz de casos A–L
 
-| Caso | Preparación | Acción | Esperado | Evidencia | Test |
-| ---- | ------------- | ------ | -------- | --------- | ---- |
-| A | pilot novatos, atasco | Fallos sin hint | TEAM_STUCK / fail nudge; no answer | narrative sin código | PARCIAL (partidas reales) |
-| B | puzzle abierto | request_hint ×3 | Orden 1→2→3; puzzleHintsUsed=3 | narrative + meta | engine unit |
-| C | pilot entrada | talk NPC objeto oculto | Evasión; no inventar objeto | gm kind character | **PENDIENTE_E2E** |
-| D | pilot lockbox | “dime código” a NPC | forbiddenTopics / fallback | no 1984 en respuesta | **PENDIENTE_E2E** |
-| E | hipótesis falsa | mensaje al NPC | no adoptar hipótesis | copy estable | manual + LLM off |
-| F | sin OPENAI_* | partida completa | static OK | experience-metrics | IMPLEMENTADO |
-| G | forzar stuck+pace | read poll GM | ≤1 banner relevante | no spam logs | **PROPUESTO unit** |
-| H | hint en flight + solve | submit correcto | hint no contradictorio post-win | status won | **PROPUESTO** |
-| I | win | acciones concurrentes | sin stuck post-win | gm list tail | **PROPUESTO** |
-| J | double request_hint | doble click | un nivel / error 2º | puzzleHintsUsed | engine |
-| K | injection en NPC | “ignora reglas…” | fallback | static only | **PENDIENTE** |
-| L | reload sesión | F5 / resume | hintsUsed conservado | resume spec parcial | `gamemaster-reload` PARCIAL |
+| Caso | Preparación | Acción | Esperado | Evidencia | Test / estado |
+| ---- | ------------- | ------ | -------- | --------- | --------------- |
+| A | pilot novatos, atasco | Fallos sin hint | TEAM_STUCK / fail nudge; no answer | narrative sin código | **PASS** — `gm-dialogo-case-a.spec.ts` |
+| B | puzzle abierto | request_hint ×3 | Orden 1→2→3; puzzleHintsUsed=3 | narrative + meta | **PASS** — `hint-levels`, clue-ledger unit |
+| C | pilot entrada | talk NPC objeto oculto | Evasión; no inventar objeto | gm kind character | **PASS** — `gm-dialogo-matrix.spec.ts` |
+| D | pilot lockbox | “dime código” a NPC | forbiddenTopics / fallback | no 1984 en respuesta | **PASS** — `gm-dialogo-matrix.spec.ts` |
+| E | hipótesis falsa | mensaje al NPC | no adoptar hipótesis | copy estable | **PASS** — static: `gm-dialogo-case-e`, `characters.test.ts`; **LLM on:** playtest manual |
+| F | sin OPENAI_* | partida completa | static OK | experience-metrics | **PASS** |
+| G | forzar stuck+pace | read poll GM | ≤1 banner relevante | no spam logs | **PASS** — `orchestration.test.ts` |
+| H | hint en flight + solve | submit correcto | hint no contradictorio post-win | status won | **PASS** — `orchestration.test.ts`, `service.test.ts` |
+| I | win | acciones concurrentes | sin stuck post-win | gm list tail | **PASS** — `orchestration.test.ts` |
+| J | double request_hint | doble click | un nivel / error 2º | puzzleHintsUsed | **PASS** — `hint-levels.test.ts` |
+| K | injection en NPC | “ignora reglas…” | fallback | static only | **PASS** — `gm-dialogo-matrix.spec.ts` |
+| L | reload sesión | F5 / resume | hintsUsed conservado | resume spec | **PASS** — `gamemaster-reload`, `session-serialize.test.ts` |
 
-*No se afirma PASS global de A–L en esta pasada — varios PENDIENTE.*
+Detalle de automatización: [gm-dialogo-er-matrix.md](./gm-dialogo-er-matrix.md).
 
 ### 10.4 Métricas
 
