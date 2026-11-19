@@ -135,6 +135,7 @@
       "priority": "P1",
       "weight": 0.55,
       "e2eSpecs": [
+        "specs/gm-dialogo-case-a.spec.ts",
         "specs/gm-dialogo-matrix.spec.ts",
         "specs/director-faq.spec.ts"
       ],
