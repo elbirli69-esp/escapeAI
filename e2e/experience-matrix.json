@@ -128,6 +128,19 @@
       "evaluateDimensions": ["flow"]
     },
     {
+      "id": "gm-dialogo-matrix",
+      "label": "GM diálogo ER (NPC límites)",
+      "mode": "catalog",
+      "roomId": "pilot",
+      "priority": "P1",
+      "weight": 0.55,
+      "e2eSpecs": [
+        "specs/gm-dialogo-matrix.spec.ts",
+        "specs/director-faq.spec.ts"
+      ],
+      "evaluateDimensions": ["fairplay", "flow", "fun"]
+    },
+    {
       "id": "gamemaster-persistence",
       "label": "GameMaster tras recarga",
       "mode": "catalog",

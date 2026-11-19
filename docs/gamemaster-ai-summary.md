@@ -26,6 +26,7 @@ El **Escape Engine** es la fuente de verdad del juego. GameMasterAI **observa** 
 | **GM-7** | — | Clue ledger `clueHistory`, linter N3 → [gm7](./gamemaster-ai-gm7.md) |
 | **GM-8** | — | NPC `event_guide` en eventos + lighthouse → [gm8](./gamemaster-ai-gm8.md) |
 | **GM-9** | — | Orquestación filter + prioridad (Fase D) → [gm9](./gamemaster-ai-gm9.md) |
+| **GM-10** | — | Matriz A–L + E2E NPC/FAQ → [gm10](./gamemaster-ai-gm10.md) · [matriz](./gm-dialogo-er-matrix.md) |
 
 ## Triggers principales
 
@@ -78,11 +79,14 @@ Los contadores son **por instancia de proceso** (serverless: no agregan entre r�
 
 ## Producto — plan de diálogo ER
 
+| Documento | Contenido |
+| --------- | --------- |
+| [gm-dialogo-er-plan.md](./gm-dialogo-er-plan.md) | Plan maestro |
+| [gm-dialogo-er-matrix.md](./gm-dialogo-er-matrix.md) | Estado casos A–L |
+
 Plan maestro (GM-6+): [gm-dialogo-er-plan.md](./gm-dialogo-er-plan.md).
 
 ## Pendiente / fuera del roadmap GM-0
-
-- Personajes en salas generadas automáticamente.
 - TTS cloud del Director.
 - Contexto spatial enriquecido para el LLM (previsto en GM-0 §7.4).
 - Orquestador legado: shim; deprecar cuando la UI solo use `gmInterventions`.
