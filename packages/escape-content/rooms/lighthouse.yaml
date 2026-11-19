@@ -129,7 +129,7 @@ puzzles:
       - level: 2
         text: Cuatro letras, todo mayúsculas.
       - level: 3
-        text: HIGH.
+        text: En inglés, cuatro letras para marea ascendente; suele ir en carteles junto a LOW.
   refill_lamp:
     id: refill_lamp
     type: inventory
@@ -186,4 +186,4 @@ puzzles:
       - level: 2
         text: Tres letras muy conocidas en emergencias marítimas.
       - level: 3
-        text: SOS.
+        text: Tres letras en mayúsculas, la sigla radiotelegráfica universal de socorro (sin puntos).
