@@ -55,6 +55,8 @@ export type SessionRecord = {
   catalogAssistKeys?: Set<string>;
   /** P6-B: pistas aportadas por otros miembros del equipo (solo lectura cooperativa). */
   teamGrantedClues: Map<string, string>;
+  /** P6-D: organizador liberó acto 2 para esta partida de evento. */
+  sagaAct2Released?: boolean;
 };
 
 export function createSession(room: RoomDefinition, playerContext?: PlayerContext): SessionRecord {
@@ -532,6 +534,10 @@ function conditionMet(session: SessionRecord, condition: Condition): boolean {
       return clueAvailable(session, condition.clueId);
     case "team_progress_gte":
       return (session.teamProgress?.value ?? 0) >= condition.min;
+    case "saga_finale_unlocked":
+      return (
+        session.solvedPuzzles.has(condition.act1PuzzleId) && Boolean(session.sagaAct2Released)
+      );
     default:
       return false;
   }
@@ -750,6 +756,11 @@ export function toPublicState(session: SessionRecord, nowMs = Date.now()): Publi
       ? PLAYER_ROLE_LABELS[session.playerContext.playerRole]
       : undefined,
     asymmetricCoopBanner: session.playerContext?.asymmetricRoles ? ASYMMETRIC_COOP_BANNER : undefined,
+    sagaActLabel: session.room.sagaTwoActs
+      ? session.currentSceneId === "finale_b"
+        ? "Acto 2"
+        : "Acto 1"
+      : undefined,
     eventJoinCode: session.playerContext?.joinCode,
     status: session.status,
     currentSceneId: session.currentSceneId,

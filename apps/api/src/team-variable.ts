@@ -77,6 +77,8 @@ export async function refreshSessionTeamProgress(
   const event = await eventStore.getByCode(ctx.joinCode);
   if (!event) return;
   attachTeamProgressToSession(session, event);
+  const { refreshSagaOnSession } = await import("./saga-event.js");
+  await refreshSagaOnSession(eventStore, session);
 }
 
 export async function onPuzzleSolvedForTeamVariable(deps: {

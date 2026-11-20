@@ -219,6 +219,8 @@ export type PublicState = {
   playerRole?: import("./player-role.js").PlayerRoleId;
   playerRoleLabel?: string;
   asymmetricCoopBanner?: string;
+  /** P6-D: etiqueta de acto en saga de dos partes. */
+  sagaActLabel?: string;
   eventJoinCode?: string;
   status: GameStatus;
   currentSceneId: string;

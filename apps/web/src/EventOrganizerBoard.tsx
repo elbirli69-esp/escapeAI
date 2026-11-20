@@ -2,7 +2,7 @@ import type { EventLeaderboard, EventTeamPublic } from "@escapeai/shared";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 import { EventJoinQr } from "./EventJoinQr";
-import { fetchEventLeaderboard } from "./api";
+import { fetchEventLeaderboard, releaseSagaAct2 } from "./api";
 import { teamAvatarStyle } from "./team-avatar";
 
 function statusLabel(t: EventTeamPublic): string {
@@ -30,6 +30,7 @@ function readProjectorFromUrl(): boolean {
 export function EventOrganizerBoard(props: { joinCode: string; onBack?: () => void }) {
   const [projectorTv, setProjectorTv] = useState(readProjectorFromUrl);
   const [projectorLinkCopied, setProjectorLinkCopied] = useState(false);
+  const [sagaReleaseBusy, setSagaReleaseBusy] = useState(false);
 
   const syncProjectorUrl = useCallback((on: boolean) => {
     const url = new URL(window.location.href);
@@ -128,6 +129,32 @@ export function EventOrganizerBoard(props: { joinCode: string; onBack?: () => vo
         <p className="organizer-milestone" data-testid="escape-organizer-milestone">
           {board.progressSummary}
         </p>
+      )}
+      {board?.sagaTwoActs && (
+        <section className="panel organizer-saga" data-testid="escape-organizer-saga">
+          <p className="eyebrow">Saga P6-D</p>
+          <p className="meta sm">
+            {board.sagaAct2Released
+              ? "Acto 2 liberado: los equipos que cerraron el acto 1 pueden continuar al rescate."
+              : "Acto 1 en curso. Libera el rescate cuando el grupo esté listo."}
+          </p>
+          {!board.sagaAct2Released && (
+            <button
+              type="button"
+              className="primary sm"
+              data-testid="escape-organizer-saga-release"
+              disabled={sagaReleaseBusy}
+              onClick={() => {
+                setSagaReleaseBusy(true);
+                void releaseSagaAct2(props.joinCode)
+                  .then(() => q.refetch())
+                  .finally(() => setSagaReleaseBusy(false));
+              }}
+            >
+              {sagaReleaseBusy ? "Liberando…" : "Liberar acto 2 (rescate)"}
+            </button>
+          )}
+        </section>
       )}
       {board?.teamVariable && (
         <p className="organizer-team-variable" data-testid="escape-organizer-team-variable">

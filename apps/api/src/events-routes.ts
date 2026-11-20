@@ -39,7 +39,12 @@ import { initTeamVariable, resolveTeamVariableConfig, teamVariableToPublic } fro
 import { refreshSessionTeamProgress } from "./team-variable.js";
 import { dailyPlaySeed } from "@escapeai/escape-content";
 
-export function mountEventRoutes(app: Hono, eventStore: EventStore, _gm?: GameMasterService): void {
+export function mountEventRoutes(
+  app: Hono,
+  eventStore: EventStore,
+  sessionStore: SessionStore,
+  _gm?: GameMasterService,
+): void {
   void _gm;
   app.get("/adventures", async (c) => {
     const templates = listAdventureTemplates();
@@ -187,6 +192,12 @@ export function mountEventRoutes(app: Hono, eventStore: EventStore, _gm?: GameMa
     return c.json(result.body, result.status as 201 | 400 | 404 | 409);
   });
 
+  app.post("/events/:code/saga-release-act2", async (c) => {
+    const { releaseSagaAct2 } = await import("./saga-event.js");
+    const result = await releaseSagaAct2(c.req.param("code"), eventStore, sessionStore);
+    return c.json(result.body, result.status as 200 | 400 | 404);
+  });
+
   app.get("/events/:code/leaderboard", async (c) => {
     const event = await eventStore.getByCode(c.req.param("code"));
     if (!event) return c.json({ error: "Evento no encontrado" }, 404);
@@ -213,6 +224,8 @@ export function mountEventRoutes(app: Hono, eventStore: EventStore, _gm?: GameMa
       posterKeyword,
       hybridPlayMode,
       asymmetricRoles: e.config.asymmetricRoles,
+      sagaTwoActs: e.config.sagaTwoActs,
+      sagaAct2Released: e.sagaAct2Released,
       players: teams,
     });
   });

@@ -52,6 +52,8 @@ export type StoredEvent = {
   room: RoomDefinition;
   teams: Record<string, StoredTeam>;
   teamVariable?: StoredTeamVariable;
+  /** P6-D: organizador liberó acto 2 para todas las sesiones del evento. */
+  sagaAct2Released?: boolean;
   /** @deprecated Lectura legacy */
   players?: Record<string, StoredTeam & { playerId?: string; displayName?: string }>;
 };

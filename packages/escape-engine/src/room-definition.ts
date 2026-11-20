@@ -2,7 +2,8 @@ export type Condition =
   | { type: "puzzle_solved"; puzzleId: string }
   | { type: "has_item"; itemId: string }
   | { type: "has_clue"; clueId: string; anyRole?: boolean }
-  | { type: "team_progress_gte"; min: number };
+  | { type: "team_progress_gte"; min: number }
+  | { type: "saga_finale_unlocked"; act1PuzzleId: string };
 
 export type PuzzleType =
   | "code"
@@ -166,4 +167,7 @@ export type RoomDefinition = {
   spatialSiteMap?: import("@escapeai/shared").SpatialSiteMapPublic;
   /** Momentos narrativos fijos del motor (sin LLM). */
   beats?: RoomBeat[];
+  /** P6-D: partida en dos actos; victoria en acto 2. */
+  sagaTwoActs?: boolean;
+  sagaAct1PuzzleId?: string;
 };

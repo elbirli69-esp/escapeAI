@@ -54,12 +54,26 @@ export function computeSceneProgress(event: StoredEvent): {
   const parts = sceneMilestones.map((m) => {
     const n = m.teamsCount;
     const label = n === 1 ? "1 equipo" : `${n} equipos`;
-    return `${label} en escena ${m.sceneNumber} («${m.sceneTitle}»)`;
+    const act =
+      e.config.sagaTwoActs && m.sceneId === "finale_b"
+        ? " · Acto 2"
+        : e.config.sagaTwoActs && m.sceneId === "finale"
+          ? " · Acto 1"
+          : "";
+    return `${label} en escena ${m.sceneNumber} («${m.sceneTitle}»)${act}`;
   });
+
+  const sagaPrefix =
+    e.config.sagaTwoActs && !e.sagaAct2Released
+      ? "Saga: acto 2 aún no liberado por organizador · "
+      : e.config.sagaTwoActs && e.sagaAct2Released
+        ? "Saga: acto 2 en juego · "
+        : "";
 
   return {
     sceneMilestones,
-    progressSummary: parts.length > 0 ? parts.join(" · ") : undefined,
+    progressSummary:
+      parts.length > 0 ? `${sagaPrefix}${parts.join(" · ")}` : sagaPrefix || undefined,
   };
 }
 
