@@ -47,7 +47,7 @@ Los clips (`audioUrl`) son contenido: ambiente, SFX o mensaje grabado; la **vali
 
 - API de eventos, join code, leaderboard, narrador con nombre de jugador.  
 - Catálogo YAML clásico (pilot, lighthouse, laboratorio).  
-- Límite 20 jugadores y sesiones independientes.
+- Límite **2–5 equipos** (`teamCount`) y **una sesión por equipo** (móvil).
 
 ## Extensión futura
 

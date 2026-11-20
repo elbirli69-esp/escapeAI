@@ -77,6 +77,10 @@ Los contadores son **por instancia de proceso** (serverless: no agregan entre r�
 
 - **Pilot:** conserje `night_concierge` (escena `entrance`), pistas YAML, voz opcional.
 
+## Beta cerrada
+
+- [beta-cerrada-guia.md](./beta-cerrada-guia.md) — flujo organizador y límites multijugador.
+
 ## Producto — plan de diálogo ER
 
 | Documento | Contenido |

@@ -9,7 +9,7 @@
 | Motor, Redis/KV, narrador DeepSeek | OK |
 | Eventos personalizados | **No en main** |
 | Pruebas interactivas | **No en main** |
-| Equipos (2–5) | **No existe** (diseño 20 jugadores individuales) |
+| Equipos (2–5) | **En main** (`teamCount`, una sesión por equipo); este doc Phase A es histórico |
 | Leaderboard UI | **Solo API**, sin pantalla organizador |
 | Tests API eventos | **Ninguno** |
 
@@ -25,7 +25,7 @@ Base de implementación MVP: rama **#14**.
 | Criterio MVP | Gap |
 |--------------|-----|
 | Equipos compitiendo | Modelo actual = 1 sesión por **persona**, no por **equipo** |
-| 2–5 equipos habitual | `playerCount` hasta 20 |
+| 2–5 equipos habitual | `teamCount` 2–5 (legacy `playerCount` en docs viejos) |
 | Organizador sigue ranking | Sin vista proyector/organizer |
 | Duración 30–60 min configurable | Fija 2700s en generador |
 | Personalización profunda | Hechos en textos/códigos; mejorable en narrativa |

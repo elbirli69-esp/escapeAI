@@ -8,6 +8,14 @@ test.describe("smoke", () => {
     await clearGameStorage(page);
   });
 
+  test("lobby comunica modelo 1 móvil por equipo", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByTestId("escape-lobby-model-hint")).toContainText(/No hay sala cooperativa/i);
+    await page.getByTestId("escape-mode-join").click();
+    await expect(page.getByRole("heading", { name: "Unirse como equipo" })).toBeVisible();
+    await expect(page.getByText(/Un móvil = un equipo/i)).toBeVisible();
+  });
+
   test("health memory + catálogo con salas", async ({ page, request }) => {
     const health = await request.get(`${API}/health`);
     expect(health.ok()).toBeTruthy();

@@ -301,6 +301,10 @@ export function ExperienceLobby(props: {
             Organiza una aventura para 2–5 equipos (un móvil por equipo), comparte el código y
             proyecta el ranking.
           </p>
+          <p className="muted sm lobby-model-hint" data-testid="escape-lobby-model-hint">
+            No hay sala cooperativa con varios móviles en la misma partida: cada equipo avanza en su
+            propia sesión. El catálogo es para practicar en solitario en este dispositivo.
+          </p>
         </header>
         {props.pendingResume && (
           <section
@@ -404,6 +408,10 @@ export function ExperienceLobby(props: {
           <h1 className="display">Configurar aventura</h1>
           <p className="lede muted">
             Toca una plantilla y completa los datos del formulario debajo para generar tu código.
+          </p>
+          <p className="muted sm">
+            Invita de 2 a 5 equipos; cada uno usa un móvil distinto con el mismo código. Al unirse,
+            su partida arranca automáticamente (no hace falta un botón de «inicio» del anfitrión).
           </p>
         </header>
         {formError && (
@@ -738,6 +746,10 @@ export function ExperienceLobby(props: {
           ← Volver
         </button>
         <h1 className="display">Unirse como equipo</h1>
+        <p className="muted sm">
+          Un móvil = un equipo. No compartís la misma partida con otros teléfonos: competís en
+          paralelo con el mismo código.
+        </p>
         {formError && <p className="error">{formError}</p>}
         <form
           id="escape-join-wizard"
@@ -810,7 +822,8 @@ export function ExperienceLobby(props: {
         <p className="eyebrow">Salas listas para jugar</p>
         <h1 className="display">Elige tu escape</h1>
         <p className="lede muted">
-          Cada carta muestra la atmósfera de la sala. Un móvil por jugador o por equipo.
+          Partida en solitario en este móvil (demo o práctica). Para competir en grupo, crea un evento
+          desde el inicio y reparte el código a cada equipo.
         </p>
       </header>
       {props.classicError && <p className="error">{props.classicError}</p>}
