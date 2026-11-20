@@ -54,6 +54,17 @@
   ],
   "profiles": [
     {
+      "id": "playtest-blind-office",
+      "label": "Playtest ciego office (recepción)",
+      "mode": "catalog",
+      "roomId": "office",
+      "priority": "P1",
+      "weight": 0.45,
+      "e2eSpecs": ["specs/playtest-blind-office-entry.spec.ts"],
+      "params": { "executionMode": "exploratory", "feedsPlaytestGrupoRuns": true },
+      "evaluateDimensions": ["challenge", "flow"]
+    },
+    {
       "id": "playtest-blind-pilot",
       "label": "Playtest ciego pilot (entrada)",
       "mode": "catalog",

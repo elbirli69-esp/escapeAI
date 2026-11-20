@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "description": "Mapa de cumplimiento playtest-grupo §4 (fuente para playtest:snapshot).",
+  "teamProfiles": [
+    { "id": "eq-novatos", "exploratorySpecs": ["specs/playtest-blind-pilot-entry.spec.ts", "specs/playtest-blind-office-entry.spec.ts"] },
+    { "id": "eq-experto", "replaySpecs": ["specs/catalog-pilot-win.spec.ts", "specs/catalog-office-win.spec.ts"] },
+    { "id": "eq-mixto", "replaySpecs": ["specs/events-full-win.spec.ts", "specs/partidas-reales-runner.spec.ts"] }
+  ],
+  "catalogRooms": [
+    {
+      "roomId": "pilot",
+      "priority": "P0",
+      "replaySpec": "specs/catalog-pilot-win.spec.ts",
+      "exploratorySpec": "specs/playtest-blind-pilot-entry.spec.ts",
+      "staticAudit": "pnpm audit-coherence"
+    },
+    {
+      "roomId": "office",
+      "priority": "P1",
+      "replaySpec": "specs/catalog-office-win.spec.ts",
+      "exploratorySpec": "specs/playtest-blind-office-entry.spec.ts",
+      "staticAudit": "pnpm audit-coherence"
+    },
+    {
+      "roomId": "lighthouse",
+      "priority": "P0",
+      "replaySpec": "specs/catalog-lighthouse-win.spec.ts",
+      "exploratorySpec": null,
+      "limitation": "Fase D lighthouse: pendiente spec ciego"
+    },
+    {
+      "roomId": "interactive-lab",
+      "priority": "P1",
+      "replaySpec": "specs/interactive-lab-partial.spec.ts",
+      "exploratorySpec": null,
+      "limitation": "Sensorial con mock cámara; exploratorio manual"
+    },
+    {
+      "roomId": "geo-lab",
+      "priority": "P1",
+      "replaySpec": "specs/geo-lab-mocked.spec.ts",
+      "exploratorySpec": null,
+      "limitation": "GPS mock en CI"
+    },
+    {
+      "roomId": "demo-michelon",
+      "priority": "P1",
+      "replaySpec": "specs/p6-demo-lobby.spec.ts",
+      "exploratorySpec": null
+    }
+  ],
+  "eventAdventureTypes": [
+    { "type": "birthday", "replaySpecs": ["specs/events-full-win.spec.ts", "specs/events-mvp.spec.ts"], "apiSpecs": [] },
+    { "type": "mystery", "replaySpecs": ["specs/p6-whodunit.spec.ts"], "apiSpecs": ["specs/custom-events-serial.spec.ts"] },
+    { "type": "team", "replaySpecs": ["specs/p6-asymmetric-roles.spec.ts"], "apiSpecs": ["specs/custom-events-serial.spec.ts"] },
+    { "type": "celebration", "replaySpecs": [], "apiSpecs": ["specs/custom-events-serial.spec.ts"] }
+  ],
+  "p6RegressionSpecs": [
+    "specs/p6-demo-lobby.spec.ts",
+    "specs/p6-whodunit.spec.ts",
+    "specs/p6-asymmetric-roles.spec.ts",
+    "specs/p6-saga-two-acts.spec.ts",
+    "specs/p5-hybrid.spec.ts"
+  ],
+  "commands": {
+    "validateRooms": "pnpm validate-rooms",
+    "auditCoherence": "pnpm audit-coherence",
+    "factsDiff": "pnpm playtest:facts-diff"
+  }
+}

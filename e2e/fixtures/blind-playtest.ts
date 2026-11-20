@@ -44,3 +44,17 @@ export async function expectPuzzleSolvedMark(page: Page, puzzleId: string): Prom
     timeout: 15_000,
   });
 }
+
+/** Copy visible (escena o pistas) con números en palabras españolas. */
+export function inferYearFromSpokenDigits(text: string): string | null {
+  const lower = text.toLowerCase();
+  if (lower.includes("veinte") && lower.includes("veinticuatro")) return "2024";
+  const digits = text.match(/\b(20\d{2})\b/);
+  return digits?.[1] ?? null;
+}
+
+/** Dos pitidos en copy de pista o escena. */
+export function inferTwoBeeps(text: string): string | null {
+  if (/dos pitidos/i.test(text)) return "2";
+  return inferSingleBeepDigit(text);
+}

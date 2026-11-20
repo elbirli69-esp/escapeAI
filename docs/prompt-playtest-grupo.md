@@ -41,6 +41,7 @@ Antes de cualquier corrida, el agente debe **verificar en código** las referenc
 | `pnpm experience-eval:score` | Sí | Lee `e2e/.cache/experience-metrics.json` + matriz + rúbrica |
 | `pnpm experience-eval:signals` | Sí | Señales de contenido → `e2e/.cache/experience-signals.json` |
 | `pnpm playtest:replay <suite>` | Sí | Suites en `e2e/playtest-matrix.json` |
+| `pnpm playtest:snapshot` | Sí | Cumplimiento §4 + auditorías → `e2e/.cache/playtest-snapshot.json` (`e2e/playtest-coverage.json`) |
 | `pnpm playtest:partidas` | Sí | `partidas-reales-runner.spec.ts` |
 | `e2e/playtest-matrix.json` | Sí | Salas, payloads y suites de replay (§5, §15) |
 | Script CLI `generate-spatial` | **No** | Solo tests: `packages/escape-content/src/spatial/generate-spatial.test.ts` |

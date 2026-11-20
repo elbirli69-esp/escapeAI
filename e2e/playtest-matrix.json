@@ -95,7 +95,7 @@
     {
       "id": "playtest-blind",
       "label": "Playtest ciego automatizado",
-      "specs": ["specs/playtest-blind-pilot-entry.spec.ts"]
+      "specs": ["specs/playtest-blind-pilot-entry.spec.ts", "specs/playtest-blind-office-entry.spec.ts"]
     },
     {
       "id": "experience-metrics",
