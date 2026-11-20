@@ -15,7 +15,8 @@
     "test": "vitest run",
     "validate-rooms": "tsx src/validate-rooms.ts",
     "audit-coherence": "tsx src/audit-coherence.ts",
-    "audit-fisico": "tsx src/audit-fisico.ts"
+    "audit-fisico": "tsx src/audit-fisico.ts",
+    "facts-diff": "tsx src/facts-personalization-diff.ts"
   },
   "dependencies": {
     "@escapeai/escape-engine": "workspace:*",
