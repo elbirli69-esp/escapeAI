@@ -6,7 +6,7 @@ Ejecución según [prompt-playtest-grupo.md](./prompt-playtest-grupo.md). **No c
 > **B.1:** `pnpm playtest:facts-diff` + `custom-events-serial.spec.ts` (`mystery` / `team` / `celebration` vía API).
 > **B.2:** `playtest-blind-pilot-entry.spec.ts`, taglines `ROOM_CATALOG` ↔ YAML, mezcla cualitativa en `experience-matrix.json` (`playtestQualitativeBlend`).
 > **B.3:** `playtest-blind-office-entry.spec.ts`, `e2e/playtest-coverage.json`, `pnpm playtest:snapshot` → `e2e/.cache/playtest-snapshot.json` (renovación §4 P6).
-> **Fase D:** `playtest-blind-lighthouse-entry.spec.ts` (`eq-sensorial`, muelle → almacén).
+> **Fase D:** specs ciegos en catálogo P0/P1 (`pilot`, `office`, `lighthouse`, `interactive-lab`, `geo-lab`) — suite `playtest-blind`.
 
 ## Resumen ejecutivo
 
@@ -111,7 +111,7 @@ Cronología resumida: fallos 0000/1234 en timbre → pista pitido → candado co
 ## Limitaciones de esta ejecución
 
 1. ~~Build workspace roto en `apps/web`.~~ (`pnpm --filter @escapeai/web typecheck` OK en B.3).
-2. Fase D exploratoria: **parcial** (pilot, office, lighthouse automatizados; labs manual/mock).
+2. Fase D exploratoria: **automatizada parcial** en las 5 salas catálogo (sin victoria ciega completa en labs).
 3. Sin evaluación LLM del GM.
 4. Sin scanner / site multihabitación jugado.
 5. Segundo payload custom por `mystery|team|celebration` solo en auditoría, no lobby.

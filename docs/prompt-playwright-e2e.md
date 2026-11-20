@@ -40,6 +40,8 @@ Variables: API en memoria (sin Redis). Los `webServer` de Playwright levantan AP
 | `playtest-blind-pilot-entry.spec.ts` | Pilot ciego (pistas UI, sin fixtures win) → `playtest-grupo-runs.json` |
 | `playtest-blind-office-entry.spec.ts` | Oficina acto 1 ciego (recepción → open space) |
 | `playtest-blind-lighthouse-entry.spec.ts` | Faro Fase D (niebla + marea → almacén) |
+| `playtest-blind-interactive-lab.spec.ts` | Lab hub sonido/visual → ópticas |
+| `playtest-blind-geo-lab.spec.ts` | Geo GPS mock → placa OSO |
 | `experience-metrics.spec.ts` | Señales rúbrica `experience-eval` |
 | `events-mvp.spec.ts` | Crear evento, 2 sesiones, candado 1995 |
 | `custom-events-serial.spec.ts` | API serial: `mystery`, `team`, `celebration` hasta `entry_lock` |
