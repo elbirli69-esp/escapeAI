@@ -309,7 +309,7 @@ export function generateAdventureRoom(
         interactionHints: [
           "En la sala: usa el mismo objeto que dejaste al lado del grupo tras la foto.",
           "En el móvil: usa el objeto del inventario cuando la ranura esté activa.",
-          "Revisa en Notas la pista salon_photo_ok y el candado numérico del acto 1 si dudas.",
+          "Revisa en Notas: prefijo numeric_prefix, candado numeric_code_complete y pista salon_photo_ok antes de usar la ranura.",
         ],
         maxHints: 2,
         hints: [

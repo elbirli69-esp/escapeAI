@@ -70,7 +70,7 @@ Antes de cualquier corrida, el agente debe **verificar en código** las referenc
 | `p6-asymmetric-roles.spec.ts` | Dos sesiones por rol |
 | `p6-saga-two-acts.spec.ts` | Saga + release acto 2 |
 
-**Gap E2E:** no hay spec Playwright dedicado al flujo **Scanner** (`apps/web/src/scanner/ScannerFlow.tsx`; testids `escape-scanner-*`). Auditar en modalidad **estática** o manual documentada.
+**Scanner:** `scanner-flow-smoke.spec.ts` (wizard sin cámara → guardar). Captura con detector en CI sigue siendo opcional/manual.
 
 ### 0.3 Fixtures E2E verificados (`e2e/fixtures/`)
 

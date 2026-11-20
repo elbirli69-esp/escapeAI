@@ -175,7 +175,7 @@ puzzles:
       - level: 2
         text: El año tiene cuatro dígitos y empieza por 19.
       - level: 3
-        text: El apellido del autor es Orwell; el título de su novela distópica es el mismo año en cuatro cifras — escríbelo en el candado.
+        text: Cuatro cifras que empiezan por 19; una novela distópica muy citada en la escuela da la pista del año.
   fuse_slot:
     id: fuse_slot
     type: inventory
