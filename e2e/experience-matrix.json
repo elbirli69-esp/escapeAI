@@ -54,6 +54,17 @@
   ],
   "profiles": [
     {
+      "id": "playtest-blind-lighthouse",
+      "label": "Playtest ciego lighthouse (muelle)",
+      "mode": "catalog",
+      "roomId": "lighthouse",
+      "priority": "P0",
+      "weight": 0.55,
+      "e2eSpecs": ["specs/playtest-blind-lighthouse-entry.spec.ts"],
+      "params": { "executionMode": "exploratory", "feedsPlaytestGrupoRuns": true },
+      "evaluateDimensions": ["challenge", "variety"]
+    },
+    {
       "id": "playtest-blind-office",
       "label": "Playtest ciego office (recepción)",
       "mode": "catalog",

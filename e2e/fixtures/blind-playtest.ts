@@ -55,6 +55,14 @@ export function inferYearFromSpokenDigits(text: string): string | null {
 
 /** Dos pitidos en copy de pista o escena. */
 export function inferTwoBeeps(text: string): string | null {
-  if (/dos pitidos/i.test(text)) return "2";
+  if (/dos pitidos|dos tonos|dos veces|parejas/i.test(text)) return "2";
   return inferSingleBeepDigit(text);
+}
+
+/** Cerradura marea (lighthouse): palabra en placa visible o pistas de inglés. */
+export function inferTideLockWord(text: string): string | null {
+  if (/\bHIGH\b/.test(text)) return "HIGH";
+  if (/marea alta/i.test(text) && /inglés|ingles|placa/i.test(text)) return "HIGH";
+  if (/marea ascendente/i.test(text) && /cuatro letras/i.test(text)) return "HIGH";
+  return null;
 }
