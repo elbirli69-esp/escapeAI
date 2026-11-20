@@ -98,7 +98,9 @@
       "specs": [
         "specs/playtest-blind-pilot-entry.spec.ts",
         "specs/playtest-blind-office-entry.spec.ts",
-        "specs/playtest-blind-lighthouse-entry.spec.ts"
+        "specs/playtest-blind-lighthouse-entry.spec.ts",
+        "specs/playtest-blind-interactive-lab.spec.ts",
+        "specs/playtest-blind-geo-lab.spec.ts"
       ]
     },
     {

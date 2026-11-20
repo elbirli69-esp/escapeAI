@@ -54,6 +54,28 @@
   ],
   "profiles": [
     {
+      "id": "playtest-blind-interactive-lab",
+      "label": "Playtest ciego lab sensorial",
+      "mode": "catalog",
+      "roomId": "interactive-lab",
+      "priority": "P1",
+      "weight": 0.4,
+      "e2eSpecs": ["specs/playtest-blind-interactive-lab.spec.ts"],
+      "params": { "executionMode": "exploratory", "mockCamera": true },
+      "evaluateDimensions": ["variety", "flow"]
+    },
+    {
+      "id": "playtest-blind-geo",
+      "label": "Playtest ciego geo-lab",
+      "mode": "catalog",
+      "roomId": "geo-lab",
+      "priority": "P1",
+      "weight": 0.4,
+      "e2eSpecs": ["specs/playtest-blind-geo-lab.spec.ts"],
+      "params": { "executionMode": "exploratory", "mockGeo": true },
+      "evaluateDimensions": ["challenge", "flow"]
+    },
+    {
       "id": "playtest-blind-lighthouse",
       "label": "Playtest ciego lighthouse (muelle)",
       "mode": "catalog",

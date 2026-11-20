@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import { requestHint } from "./game.js";
+import { requestHint, submitAnswer } from "./game.js";
 
 /** Inferencia jugable sin leer YAML: pistas de distopía + prefijo 19 → año clásico de cuatro cifras. */
 export function inferYearFromHintText(text: string): string | null {
@@ -57,6 +57,34 @@ export function inferYearFromSpokenDigits(text: string): string | null {
 export function inferTwoBeeps(text: string): string | null {
   if (/dos pitidos|dos tonos|dos veces|parejas/i.test(text)) return "2";
   return inferSingleBeepDigit(text);
+}
+
+/** Cifra única revelada en pista de laboratorio (p. ej. «cifra, 3»). */
+export function inferSingleDigitFromHints(text: string): string | null {
+  const m = text.match(/(?:una sola )?cifra[,\s]+(\d)/i);
+  if (m) return m[1]!;
+  if (/imagina tres|tres puertas|cuenta solo.*tres/i.test(text)) return "3";
+  return null;
+}
+
+export async function submitUntilPuzzleSolved(
+  page: Page,
+  puzzleId: string,
+  candidates: string[],
+): Promise<string | null> {
+  for (const value of candidates) {
+    await submitAnswer(page, value);
+    const tabText = await page.getByTestId(`escape-puzzle-tab-${puzzleId}`).innerText();
+    if (tabText.includes("✓")) return value;
+  }
+  return null;
+}
+
+/** Placa Madrid: mamífero del escudo en copy visible. */
+export function inferPedestalOso(text: string): string | null {
+  if (/\bOSO\b/.test(text)) return "OSO";
+  if (/oso y el madroño|mamífero del símbolo/i.test(text)) return "OSO";
+  return null;
 }
 
 /** Cerradura marea (lighthouse): palabra en placa visible o pistas de inglés. */

@@ -11,9 +11,16 @@
     },
     {
       "id": "eq-sensorial",
-      "exploratorySpecs": ["specs/playtest-blind-lighthouse-entry.spec.ts"]
+      "exploratorySpecs": [
+        "specs/playtest-blind-lighthouse-entry.spec.ts",
+        "specs/playtest-blind-interactive-lab.spec.ts"
+      ]
     },
-    { "id": "eq-experto", "replaySpecs": ["specs/catalog-pilot-win.spec.ts", "specs/catalog-office-win.spec.ts"] },
+    {
+      "id": "eq-experto",
+      "exploratorySpecs": ["specs/playtest-blind-geo-lab.spec.ts"],
+      "replaySpecs": ["specs/catalog-pilot-win.spec.ts", "specs/catalog-office-win.spec.ts"]
+    },
     { "id": "eq-mixto", "replaySpecs": ["specs/events-full-win.spec.ts", "specs/partidas-reales-runner.spec.ts"] }
   ],
   "catalogRooms": [
@@ -42,15 +49,15 @@
       "roomId": "interactive-lab",
       "priority": "P1",
       "replaySpec": "specs/interactive-lab-partial.spec.ts",
-      "exploratorySpec": null,
-      "limitation": "Sensorial con mock cámara; exploratorio manual"
+      "exploratorySpec": "specs/playtest-blind-interactive-lab.spec.ts",
+      "staticAudit": "pnpm audit-coherence"
     },
     {
       "roomId": "geo-lab",
       "priority": "P1",
       "replaySpec": "specs/geo-lab-mocked.spec.ts",
-      "exploratorySpec": null,
-      "limitation": "GPS mock en CI"
+      "exploratorySpec": "specs/playtest-blind-geo-lab.spec.ts",
+      "staticAudit": "pnpm audit-coherence"
     },
     {
       "roomId": "demo-michelon",
