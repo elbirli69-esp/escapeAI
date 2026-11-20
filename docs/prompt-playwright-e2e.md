@@ -39,6 +39,7 @@ Variables: API en memoria (sin Redis). Los `webServer` de Playwright levantan AP
 | `partidas-reales-runner.spec.ts` | Jugadores simulados + `partidas-reales-runs.json` |
 | `experience-metrics.spec.ts` | Señales rúbrica `experience-eval` |
 | `events-mvp.spec.ts` | Crear evento, 2 sesiones, candado 1995 |
+| `custom-events-serial.spec.ts` | API serial: `mystery`, `team`, `celebration` hasta `entry_lock` |
 | `events-full-win.spec.ts` | Victoria completa evento fixture Sara |
 | `p5-hybrid.spec.ts` | Panel prep + híbrido mobile_only |
 | `p6-demo-lobby.spec.ts` | Demo Michelón lobby |
@@ -53,3 +54,4 @@ Variables: API en memoria (sin Redis). Los `webServer` de Playwright levantan AP
 | `resume-session-banner.spec.ts` | Reanudar sesión |
 
 Suites agrupadas: `pnpm playtest:replay <suite>` según `e2e/playtest-matrix.json` (`catalog-replay`, `p6-regression`, `gm-partidas`, …).
+Personalización procedural: `pnpm playtest:facts-diff` (diff funcional por `facts`, sin Playwright).

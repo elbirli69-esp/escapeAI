@@ -306,7 +306,7 @@ Por artefacto (escena, puzzle, answer, item, hint, character, beat, victoria, co
 ### 8.2 Protocolo comparación facts
 
 1. Input **A** y **B** idénticos salvo `facts` (y derivados directos si el generador los lee).
-2. Diff con `generateAdventureRoom` (estático).
+2. Diff automatizado: `pnpm playtest:facts-diff` → `e2e/.cache/facts-personalization-diff.json` (`packages/escape-content/src/facts-personalization-diff.ts`).
 3. Clasificar cada cambio: superficial (solo nombre) vs funcional (answers, grafo, hints, puzzles).
 4. Comprobar win-path en A y B vía `audit-coherence` o test `generate-adventure.test.ts` — **no asumir** sin ejecutar coherence.
 

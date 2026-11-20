@@ -26,6 +26,11 @@
       "replaySpecs": ["specs/p6-whodunit.spec.ts", "specs/partidas-reales-runner.spec.ts"]
     },
     {
+      "id": "ADA_CELEBRATION",
+      "adventureType": "celebration",
+      "replaySpecs": ["specs/custom-events-serial.spec.ts"]
+    },
+    {
       "id": "hybrid-mobile",
       "adventureType": "birthday",
       "replaySpecs": ["specs/p5-hybrid.spec.ts"]
@@ -56,7 +61,12 @@
     {
       "id": "events-replay",
       "label": "Eventos generados",
-      "specs": ["specs/events-mvp.spec.ts", "specs/events-full-win.spec.ts", "specs/organizer-panel.spec.ts"]
+      "specs": [
+        "specs/events-mvp.spec.ts",
+        "specs/events-full-win.spec.ts",
+        "specs/organizer-panel.spec.ts",
+        "specs/custom-events-serial.spec.ts"
+      ]
     },
     {
       "id": "p6-regression",
