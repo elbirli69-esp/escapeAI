@@ -33,7 +33,7 @@ scenes:
     description: >
       Un cartel recuerda el protocolo de visitantes. El torniquete marca dos pitidos
       por turno de noche; el conserje digital dejó un post-it con el año del último
-      auditoría interna.
+      auditoría interna — en la tinta roja se distinguen un veinte y un veinticuatro.
     puzzles: [turnstile_tone, audit_year]
     characters: [night_auditor]
     exits:

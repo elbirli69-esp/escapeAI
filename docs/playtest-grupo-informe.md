@@ -5,6 +5,7 @@ Ejecución según [prompt-playtest-grupo.md](./prompt-playtest-grupo.md). **No c
 > **Actualización 2026-11-20 (infra playtest, sí en repo):** `e2e/playtest-matrix.json`, `pnpm playtest:replay <suite>`, catálogo `office` en `experience-matrix.json`, métricas e2e y corrida `partidas-reales` experto oficina. Backlog mailroom P0: cubierto con `mailroom-entry-regression.spec.ts`.
 > **B.1:** `pnpm playtest:facts-diff` + `custom-events-serial.spec.ts` (`mystery` / `team` / `celebration` vía API).
 > **B.2:** `playtest-blind-pilot-entry.spec.ts`, taglines `ROOM_CATALOG` ↔ YAML, mezcla cualitativa en `experience-matrix.json` (`playtestQualitativeBlend`).
+> **B.3:** `playtest-blind-office-entry.spec.ts`, `e2e/playtest-coverage.json`, `pnpm playtest:snapshot` → `e2e/.cache/playtest-snapshot.json` (renovación §4 P6).
 
 ## Resumen ejecutivo
 
@@ -108,7 +109,7 @@ Cronología resumida: fallos 0000/1234 en timbre → pista pitido → candado co
 
 ## Limitaciones de esta ejecución
 
-1. Build workspace roto en `apps/web`; no `pnpm test` completo en monorepo.
+1. ~~Build workspace roto en `apps/web`.~~ (`pnpm --filter @escapeai/web typecheck` OK en B.3).
 2. Fase D exploratoria casi sin ejecutar.
 3. Sin evaluación LLM del GM.
 4. Sin scanner / site multihabitación jugado.
@@ -123,7 +124,7 @@ Cronología resumida: fallos 0000/1234 en timbre → pista pitido → candado co
 5. ~~`playtestMatrix.json` + spec custom events serial.~~ (`custom-events-serial.spec.ts`)
 6. ~~Exploratorio automatizado con sesión ciega (sin leer YAML).~~ (`playtest-blind-pilot-entry.spec.ts`)
 7. ~~Unificar taglines catálogo/YAML o documentar marketing.~~ (`ROOM_CATALOG` alineado a YAML)
-8. Arreglar `pnpm build` web/vitest en CI local.
+8. ~~Arreglar `pnpm build` web/vitest en CI local.~~ (typecheck web verde; tests web vía `vitest run` en paquete).
 9. ~~Diff facts automatizado post-audit.~~ (`pnpm playtest:facts-diff`, B.1)
 10. ~~Ponderar playtest cualitativo en matriz (P2 roadmap).~~ (`playtestQualitativeBlend` en `experience-eval:score`)
 
