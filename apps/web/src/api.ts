@@ -118,6 +118,13 @@ export async function joinEventAsPlayer(joinCode: string, displayName: string): 
   return joinEventAsTeam(joinCode, displayName);
 }
 
+export async function releaseSagaAct2(joinCode: string): Promise<{ sagaAct2Released: boolean }> {
+  const res = await fetch(`${base}/events/${joinCode}/saga-release-act2`, { method: "POST" });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { error?: string }).error ?? "No se pudo liberar acto 2");
+  return data as { sagaAct2Released: boolean };
+}
+
 export async function fetchEventLeaderboard(joinCode: string): Promise<EventLeaderboard> {
   const res = await fetch(`${base}/events/${encodeURIComponent(joinCode)}/leaderboard`);
   if (!res.ok) throw new Error("Evento no encontrado");

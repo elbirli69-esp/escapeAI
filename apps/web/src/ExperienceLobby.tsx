@@ -135,6 +135,7 @@ export function ExperienceLobby(props: {
   const [eventTitle, setEventTitle] = useState("");
   const [hybridPlayMode, setHybridPlayMode] = useState<"room" | "mobile_only">("room");
   const [asymmetricRoles, setAsymmetricRoles] = useState(false);
+  const [sagaTwoActs, setSagaTwoActs] = useState(false);
   const [created, setCreated] = useState<EventPreview | null>(null);
   const [joinCode, setJoinCode] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -444,6 +445,7 @@ export function ExperienceLobby(props: {
                 durationMin,
                 hybridPlayMode,
                 asymmetricRoles: adventureType === "team" ? asymmetricRoles : undefined,
+                sagaTwoActs: sagaTwoActs || undefined,
                 subject: {
                   name: subjectName.trim(),
                   nickname: nickname.trim() || undefined,
@@ -536,6 +538,14 @@ export function ExperienceLobby(props: {
                 Roles asimétricos (P6-B): 2 móviles por equipo — laboratorio y campo
               </label>
             )}
+            <label className="checkbox-row" data-testid="escape-saga-two-acts">
+              <input
+                type="checkbox"
+                checked={sagaTwoActs}
+                onChange={(e) => setSagaTwoActs(e.target.checked)}
+              />
+              Saga dos actos (P6-D): acto 2 «rescate» lo libera el organizador
+            </label>
             <label>
               Nombre central (persona, pareja o nombre del evento)
               <input

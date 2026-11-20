@@ -4,6 +4,7 @@ import { durationMinToSec, resolveDurationMin } from "@escapeai/shared";
 import type { RoomBeat, RoomCharacter, RoomDefinition } from "@escapeai/escape-engine";
 import { buildProceduralSoundIntro } from "./sound-digit-clues.js";
 import { applyTeamAsymmetricRoles } from "./asymmetric-roles.js";
+import { applySagaTwoActs } from "./saga-two-acts.js";
 import { applyMysteryWhodunit } from "./whodunit.js";
 
 type AdventureVisual = {
@@ -408,6 +409,9 @@ export function generateAdventureRoom(
     applyTeamAsymmetricRoles(room, codes);
   }
   applyMysteryWhodunit(room, input, eventId);
+  if (input.sagaTwoActs) {
+    applySagaTwoActs(room, input, codes);
+  }
   return room;
 }
 

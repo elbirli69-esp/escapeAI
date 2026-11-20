@@ -48,6 +48,7 @@ export {
 } from "./generated-prep-checklist.js";
 export { applyMysteryWhodunit, pickWhodunitCulprit } from "./whodunit.js";
 export { applyTeamAsymmetricRoles } from "./asymmetric-roles.js";
+export { applySagaTwoActs } from "./saga-two-acts.js";
 export { dailyPlaySeed } from "./play-seed.js";
 export { applyCatalogDailyVariant } from "./daily-variant.js";
 export { buildSpatialRoom } from "./spatial/build-room.js";

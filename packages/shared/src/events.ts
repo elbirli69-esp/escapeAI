@@ -56,6 +56,8 @@ export type CreateEventRequest = {
   hybridPlayMode?: "room" | "mobile_only";
   /** P6-B: dos roles por equipo (investigador + campo); requiere 2 móviles en el mismo equipo. */
   asymmetricRoles?: boolean;
+  /** P6-D: misma partida con acto 2 «rescate» desbloqueable por organizador. */
+  sagaTwoActs?: boolean;
 };
 
 export type EventTeamVariablePublic = {
@@ -156,6 +158,8 @@ export type EventLeaderboard = {
   posterKeyword?: string;
   hybridPlayMode?: "room" | "mobile_only";
   asymmetricRoles?: boolean;
+  sagaTwoActs?: boolean;
+  sagaAct2Released?: boolean;
   /** @deprecated */
   players?: EventTeamPublic[];
 };

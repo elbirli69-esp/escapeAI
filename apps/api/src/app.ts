@@ -75,7 +75,7 @@ export async function createApp(store?: SessionStore): Promise<Hono> {
     });
   });
 
-  mountEventRoutes(app, eventStore, gm);
+  mountEventRoutes(app, eventStore, sessionStore, gm);
   mountScannerRoutes(app, scannedStore, eventStore);
   mountSiteRoutes(app, siteStore, scannedStore, eventStore);
   mountMediaRoutes(app);

@@ -24,6 +24,7 @@ export type SerializedSession = {
   failForwardSoundIntro?: boolean;
   assistNarrativeMode?: SessionRecord["assistNarrativeMode"];
   catalogAssistKeys?: string[];
+  sagaAct2Released?: boolean;
 };
 
 export function serializeSession(session: SessionRecord): SerializedSession {
@@ -55,6 +56,7 @@ export function serializeSession(session: SessionRecord): SerializedSession {
     failForwardSoundIntro: session.failForwardSoundIntro,
     assistNarrativeMode: session.assistNarrativeMode,
     catalogAssistKeys: session.catalogAssistKeys ? [...session.catalogAssistKeys] : undefined,
+    sagaAct2Released: session.sagaAct2Released,
   };
 }
 
@@ -89,5 +91,6 @@ export function deserializeSession(data: SerializedSession): SessionRecord {
     catalogAssistKeys: data.catalogAssistKeys?.length
       ? new Set(data.catalogAssistKeys)
       : undefined,
+    sagaAct2Released: data.sagaAct2Released,
   };
 }
