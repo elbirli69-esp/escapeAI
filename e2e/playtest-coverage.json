@@ -2,7 +2,17 @@
   "version": 1,
   "description": "Mapa de cumplimiento playtest-grupo §4 (fuente para playtest:snapshot).",
   "teamProfiles": [
-    { "id": "eq-novatos", "exploratorySpecs": ["specs/playtest-blind-pilot-entry.spec.ts", "specs/playtest-blind-office-entry.spec.ts"] },
+    {
+      "id": "eq-novatos",
+      "exploratorySpecs": [
+        "specs/playtest-blind-pilot-entry.spec.ts",
+        "specs/playtest-blind-office-entry.spec.ts"
+      ]
+    },
+    {
+      "id": "eq-sensorial",
+      "exploratorySpecs": ["specs/playtest-blind-lighthouse-entry.spec.ts"]
+    },
     { "id": "eq-experto", "replaySpecs": ["specs/catalog-pilot-win.spec.ts", "specs/catalog-office-win.spec.ts"] },
     { "id": "eq-mixto", "replaySpecs": ["specs/events-full-win.spec.ts", "specs/partidas-reales-runner.spec.ts"] }
   ],
@@ -25,8 +35,8 @@
       "roomId": "lighthouse",
       "priority": "P0",
       "replaySpec": "specs/catalog-lighthouse-win.spec.ts",
-      "exploratorySpec": null,
-      "limitation": "Fase D lighthouse: pendiente spec ciego"
+      "exploratorySpec": "specs/playtest-blind-lighthouse-entry.spec.ts",
+      "staticAudit": "pnpm audit-coherence"
     },
     {
       "roomId": "interactive-lab",
