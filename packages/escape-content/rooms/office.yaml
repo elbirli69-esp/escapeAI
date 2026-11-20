@@ -1,0 +1,245 @@
+id: office
+name: La oficina — caso interno
+tagline: Finanzas en rojo, un acceso VIP a medianoche y cuatro sospechosos en open space.
+theme: urban
+coverImage: /media/pilot-control.jpg
+timeLimitSec: 3600
+startSceneId: reception
+winCondition:
+  type: puzzle_solved
+  puzzleId: office_accusation
+beats:
+  - id: office_arrival
+    after: session_started
+    text: "El ascensor sube al piso 12 con un pitido de más: alguien pasó el torniquete sin dejar huella en recepción."
+  - id: office_hub
+    after: scene_entered
+    sceneId: open_space
+    text: "Open space en silencio: dos pantallas encendidas — presupuesto y papelera — cuentan historias distintas."
+  - id: office_archive
+    after: scene_entered
+    sceneId: archive
+    text: "El archivo aún huele a toner caliente; el registro de tarjetas no miente."
+  - id: office_verdict
+    after: scene_entered
+    sceneId: boardroom
+    text: "La sala de juntas espera un nombre. Una sola acusación, tres pruebas en el cuaderno."
+scenes:
+  reception:
+    id: reception
+    title: Recepción · piso 12
+    image: /media/pilot-entrance.jpg
+    mood: Neón del logo corporativo, chelo triste del ascensor y café de máquina.
+    description: >
+      Un cartel recuerda el protocolo de visitantes. El torniquete marca dos pitidos
+      por turno de noche; el conserje digital dejó un post-it con el año del último
+      auditoría interna.
+    puzzles: [turnstile_tone, audit_year]
+    characters: [night_auditor]
+    exits:
+      - toSceneId: open_space
+        label: Pasar al open space
+        when:
+          type: puzzle_solved
+          puzzleId: audit_year
+  open_space:
+    id: open_space
+    title: Open space · investigación
+    image: /media/pilot-control.jpg
+    mood: Monitores en standby, charts financieros y una papelera que aún humea.
+    description: >
+      P6-E: hub de investigación. Revisa el presupuesto del trimestre y la bandeja
+      de la destructora antes de pedir acceso al archivo cerrado.
+    puzzles: [budget_chart, shredder_tray]
+    exits:
+      - toSceneId: archive
+        label: Archivo de nominas
+        when:
+          type: puzzle_solved
+          puzzleId: budget_chart
+      - toSceneId: boardroom
+        label: Sala de juntas (solo con el cuaderno completo)
+        when:
+          type: has_clue
+          clueId: clue_badge
+  archive:
+    id: archive
+    title: Archivo interno
+    image: /media/pilot-basement.jpg
+    mood: Carpetas azules, lector de tarjetas parpadeando y un olor a plástico recalentado.
+    description: >
+      Aquí firmaron los accesos VIP. La bandeja de la destructora mencionaba «IRAS»
+      en las iniciales del memo recortado.
+    puzzles: [badge_log]
+    exits:
+      - toSceneId: open_space
+        label: Volver con las pruebas
+        when:
+          type: puzzle_solved
+          puzzleId: badge_log
+  boardroom:
+    id: boardroom
+    title: Sala de juntas
+    image: /media/pilot-cover.jpg
+    mood: Cristal esmerilado, proyectores apagados y una silla vacía en cabecera.
+    description: >
+      Con las tres pruebas en Notas, señala quién manipuló las cuentas y clonó la
+      tarjeta de Finanzas.
+    puzzles: [office_accusation]
+    exits: []
+characters:
+  night_auditor:
+    id: night_auditor
+    displayName: Auditora de turno
+    voiceTone: Seca, procedural; evita nombres propios.
+    backstoryPublic: Contratada para revisar accesos tras la filtración de datos.
+    greeting: "Estoy en recepción hasta que el turno cierre. Pregunta, pero no firmo cheques."
+    spokenReplies: true
+    voiceLocale: es-ES
+    authorizedKnowledge:
+      - El torniquete anuncia visitas con dos pitidos iguales esta noche.
+      - La última auditoría interna dejó el año en el post-it del mostrador.
+      - Finanzas huele a crisis; alguien del piso 12 está nervioso.
+    forbiddenTopics:
+      - acusación directa
+      - culpable por nombre
+    fallbackLines:
+      - Revisa el post-it del mostrador; yo no memorizo cifras.
+      - Sin credencial válida no paso nadie al open space.
+puzzles:
+  turnstile_tone:
+    id: turnstile_tone
+    type: sound
+    label: Torniquete nocturno
+    cardImage: /media/pilot-entrance.jpg
+    prompt: Escucha el torniquete (cada pitido = una cifra). Apunta el total de pitidos.
+    soundMode: beeps
+    beepPattern: [200, 200]
+    minListenSec: 1
+    answer: "2"
+    normalize: trim
+    maxHints: 1
+    hints:
+      - level: 1
+        text: Dos pitidos cortos seguidos.
+  audit_year:
+    id: audit_year
+    type: code
+    label: Credencial de visita
+    prompt: Introduce el año de la última auditoría (4 dígitos) para desbloquear el acceso.
+    answer: "2024"
+    normalize: trim
+    maxHints: 2
+    hints:
+      - level: 1
+        text: Está en el post-it junto al torniquete; empieza por 20.
+      - level: 2
+        text: Cuatro cifras — el año pasado en calendario fiscal habitual.
+  budget_chart:
+    id: budget_chart
+    type: visual
+    label: Gráfico de gastos
+    cardImage: /media/pilot-control.jpg
+    visualLayout: single
+    prompt: "Imagen de referencia — ¿cuántas barras rojas superan la media? (número)"
+    pexelsQuery: office finance chart dashboard screens
+    answer: "3"
+    normalize: trim
+    onSolve:
+      grantClue:
+        id: clue_ledger
+        text: "Tres partidas infladas firman en el libro mayor con el sello de la directora financiera."
+    interactionHints:
+      - "En el móvil: cuenta solo las barras marcadas en rojo intenso."
+    maxHints: 1
+    hints:
+      - level: 1
+        text: En demo, la respuesta es 3.
+  shredder_tray:
+    id: shredder_tray
+    type: code
+    label: Memo recortado
+    prompt: Escribe las cuatro letras que quedaron legibles en el título del memo (IRAS = Informe RAS).
+    answer: IRAS
+    normalize: uppercase
+    onSolve:
+      grantClue:
+        id: clue_hr
+        text: "RRHH confirma que solo el despacho de Finanzas pidió copia de ese memo a medianoche."
+    maxHints: 2
+    hints:
+      - level: 1
+        text: Cuatro letras mayúsculas, empieza por I.
+      - level: 2
+        text: Las letras visibles en el título eran I-R-A-S.
+  badge_log:
+    id: badge_log
+    type: code
+    label: Registro de tarjetas
+    prompt: Código del piso del despacho implicado (tres letras, el área de Finanzas).
+    answer: CFO
+    normalize: uppercase
+    onSolve:
+      grantClue:
+        id: clue_badge
+        text: "La tarjeta clonada pertenecía al despacho CFO — planta 12, alas norte."
+    maxHints: 2
+    hints:
+      - level: 1
+        text: Tres letras en inglés, rol financiero máximo.
+      - level: 2
+        text: Chief Financial Officer — siglas en mayúsculas.
+  office_accusation:
+    id: office_accusation
+    type: deduction
+    label: Veredicto interno
+    prompt: Señala al responsable con las tres pruebas del cuaderno (una sola acusación).
+    answer: cfo
+    normalize: lowercase
+    deduction:
+      requiredClueIds: [clue_ledger, clue_hr, clue_badge]
+      suspects:
+        - id: cfo
+          name: Directora financiera
+          traits:
+            - id: cfo_t1
+              label: Coartada inconsistente con el registro de tarjetas
+              clearingClueId: clue_badge
+            - id: cfo_t2
+              label: Motivo alineado con gastos fantasía del gráfico
+              clearingClueId: clue_ledger
+        - id: hr
+          name: Responsable RRHH
+          traits:
+            - id: hr_t1
+              label: Validó horarios; no firmó los gastos
+              clearingClueId: clue_hr
+            - id: hr_t2
+              label: Sin acceso al libro mayor según memo
+              clearingClueId: clue_ledger
+        - id: intern
+          name: Becario de verano
+          traits:
+            - id: intern_t1
+              label: Sin credencial VIP en el torniquete
+              clearingClueId: clue_badge
+            - id: intern_t2
+              label: Fuera de plantilla el día del incidente
+              clearingClueId: clue_hr
+        - id: security
+          name: Vigilante nocturno
+          traits:
+            - id: sec_t1
+              label: Turno corroborado por auditoría
+              clearingClueId: clue_hr
+            - id: sec_t2
+              label: Sin firma en partidas del gráfico
+              clearingClueId: clue_ledger
+    interactionHints:
+      - "Revisa Notas: ledger, RRHH y tarjeta CFO antes de acusar."
+    maxHints: 2
+    hints:
+      - level: 1
+        text: Descarta a quien tenga coartada verificada en ambos rasgos.
+      - level: 2
+        text: El memo y el registro apuntan al mismo despacho — Finanzas.

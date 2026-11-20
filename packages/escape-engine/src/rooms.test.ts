@@ -16,6 +16,35 @@ describe("pilot room", () => {
   });
 });
 
+describe("office room (P6-E)", () => {
+  it("can be won with whodunit verdict", () => {
+    const room = loadRoomFile("office.yaml");
+    const session = createSession(room);
+
+    applyAction(session, { type: "complete_interaction", puzzleId: "turnstile_tone", step: "listen" });
+    applyAction(session, { type: "submit_answer", puzzleId: "turnstile_tone", value: "2" });
+    applyAction(session, { type: "submit_answer", puzzleId: "audit_year", value: "2024" });
+    expect(applyAction(session, { type: "move", sceneId: "open_space" }).ok).toBe(true);
+
+    applyAction(session, { type: "complete_interaction", puzzleId: "budget_chart", step: "view" });
+    applyAction(session, { type: "submit_answer", puzzleId: "budget_chart", value: "3" });
+    applyAction(session, { type: "submit_answer", puzzleId: "shredder_tray", value: "IRAS" });
+
+    expect(applyAction(session, { type: "move", sceneId: "archive" }).ok).toBe(true);
+    applyAction(session, { type: "submit_answer", puzzleId: "badge_log", value: "CFO" });
+    expect(applyAction(session, { type: "move", sceneId: "open_space" }).ok).toBe(true);
+    expect(applyAction(session, { type: "move", sceneId: "boardroom" }).ok).toBe(true);
+
+    const win = applyAction(session, {
+      type: "submit_answer",
+      puzzleId: "office_accusation",
+      value: "cfo",
+    });
+    expect(win.ok).toBe(true);
+    expect(session.status).toBe("won");
+  });
+});
+
 describe("lighthouse room", () => {
   it("can be won end-to-end", () => {
     const room = loadRoomFile("lighthouse.yaml");

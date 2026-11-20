@@ -251,7 +251,7 @@ Estudio completo: `docs/estudio-erl-online-gratis.md` (45 títulos indexados en 
 - [x] **P6-B — Roles asimétricos:** dos paneles por rol (`researcher` / `field`) + e2e `p6-asymmetric-roles.spec.ts`.
 - [x] **P6-C — Demo lobby:** `demo-michelon` + tarjeta inicio + e2e `p6-demo-lobby.spec.ts`.
 - [x] **P6-D — Saga opcional:** segundo acto en el mismo `eventId` (*Misión rescate* tras retorno).
-- [ ] **Catálogo — Investigación ampliada:** sala tipo *La oficina* junto a `pilot`.
+- [x] **Catálogo — Investigación ampliada:** sala tipo *La oficina* junto a `pilot` (`office.yaml`).
 
 ---
 

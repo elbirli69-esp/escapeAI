@@ -17,6 +17,7 @@ test.describe("smoke", () => {
 
     await openCatalog(page);
     await expect(page.getByTestId("escape-room-pilot")).toBeVisible();
+    await expect(page.getByTestId("escape-room-office")).toBeVisible();
     await expect(page.getByTestId("escape-room-geo-lab")).toBeVisible();
   });
 
