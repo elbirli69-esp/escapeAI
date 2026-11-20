@@ -61,7 +61,7 @@ export function listLobbyHomeModes(): LobbyHomeModeInfo[] {
     {
       mode: "catalog",
       title: "Catálogo clásico",
-      description: "Conserje, faro y salas de demostración",
+      description: "Conserje, oficina corporativa, faro y salas de demostración",
       imageAlt: "Faro en la costa, tormenta inminente",
       coverImage: "/media/lighthouse-cover.jpg",
       pexelsQuery: "escape room colorful puzzle lights interior",

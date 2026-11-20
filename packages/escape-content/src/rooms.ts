@@ -1,5 +1,6 @@
 export const ROOM_FILES = {
   pilot: "pilot.yaml",
+  office: "office.yaml",
   lighthouse: "lighthouse.yaml",
   "demo-michelon": "demo-michelon.yaml",
   "interactive-lab": "interactive-lab.yaml",
@@ -42,6 +43,16 @@ export const ROOM_CATALOG: Array<{
     coverImage: "/media/pilot-cover.jpg",
     pexelsQuery: "urban apartment hallway mystery door padlock",
     pexelsPage: 1,
+    theme: "urban",
+  },
+  {
+    id: "office",
+    title: "La oficina — caso interno",
+    summary: "Hub de investigación, archivo financiero y veredicto whodunit (~45 min).",
+    tagline: "Finanzas en rojo, un acceso VIP a medianoche y cuatro sospechosos en open space.",
+    coverImage: "/media/pilot-control.jpg",
+    pexelsQuery: "corporate office night investigation desk monitors",
+    pexelsPage: 2,
     theme: "urban",
   },
   {
