@@ -72,10 +72,15 @@ export async function submitUntilPuzzleSolved(
   puzzleId: string,
   candidates: string[],
 ): Promise<string | null> {
+  const tab = page.getByTestId(`escape-puzzle-tab-${puzzleId}`);
   for (const value of candidates) {
     await submitAnswer(page, value);
-    const tabText = await page.getByTestId(`escape-puzzle-tab-${puzzleId}`).innerText();
-    if (tabText.includes("✓")) return value;
+    try {
+      await expect(tab).toHaveText(/✓/, { timeout: 5_000 });
+      return value;
+    } catch {
+      // try next candidate
+    }
   }
   return null;
 }
