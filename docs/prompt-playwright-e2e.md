@@ -37,6 +37,7 @@ Variables: API en memoria (sin Redis). Los `webServer` de Playwright levantan AP
 | `mailroom-entry-regression.spec.ts` | Regresión salida pilot → mailroom |
 | `pilot-exploratory-order.spec.ts` | Candado antes que timbre → mailroom (orden playtest) |
 | `partidas-reales-runner.spec.ts` | Jugadores simulados + `partidas-reales-runs.json` |
+| `playtest-blind-pilot-entry.spec.ts` | Pilot ciego (pistas UI, sin fixtures win) → `playtest-grupo-runs.json` |
 | `experience-metrics.spec.ts` | Señales rúbrica `experience-eval` |
 | `events-mvp.spec.ts` | Crear evento, 2 sesiones, candado 1995 |
 | `custom-events-serial.spec.ts` | API serial: `mystery`, `team`, `celebration` hasta `entry_lock` |

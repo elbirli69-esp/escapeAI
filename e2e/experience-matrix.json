@@ -11,7 +11,14 @@
       "flow": 0.1,
       "closure": 0.1
     },
-    "e2eFailCap": 4.0
+    "e2eFailCap": 4.0,
+    "playtestQualitativeBlend": {
+      "enabled": true,
+      "weight": 0.12,
+      "description": "Mezcla opcional con notas exploratorias en playtest-grupo-runs.json (P2 roadmap playtest).",
+      "minExploratoryRuns": 1,
+      "scoreField": "perceivedProgress"
+    }
   },
   "dimensions": [
     {
@@ -46,6 +53,20 @@
     }
   ],
   "profiles": [
+    {
+      "id": "playtest-blind-pilot",
+      "label": "Playtest ciego pilot (entrada)",
+      "mode": "catalog",
+      "roomId": "pilot",
+      "priority": "P1",
+      "weight": 0.5,
+      "e2eSpecs": ["specs/playtest-blind-pilot-entry.spec.ts"],
+      "params": {
+        "executionMode": "exploratory",
+        "feedsPlaytestGrupoRuns": true
+      },
+      "evaluateDimensions": ["challenge", "flow"]
+    },
     {
       "id": "catalog-pilot",
       "label": "La oficina del conserje (pilot)",
