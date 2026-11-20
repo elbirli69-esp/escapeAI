@@ -35,7 +35,12 @@
     {
       "id": "smoke",
       "label": "Humo + catálogo visible",
-      "specs": ["specs/smoke.spec.ts", "specs/mailroom-entry-regression.spec.ts"]
+      "specs": [
+        "specs/smoke.spec.ts",
+        "specs/mailroom-entry-regression.spec.ts",
+        "specs/scanner-flow-smoke.spec.ts",
+        "specs/events-late-join.spec.ts"
+      ]
     },
     {
       "id": "catalog-replay",

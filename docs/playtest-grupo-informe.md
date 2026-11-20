@@ -114,11 +114,11 @@ Cronología resumida: fallos 0000/1234 en timbre → pista pitido → candado co
 
 ## Backlog (máx. 10, sin implementar aquí)
 
-1. Arreglar `clue-ledger` → `token_slot` en generador.
-2. Rebajar spoiler N3 en puzzles producción (pilot `lockbox`).
-3. E2E join tardío y aislamiento inventario A/B.
-4. Spec scanner `escape-scanner-*`.
-5. `playtestMatrix.json` + spec custom events serial.
+1. ~~Arreglar `clue-ledger` → `token_slot` en generador.~~ (hints `numeric_*` + test `clue-ledger.test.ts`)
+2. ~~Rebajar spoiler N3 en puzzles producción (pilot `lockbox`).~~
+3. ~~E2E join tardío y aislamiento inventario A/B.~~ (`events-late-join.spec.ts`)
+4. ~~Spec scanner `escape-scanner-*`.~~ (`scanner-flow-smoke.spec.ts`)
+5. ~~`playtestMatrix.json` + spec custom events serial.~~ (matriz + suites; custom serial pendiente)
 6. Exploratorio automatizado con sesión ciega (sin leer YAML).
 7. Unificar taglines catálogo/YAML o documentar marketing.
 8. Arreglar `pnpm build` web/vitest en CI local.

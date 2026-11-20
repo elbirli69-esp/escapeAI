@@ -29,6 +29,8 @@ Variables: API en memoria (sin Redis). Los `webServer` de Playwright levantan AP
 | Archivo | Cobertura |
 | ------- | --------- |
 | `smoke.spec.ts` | Health, catálogo, validación UI |
+| `scanner-flow-smoke.spec.ts` | Wizard scanner sin cámara → guardar inventario |
+| `events-late-join.spec.ts` | Aislamiento inventario: equipo tardío no hereda token |
 | `catalog-pilot-win.spec.ts` | Victoria pilot completa |
 | `catalog-office-win.spec.ts` | Victoria oficina (hub + whodunit) |
 | `catalog-lighthouse-win.spec.ts` | Victoria faro (`HIGH` → aceite → `SOS`) |
