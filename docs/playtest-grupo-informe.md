@@ -1,43 +1,56 @@
 # Informe playtest en grupo — 2026-11-18
 
-Ejecución según [prompt-playtest-grupo.md](./prompt-playtest-grupo.md). **No commiteado** (criterio DoD del prompt).
+Ejecución según [prompt-playtest-grupo.md](./prompt-playtest-grupo.md). El cuerpo del informe se **versiona en repo**; los JSON de corrida en `e2e/.cache/` siguen siendo locales salvo export explícito.
 
-> **Actualización 2026-11-20 (infra playtest, sí en repo):** `e2e/playtest-matrix.json`, `pnpm playtest:replay <suite>`, catálogo `office` en `experience-matrix.json`, métricas e2e y corrida `partidas-reales` experto oficina. Backlog mailroom P0: cubierto con `mailroom-entry-regression.spec.ts`.
-> **B.1:** `pnpm playtest:facts-diff` + `custom-events-serial.spec.ts` (`mystery` / `team` / `celebration` vía API).
-> **B.2:** `playtest-blind-pilot-entry.spec.ts`, taglines `ROOM_CATALOG` ↔ YAML, mezcla cualitativa en `experience-matrix.json` (`playtestQualitativeBlend`).
-> **B.3:** `playtest-blind-office-entry.spec.ts`, `e2e/playtest-coverage.json`, `pnpm playtest:snapshot` → `e2e/.cache/playtest-snapshot.json` (renovación §4 P6).
-> **Fase D:** specs ciegos en catálogo P0/P1 (`pilot`, `office`, `lighthouse`, `interactive-lab`, `geo-lab`) — suite `playtest-blind`.
+> **Renovación snapshot — 2026-11-21 (Europe/Madrid):** `pnpm playtest:replay playtest-blind` (5/5) + `pnpm playtest:snapshot` → `e2e/.cache/playtest-snapshot.json` (`gitSha` `1d5356d`, `catalogGaps` 0).
+> **Infra previa:** B.1–B.3, Fase D ciego en catálogo, `playtest-coverage.json`, `custom-events-serial`, scanner smoke, join tardío.
 
 ## Resumen ejecutivo
 
-| Concepto | Resultado |
-| -------- | --------- |
-| `gitSha` / rama | `1c28248` / `main` |
-| Corridas registradas | 11 entradas en `e2e/.cache/playtest-grupo-runs.json` |
-| Por `executionMode` | estática: 3 · replay: 7 · exploratorio: 1 (computerUse pilot) |
-| E2E | **20/20** en `CI=1 pnpm test:e2e` (~1 min) |
-| `audit-coherence` | **0 errores**, 7 warnings |
-| `experience-eval` global | **9,86/10** |
+| Concepto | Resultado (snapshot 2026-11-21) |
+| -------- | -------------------------------- |
+| `gitSha` / rama | `1d5356d` / `main` |
+| Corridas `playtest-grupo-runs.json` | **10** (`exploratory`: 10 · `deterministic_replay`: 0 en caché local) |
+| Suite `playtest-blind` | **5/5** PASS (~18 s, corrida local) |
+| `audit-coherence` | **0 errores**, **0 warnings** (post-taglines / clue-ledger) |
+| `facts-diff` | OK (`playtest:facts-diff`) |
+| `experience-eval` global | **9,86/10** (corrida histórica 2026-11-18; re-ejecutar opcional) |
 | LLM | **no_configurado** (`OPENAI_*` / `DEEPSEEK_*` ausentes) |
 
 ### Cobertura vs §4 del prompt
 
 | Requisito | Estado |
 | --------- | ------ |
-| 4 salas catálogo | **OK** (replay E2E) |
-| 4 `adventureType` | **Parcial** — auditoría estática en `audit-coherence` (generated:\*); UI/E2E solo `birthday` (Sara) |
-| 2 payloads / tipo | **Parcial** — 1 por UI; otros tipos vía tests `generate-adventure.test.ts`, no lobby custom |
-| 5 perfiles equipo | **Parcial** — replay asignado por sala; exploratorio ciego solo anotado |
-| Victorias exploratorias | **0** — exploratorio pilot: `partialWin` (entrada OK; victoria global no) |
-| Scanner espacial | **N/D** — sin spec E2E |
+| Catálogo jugable (5 + demo) | **OK** replay E2E en las 6 entradas de `playtest-coverage.json` |
+| Exploratorio ciego catálogo | **OK (parcial)** — 5/5 salas con spec `playtest-blind-*` (`partialWin`, sin victoria ciega completa) |
+| 4 `adventureType` | **Parcial** — API serial (`custom-events-serial`) + audit; UI lobby sigue centrado en `birthday` |
+| 2 payloads / tipo en UI | **Parcial** — segundo payload solo estático/API |
+| Perfiles equipo | **Parcial** — `eq-novatos`, `eq-sensorial`, `eq-experto` cubiertos en specs ciegos; falta narrativa `eq-mixto` exploratoria |
+| Victorias exploratorias completas | **0** (por diseño: corridas ciegas acotadas) |
+| Scanner | **Parcial** — `scanner-flow-smoke.spec.ts`; generación espacial sin playtest grupo |
 
-**Conclusión DoD:** ejecución **no cerrada** en sentido estricto del prompt (falta Fase D amplia y 2º payload por tipo en UI). Resultados técnicos y estáticos sí son accionables.
+**Tabla catálogo (fuente: snapshot):**
+
+| `roomId` | Replay | Exploratorio ciego |
+| -------- | ------ | ------------------ |
+| `pilot` | `catalog-pilot-win` | `playtest-blind-pilot-entry` |
+| `office` | `catalog-office-win` | `playtest-blind-office-entry` |
+| `lighthouse` | `catalog-lighthouse-win` | `playtest-blind-lighthouse-entry` |
+| `interactive-lab` | `interactive-lab-partial` | `playtest-blind-interactive-lab` |
+| `geo-lab` | `geo-lab-mocked` | `playtest-blind-geo-lab` |
+| `demo-michelon` | `p6-demo-lobby` | — |
+
+**Eventos (API / replay):** `birthday` (UI + replay), `mystery` / `team` / `celebration` con `custom-events-serial` + replays P6 donde aplica.
+
+**Conclusión DoD:** Fase **B + D automatizada** cubierta en CI; quedan victoria exploratoria completa, lobby multi-tipo y playtest espacial/manual ampliado.
 
 ## Referencias verificadas / gaps
 
-- `pnpm validate-rooms` → OK (4 salas).
-- `pnpm audit-coherence` → informe `docs/coherencia-partidas-informe.md`.
-- `pnpm build` → **fallo** `apps/web` (`vitest` no resuelto en `tsc --noEmit`). E2E arrancó Vite vía Playwright `webServer`.
+- `pnpm validate-rooms` → OK (6 YAML catálogo).
+- `pnpm audit-coherence` → informe `docs/coherencia-partidas-informe.md` (**0** errores en snapshot).
+- `pnpm build` → OK en CI local (2026-11-21).
+- `pnpm playtest:replay playtest-blind` → 5/5.
+- `pnpm playtest:snapshot` → `e2e/.cache/playtest-snapshot.json`.
 - `pnpm --filter @escapeai/escape-engine test` → 21 tests OK.
 - `generateAdventureRoom` en CLI tsx → error exports `@escapeai/shared`; usado **vitest** `generate-adventure.test.ts`.
 - GM baseline: `escape-gm-line`, métricas `gmLinesBeforeFirstSolve` ≥ 2 en catálogo P0.
@@ -45,11 +58,12 @@ Ejecución según [prompt-playtest-grupo.md](./prompt-playtest-grupo.md). **No c
 
 ## Hallazgos P0 / producto
 
-1. **Warning `clue-ledger`** en los 4 tipos generados: `token_slot` no enlaza pista del acto 1 (`audit-coherence`).
-2. **Pista nivel 3 `lockbox` (pilot)** entrega solución literal «Prueba 1984» — spacer de fair play en grupos novatos.
-3. **Tagline drift** catálogo vs YAML en lighthouse, interactive-lab, geo-lab (marketing vs sala).
-4. **interactive-lab** pistas demo con cifras fijas — coherencia advierte disclaimer.
-5. **Sin soft-lock** mecánico detectado en salas P0 (coherence win-path OK).
+1. ~~**clue-ledger** / `token_slot`.~~ Resuelto en main (tests + hints).
+2. ~~**lockbox N3 spoiler**.~~ Rebajado en playtest debt B.
+3. ~~**Tagline drift**.~~ `ROOM_CATALOG` alineado a YAML.
+4. **interactive-lab** pistas demo con cifras fijas — vigilar fair play (corridas ciegas usan pistas/trial acotado).
+5. **Sin soft-lock** mecánico en salas P0 en última audit.
+6. **Victoria ciega completa** no automatizada (labs/geo cortan antes del win).
 
 ## Tabla resumen de corridas
 
@@ -105,8 +119,8 @@ Cronología resumida: fallos 0000/1234 en timbre → pista pitido → candado co
 ## Comparación con `experience-eval` y coherencia
 
 - Global **9,86** — pilot/lighthouse/GM persistence en **~10**; interactive-lab y evento con gaps de escenas/`timeToFirstPuzzle`.
-- Playtest cualitativo **no contradice** la nota objetiva; añade: pistas N3 spoil, clue-ledger eventos, tagline drift.
-- `audit-coherence` sin errores bloqueantes; warnings priorizados en backlog.
+- Playtest cualitativo automatizado alimenta `playtestQualitativeBlend` vía `playtest-grupo-runs.json`.
+- `audit-coherence` sin warnings en snapshot `1d5356d` (regenerar tras cambios YAML).
 
 ## Limitaciones de esta ejecución
 
@@ -114,9 +128,9 @@ Cronología resumida: fallos 0000/1234 en timbre → pista pitido → candado co
 2. Fase D exploratoria: **automatizada parcial** en las 5 salas catálogo (sin victoria ciega completa en labs).
 3. Sin evaluación LLM del GM.
 4. Sin scanner / site multihabitación jugado.
-5. Segundo payload custom por `mystery|team|celebration` solo en auditoría, no lobby.
+5. Segundo payload custom por `mystery|team|celebration` en lobby UI (API E2E sí).
 
-## Backlog (máx. 10, sin implementar aquí)
+## Backlog playtest (post B + D)
 
 1. ~~Arreglar `clue-ledger` → `token_slot` en generador.~~ (hints `numeric_*` + test `clue-ledger.test.ts`)
 2. ~~Rebajar spoiler N3 en puzzles producción (pilot `lockbox`).~~
@@ -129,17 +143,26 @@ Cronología resumida: fallos 0000/1234 en timbre → pista pitido → candado co
 9. ~~Diff facts automatizado post-audit.~~ (`pnpm playtest:facts-diff`, B.1)
 10. ~~Ponderar playtest cualitativo en matriz (P2 roadmap).~~ (`playtestQualitativeBlend` en `experience-eval:score`)
 
-## Anexo
+**Abierto (siguiente tanda):**
 
-**Comandos ejecutados:**
+1. Exploratorio ciego con **victoria** en al menos una sala (sin fixture win).
+2. Lobby UI para `mystery` / `team` / `celebration` (2º payload visible).
+3. Playtest grupo **GM con LLM** cuando haya secretos en entorno.
+4. Regenerar **`experience-eval`** tras suite ampliada y cruzar con snapshot.
+
+## Anexo — corrida 2026-11-21
+
+**Comandos:**
 
 ```bash
-pnpm validate-rooms
-pnpm audit-coherence
-pnpm --filter @escapeai/escape-content build
-pnpm --filter @escapeai/escape-engine test
-CI=1 pnpm test:e2e
-pnpm experience-eval:signals && pnpm experience-eval:score
+pnpm build
+pnpm playtest:replay playtest-blind
+pnpm playtest:snapshot
 ```
 
-**Artefactos:** `e2e/.cache/playtest-grupo-runs.json`, `e2e/.cache/experience-metrics.json`, `e2e/.cache/experience-scores.json`, `docs/coherencia-partidas-informe.md` (regenerado por audit).
+**Artefactos locales (no commiteados por defecto):**
+
+- `e2e/.cache/playtest-snapshot.json` — cobertura §4 + auditorías
+- `e2e/.cache/playtest-grupo-runs.json` — corridas `exploratory` de specs ciegos
+- `e2e/.cache/facts-personalization-diff.json`
+- `docs/coherencia-partidas-informe.md` (regenerado por `audit-coherence`)
