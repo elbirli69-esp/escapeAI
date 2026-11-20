@@ -61,6 +61,44 @@
       }
     },
     {
+      "id": "catalog-office",
+      "label": "La oficina — caso interno",
+      "mode": "catalog",
+      "roomId": "office",
+      "priority": "P1",
+      "weight": 0.95,
+      "e2eSpecs": ["specs/catalog-office-win.spec.ts"],
+      "params": {
+        "simulateWrongAttempts": 1,
+        "measureTimeToFirstPuzzle": true,
+        "deductionFinale": true
+      }
+    },
+    {
+      "id": "catalog-demo",
+      "label": "Michelón demo (lobby)",
+      "mode": "catalog",
+      "roomId": "demo-michelon",
+      "priority": "P1",
+      "weight": 0.7,
+      "e2eSpecs": ["specs/p6-demo-lobby.spec.ts"],
+      "params": { "isPublicDemo": true }
+    },
+    {
+      "id": "p6-regression",
+      "label": "P6 + híbrido P5",
+      "mode": "mixed",
+      "priority": "P1",
+      "weight": 0.85,
+      "e2eSpecs": [
+        "specs/p6-whodunit.spec.ts",
+        "specs/p6-asymmetric-roles.spec.ts",
+        "specs/p6-saga-two-acts.spec.ts",
+        "specs/p5-hybrid.spec.ts"
+      ],
+      "evaluateDimensions": ["flow", "closure"]
+    },
+    {
       "id": "catalog-lighthouse",
       "label": "El faro de Punta Norte",
       "mode": "catalog",

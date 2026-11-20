@@ -40,7 +40,9 @@ Antes de cualquier corrida, el agente debe **verificar en código** las referenc
 | `pnpm experience-eval` | Sí | `build` + signals + e2e + score + report |
 | `pnpm experience-eval:score` | Sí | Lee `e2e/.cache/experience-metrics.json` + matriz + rúbrica |
 | `pnpm experience-eval:signals` | Sí | Señales de contenido → `e2e/.cache/experience-signals.json` |
-| `playtestMatrix.json` | **No** | Propuesta futura (§9) |
+| `pnpm playtest:replay <suite>` | Sí | Suites en `e2e/playtest-matrix.json` |
+| `pnpm playtest:partidas` | Sí | `partidas-reales-runner.spec.ts` |
+| `e2e/playtest-matrix.json` | Sí | Salas, payloads y suites de replay (§5, §15) |
 | Script CLI `generate-spatial` | **No** | Solo tests: `packages/escape-content/src/spatial/generate-spatial.test.ts` |
 
 ### 0.2 Specs Playwright verificados (`e2e/specs/`)
@@ -58,6 +60,15 @@ Antes de cualquier corrida, el agente debe **verificar en código** las referenc
 | `resume-session-banner.spec.ts` | Reanudar sesión |
 | `gamemaster-reload.spec.ts` | GM tras reload (evento + pilot clásico) |
 | `experience-metrics.spec.ts` | Métricas para `experience-eval` (serial) |
+| `catalog-office-win.spec.ts` | Victoria catálogo oficina + whodunit |
+| `mailroom-entry-regression.spec.ts` | Regresión navegación pilot → mailroom |
+| `partidas-reales-runner.spec.ts` | Partidas simuladas + JSON veredictos |
+| `pilot-exploratory-order.spec.ts` | Orden malo playtest novatos |
+| `p5-hybrid.spec.ts` | Prep organizador + token mobile_only |
+| `p6-demo-lobby.spec.ts` | Demo Michelón desde lobby |
+| `p6-whodunit.spec.ts` | Mystery generado + acusación |
+| `p6-asymmetric-roles.spec.ts` | Dos sesiones por rol |
+| `p6-saga-two-acts.spec.ts` | Saga + release acto 2 |
 
 **Gap E2E:** no hay spec Playwright dedicado al flujo **Scanner** (`apps/web/src/scanner/ScannerFlow.tsx`; testids `escape-scanner-*`). Auditar en modalidad **estática** o manual documentada.
 
@@ -66,7 +77,7 @@ Antes de cualquier corrida, el agente debe **verificar en código** las referenc
 | Fixture | Uso |
 | ------- | --- |
 | `game.ts` | Lobby, puzzles, `submitAnswer`, `moveToScene`, `completeSoundListen`, `data-testid` UI |
-| `pilot-win.ts`, `lighthouse-win.ts`, `interactive-lab-win.ts`, `geo-lab-win.ts` | **Replay determinista** |
+| `pilot-win.ts`, `office-win.ts`, `lighthouse-win.ts`, `interactive-lab-win.ts`, `geo-lab-win.ts`, `demo-michelon-win.ts` | **Replay determinista** |
 | `event-win-path.ts`, `events.ts` | `SARA_EVENT`, `createEventFromLobby`, `playSaraEventToWin` |
 | `experience-metrics-io.ts` | Escritura `e2e/.cache/experience-metrics.json` |
 | `media-mock.ts`, `routes.ts` | Cámara/geo en CI |
@@ -186,7 +197,7 @@ Si no se alcanza, el informe lista **faltantes exactos** (sin declarar DoD cerra
 
 | Eje | Meta |
 | --- | ---- |
-| Catálogo | 4 salas: `pilot`, `lighthouse`, `interactive-lab`, `geo-lab` |
+| Catálogo | 5 salas jugables: `pilot`, `office`, `lighthouse`, `interactive-lab`, `geo-lab` + demo `demo-michelon` |
 | Tipos evento | 4× `adventureType`, **2 payloads** cada uno (Sara = 1; otro distinto vía estática o API verificada) |
 | Perfiles | 5 `teamId` documentados al menos una vez |
 | Modalidades | Cada sala P0: ≥1 exploratorio **o** limitación documentada; ≥1 replay; ≥1 estática |
@@ -201,6 +212,7 @@ Si no se alcanza, el informe lista **faltantes exactos** (sin declarar DoD cerra
 | `roomId` | Replay (spec / fixture) | Notas exploratorio |
 | -------- | ------------------------ | ------------------ |
 | `pilot` | `catalog-pilot-win.spec.ts`, `pilot-win.ts` | Sensorial + mailroom + candado |
+| `office` | `catalog-office-win.spec.ts`, `office-win.ts` | Hub investigación + `office_accusation` |
 | `lighthouse` | `catalog-lighthouse-win.spec.ts`, `lighthouse-win.ts` | Cadena sound/visual/voice |
 | `interactive-lab` | `interactive-lab-partial.spec.ts`, `interactive-lab-win.ts` | Requiere `mockCameraForPlaywright` |
 | `geo-lab` | `geo-lab-mocked.spec.ts`, `geo-lab-win.ts` | Permisos geolocation en contexto |
@@ -505,7 +517,7 @@ Array de objetos. Campos obligatorios marcados con `*`.
 
 ### P1 — Automatización
 
-- `e2e/playtest-matrix.json` (payloads + equipos).
+- ~~`e2e/playtest-matrix.json`~~ (implementado; ampliar payloads mystery/team).
 - Volcado diario/GM/pistas post-partida.
 - Diff sistemático de personalización.
 - E2E multiequipo ampliado (join tardío).

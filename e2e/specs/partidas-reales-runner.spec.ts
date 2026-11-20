@@ -262,6 +262,76 @@ test.describe("partidas reales (prompt §6)", () => {
     });
   });
 
+  test("office — eq-experto — hub y acusación CFO", async ({ page }) => {
+    test.setTimeout(240_000);
+    const t0 = Date.now();
+    const evidence: Array<{ t: string; kind: string; puzzleId?: string; detail: string }> = [];
+
+    await startClassicRoom(page, "office");
+    const sessionId = await getSessionId(page);
+    evidencePush(evidence, "session", `sessionId=${sessionId}`);
+
+    await selectPuzzle(page, "turnstile_tone");
+    await completeSoundListen(page);
+    await submitAnswer(page, "2");
+    await selectPuzzle(page, "audit_year");
+    await submitAnswer(page, "2024");
+    await moveToScene(page, "open_space");
+
+    await selectPuzzle(page, "budget_chart");
+    const viewBtn = page.getByRole("button", { name: "He estudiado la imagen" });
+    await expect(viewBtn).toBeEnabled({ timeout: 15_000 });
+    await viewBtn.click();
+    await submitAnswer(page, "3");
+    evidencePush(evidence, "solve", "gráfico 3 barras", "budget_chart");
+
+    await selectPuzzle(page, "shredder_tray");
+    await submitAnswer(page, "IRAS");
+    await moveToScene(page, "archive");
+    await selectPuzzle(page, "badge_log");
+    await submitAnswer(page, "CFO");
+    await moveToScene(page, "open_space");
+    await moveToScene(page, "boardroom");
+
+    await selectPuzzle(page, "office_accusation");
+    await page.getByTestId("escape-whodunit-suspect-cfo").click();
+    await page.getByTestId("escape-whodunit-submit").click();
+    await expect(page.getByTestId("escape-game-status")).toHaveAttribute("data-status", "won", {
+      timeout: 30_000,
+    });
+    const elapsed = Math.round((Date.now() - t0) / 1000);
+    evidencePush(evidence, "win", `veredicto CFO en ${elapsed}s`, "office_accusation");
+
+    appendPartidasRealesRun({
+      executionMode: "real_session_exploratory",
+      gameKind: "catalog",
+      roomId: "office",
+      adventureType: null,
+      eventJoinCode: null,
+      sessionId,
+      teamId: "eq-experto",
+      playerModel: EXPERTO_MODEL,
+      won: true,
+      abandonedAt: null,
+      timeToWinSec: elapsed,
+      metrics: {
+        wrongAttempts: 0,
+        gmLineCount: await gmLineCount(page),
+        perceivedProgress: 9,
+      },
+      verdicts: {
+        difficulty: { status: "pass", score: 7, evidence: ["hub paralelo + deducción sin atascos"] },
+        playability: { status: "pass", score: 8.5 },
+        closure: { status: "pass", score: 8, evidence: ["whodunit con 3 clues en cuaderno"] },
+        mechanics: { status: "pass", score: 8, evidence: ["visual + code + deduction"] },
+        gamemaster: { status: "pass", score: 7.5 },
+      },
+      globalVerdict: "ship",
+      evidence,
+      llmStatus: "no_configurado",
+    });
+  });
+
   test("event birthday — eq-novatos — candado con pistas", async ({ page }) => {
     test.setTimeout(240_000);
     const evidence: Array<{ t: string; kind: string; puzzleId?: string; detail: string }> = [];

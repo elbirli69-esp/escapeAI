@@ -7,6 +7,7 @@
 **Complementa:** [prompt-playwright-e2e.md](./prompt-playwright-e2e.md) (funcional), [prompt-coherencia-partidas.md](./prompt-coherencia-partidas.md) (mecánica), [prompt-entretenimiento-er.md](./prompt-entretenimiento-er.md) (diseño ER), [prompt-playtest-grupo.md](./prompt-playtest-grupo.md) (playtest multiequipo v2: exploratorio, replay, auditoría estática), [prompt-partidas-reales-jugadores.md](./prompt-partidas-reales-jugadores.md) (partidas reales con jugadores simulados y veredicto ER).
 
 **Parametrización:** `e2e/experience-matrix.json`  
+**Replay por suites (sin commitear JSON de corrida):** `pnpm playtest:replay catalog-replay` · ver `e2e/playtest-matrix.json`  
 **Señales objetivas:** `pnpm experience-eval:signals`  
 **Informe base:** `pnpm experience-eval:report` → `docs/experiencia-jugable-informe.md` (generado; no commitear salvo revisión humana).
 
