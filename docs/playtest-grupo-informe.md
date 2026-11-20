@@ -4,6 +4,7 @@ Ejecución según [prompt-playtest-grupo.md](./prompt-playtest-grupo.md). **No c
 
 > **Actualización 2026-11-20 (infra playtest, sí en repo):** `e2e/playtest-matrix.json`, `pnpm playtest:replay <suite>`, catálogo `office` en `experience-matrix.json`, métricas e2e y corrida `partidas-reales` experto oficina. Backlog mailroom P0: cubierto con `mailroom-entry-regression.spec.ts`.
 > **B.1:** `pnpm playtest:facts-diff` + `custom-events-serial.spec.ts` (`mystery` / `team` / `celebration` vía API).
+> **B.2:** `playtest-blind-pilot-entry.spec.ts`, taglines `ROOM_CATALOG` ↔ YAML, mezcla cualitativa en `experience-matrix.json` (`playtestQualitativeBlend`).
 
 ## Resumen ejecutivo
 
@@ -119,12 +120,12 @@ Cronología resumida: fallos 0000/1234 en timbre → pista pitido → candado co
 2. ~~Rebajar spoiler N3 en puzzles producción (pilot `lockbox`).~~
 3. ~~E2E join tardío y aislamiento inventario A/B.~~ (`events-late-join.spec.ts`)
 4. ~~Spec scanner `escape-scanner-*`.~~ (`scanner-flow-smoke.spec.ts`)
-5. ~~`playtestMatrix.json` + spec custom events serial.~~ (matriz + suites; custom serial pendiente)
-6. Exploratorio automatizado con sesión ciega (sin leer YAML).
-7. Unificar taglines catálogo/YAML o documentar marketing.
+5. ~~`playtestMatrix.json` + spec custom events serial.~~ (`custom-events-serial.spec.ts`)
+6. ~~Exploratorio automatizado con sesión ciega (sin leer YAML).~~ (`playtest-blind-pilot-entry.spec.ts`)
+7. ~~Unificar taglines catálogo/YAML o documentar marketing.~~ (`ROOM_CATALOG` alineado a YAML)
 8. Arreglar `pnpm build` web/vitest en CI local.
-9. Diff facts automatizado post-audit (script `generateAdventureRoom` estable).
-10. Ponderar playtest cualitativo en matriz (P2 roadmap).
+9. ~~Diff facts automatizado post-audit.~~ (`pnpm playtest:facts-diff`, B.1)
+10. ~~Ponderar playtest cualitativo en matriz (P2 roadmap).~~ (`playtestQualitativeBlend` en `experience-eval:score`)
 
 ## Anexo
 

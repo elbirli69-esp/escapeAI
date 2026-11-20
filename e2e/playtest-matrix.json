@@ -93,6 +93,11 @@
       ]
     },
     {
+      "id": "playtest-blind",
+      "label": "Playtest ciego automatizado",
+      "specs": ["specs/playtest-blind-pilot-entry.spec.ts"]
+    },
+    {
       "id": "experience-metrics",
       "label": "Rúbrica objetiva (serial)",
       "specs": ["specs/experience-metrics.spec.ts"]

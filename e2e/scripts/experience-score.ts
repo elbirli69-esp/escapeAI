@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { generateAdventureRoom, loadRoomById, ROOM_FILES, type RoomId } from "@escapeai/escape-content";
 import matrix from "../experience-matrix.json" with { type: "json" };
 import { experienceMetricsPath } from "../fixtures/experience-metrics-io.js";
+import { playtestGrupoRunsPath, type PlaytestGrupoFile } from "../fixtures/playtest-grupo-io.js";
 import type { ExperienceMetricsFile, ProfileRuntimeMetrics } from "../fixtures/experience-metrics-io.js";
 import {
   contentMetricsFromRoom,
@@ -155,14 +156,59 @@ for (const r of results) {
   globalSum += r.total * r.weight;
   globalWeight += r.weight;
 }
-const globalScore = globalWeight > 0 ? Math.round((globalSum / globalWeight) * 100) / 100 : 0;
+const globalScoreObjective =
+  globalWeight > 0 ? Math.round((globalSum / globalWeight) * 100) / 100 : 0;
+
+type QualitativeBlend = {
+  enabled?: boolean;
+  weight?: number;
+  minExploratoryRuns?: number;
+  scoreField?: keyof PlaytestGrupoFile["runs"][number];
+};
+
+function playtestQualitativeMean(): { score: number | null; exploratoryRuns: number } {
+  const blend = (matrix.rubric as { playtestQualitativeBlend?: QualitativeBlend })
+    .playtestQualitativeBlend;
+  if (!blend?.enabled || !existsSync(playtestGrupoRunsPath)) {
+    return { score: null, exploratoryRuns: 0 };
+  }
+  const file = JSON.parse(readFileSync(playtestGrupoRunsPath, "utf8")) as PlaytestGrupoFile;
+  const field = blend.scoreField ?? "perceivedProgress";
+  const exploratory = file.runs.filter((r) => r.executionMode === "exploratory");
+  const values = exploratory
+    .map((r) => r[field])
+    .filter((v): v is number => typeof v === "number");
+  const minRuns = blend.minExploratoryRuns ?? 1;
+  if (values.length < minRuns) {
+    return { score: null, exploratoryRuns: values.length };
+  }
+  const mean = values.reduce((sum, n) => sum + n, 0) / values.length;
+  return { score: Math.round(mean * 100) / 100, exploratoryRuns: values.length };
+}
+
+const qualitative = playtestQualitativeMean();
+const blend = (matrix.rubric as { playtestQualitativeBlend?: QualitativeBlend })
+  .playtestQualitativeBlend;
+const blendWeight = blend?.enabled && qualitative.score != null ? (blend.weight ?? 0) : 0;
+const globalScore =
+  blendWeight > 0 && qualitative.score != null
+    ? Math.round(
+        ((1 - blendWeight) * globalScoreObjective + blendWeight * qualitative.score) * 100,
+      ) / 100
+    : globalScoreObjective;
 
 const payload = {
   generatedAt: new Date().toISOString(),
-  scoringMode: "objective-v1",
+  scoringMode: blendWeight > 0 ? "objective-v1+playtest-qualitative" : "objective-v1",
   rubricVersion: rubricVersion(),
   matrixVersion: matrix.version,
   globalScore,
+  globalScoreObjective,
+  playtestQualitativeBlend: {
+    weight: blendWeight,
+    exploratoryRuns: qualitative.exploratoryRuns,
+    qualitativeScore: qualitative.score,
+  },
   globalWeightSum: globalWeight,
   profiles: results,
 };
