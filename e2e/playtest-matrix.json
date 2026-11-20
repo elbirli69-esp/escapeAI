@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "description": "Replay determinista y payloads para playtest multiequipo (ver docs/prompt-playtest-grupo.md).",
+  "teamProfiles": [
+    { "id": "eq-novatos", "label": "Novatos ER", "logicPuzzles": 1, "sensoryLiteracy": 2 },
+    { "id": "eq-experto", "label": "Veteranos escape", "logicPuzzles": 5, "sensoryLiteracy": 4 },
+    { "id": "eq-sensorial", "label": "Sensorial-first", "logicPuzzles": 2, "sensoryLiteracy": 4 }
+  ],
+  "catalogRooms": [
+    { "roomId": "pilot", "replaySpec": "specs/catalog-pilot-win.spec.ts", "fixture": "fixtures/pilot-win.ts" },
+    { "roomId": "office", "replaySpec": "specs/catalog-office-win.spec.ts", "fixture": "fixtures/office-win.ts" },
+    { "roomId": "lighthouse", "replaySpec": "specs/catalog-lighthouse-win.spec.ts", "fixture": "fixtures/lighthouse-win.ts" },
+    { "roomId": "interactive-lab", "replaySpec": "specs/interactive-lab-partial.spec.ts", "fixture": "fixtures/interactive-lab-win.ts" },
+    { "roomId": "geo-lab", "replaySpec": "specs/geo-lab-mocked.spec.ts", "fixture": "fixtures/geo-lab-win.ts" },
+    { "roomId": "demo-michelon", "replaySpec": "specs/p6-demo-lobby.spec.ts", "notes": "Lobby → demo corta" }
+  ],
+  "eventPresets": [
+    {
+      "id": "SARA_EVENT",
+      "adventureType": "birthday",
+      "replaySpecs": ["specs/events-full-win.spec.ts", "specs/events-mvp.spec.ts"]
+    },
+    {
+      "id": "ADA_MYSTERY",
+      "adventureType": "mystery",
+      "replaySpecs": ["specs/p6-whodunit.spec.ts", "specs/partidas-reales-runner.spec.ts"]
+    },
+    {
+      "id": "hybrid-mobile",
+      "adventureType": "birthday",
+      "replaySpecs": ["specs/p5-hybrid.spec.ts"]
+    }
+  ],
+  "suites": [
+    {
+      "id": "smoke",
+      "label": "Humo + catálogo visible",
+      "specs": ["specs/smoke.spec.ts", "specs/mailroom-entry-regression.spec.ts"]
+    },
+    {
+      "id": "catalog-replay",
+      "label": "Victorias catálogo (determinista)",
+      "specs": [
+        "specs/catalog-pilot-win.spec.ts",
+        "specs/catalog-office-win.spec.ts",
+        "specs/catalog-lighthouse-win.spec.ts",
+        "specs/interactive-lab-partial.spec.ts",
+        "specs/geo-lab-mocked.spec.ts"
+      ]
+    },
+    {
+      "id": "events-replay",
+      "label": "Eventos generados",
+      "specs": ["specs/events-mvp.spec.ts", "specs/events-full-win.spec.ts", "specs/organizer-panel.spec.ts"]
+    },
+    {
+      "id": "p6-regression",
+      "label": "P6 producto + P5 híbrido",
+      "specs": [
+        "specs/p6-demo-lobby.spec.ts",
+        "specs/p6-whodunit.spec.ts",
+        "specs/p6-asymmetric-roles.spec.ts",
+        "specs/p6-saga-two-acts.spec.ts",
+        "specs/p5-hybrid.spec.ts"
+      ]
+    },
+    {
+      "id": "gm-partidas",
+      "label": "GM, diálogo ER y partidas simuladas",
+      "specs": [
+        "specs/gm-dialogo-case-a.spec.ts",
+        "specs/gm-dialogo-case-e.spec.ts",
+        "specs/gm-dialogo-matrix.spec.ts",
+        "specs/director-faq.spec.ts",
+        "specs/gamemaster-reload.spec.ts",
+        "specs/partidas-reales-runner.spec.ts",
+        "specs/pilot-exploratory-order.spec.ts"
+      ]
+    },
+    {
+      "id": "experience-metrics",
+      "label": "Rúbrica objetiva (serial)",
+      "specs": ["specs/experience-metrics.spec.ts"]
+    }
+  ]
+}

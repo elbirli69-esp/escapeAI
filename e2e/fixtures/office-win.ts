@@ -7,12 +7,21 @@ import {
   submitAnswer,
 } from "./game.js";
 
-export async function playOfficeToWin(page: Page): Promise<void> {
+export async function playOfficeToWin(
+  page: Page,
+  opts?: { withWrongAuditYear?: boolean },
+): Promise<void> {
   await selectPuzzle(page, "turnstile_tone");
   await completeSoundListen(page);
   await submitAnswer(page, "2");
 
   await selectPuzzle(page, "audit_year");
+  if (opts?.withWrongAuditYear) {
+    await submitAnswer(page, "2000");
+    await expect(page.getByTestId("escape-narrative-log")).toContainText(/incorrecta/i, {
+      timeout: 10_000,
+    });
+  }
   await submitAnswer(page, "2024");
   await moveToScene(page, "open_space");
 

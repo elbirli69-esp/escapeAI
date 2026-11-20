@@ -2,6 +2,8 @@
 
 Ejecución según [prompt-playtest-grupo.md](./prompt-playtest-grupo.md). **No commiteado** (criterio DoD del prompt).
 
+> **Actualización 2026-11-20 (infra playtest, sí en repo):** `e2e/playtest-matrix.json`, `pnpm playtest:replay <suite>`, catálogo `office` en `experience-matrix.json`, métricas e2e y corrida `partidas-reales` experto oficina. Backlog mailroom P0: cubierto con `mailroom-entry-regression.spec.ts`.
+
 ## Resumen ejecutivo
 
 | Concepto | Resultado |

@@ -30,10 +30,24 @@ Variables: API en memoria (sin Redis). Los `webServer` de Playwright levantan AP
 | ------- | --------- |
 | `smoke.spec.ts` | Health, catálogo, validación UI |
 | `catalog-pilot-win.spec.ts` | Victoria pilot completa |
+| `catalog-office-win.spec.ts` | Victoria oficina (hub + whodunit) |
+| `catalog-lighthouse-win.spec.ts` | Victoria faro (`HIGH` → aceite → `SOS`) |
+| `mailroom-entry-regression.spec.ts` | Regresión salida pilot → mailroom |
 | `pilot-exploratory-order.spec.ts` | Candado antes que timbre → mailroom (orden playtest) |
+| `partidas-reales-runner.spec.ts` | Jugadores simulados + `partidas-reales-runs.json` |
+| `experience-metrics.spec.ts` | Señales rúbrica `experience-eval` |
 | `events-mvp.spec.ts` | Crear evento, 2 sesiones, candado 1995 |
 | `events-full-win.spec.ts` | Victoria completa evento fixture Sara |
+| `p5-hybrid.spec.ts` | Panel prep + híbrido mobile_only |
+| `p6-demo-lobby.spec.ts` | Demo Michelón lobby |
+| `p6-whodunit.spec.ts` | Mystery generado + acusación |
+| `p6-asymmetric-roles.spec.ts` | Roles researcher/field |
+| `p6-saga-two-acts.spec.ts` | Saga dos actos + release organizador |
 | `interactive-lab-partial.spec.ts` | Sensoriales (cámara vía API) |
 | `geo-lab-mocked.spec.ts` | GPS mock + quiz |
-| `catalog-lighthouse-win.spec.ts` | Victoria faro (`HIGH` → aceite → `SOS`) |
 | `organizer-panel.spec.ts` | Ranking tras unir equipo |
+| `gm-dialogo-*.spec.ts`, `director-faq.spec.ts` | Matriz diálogo GM |
+| `gamemaster-reload.spec.ts` | GM tras recarga |
+| `resume-session-banner.spec.ts` | Reanudar sesión |
+
+Suites agrupadas: `pnpm playtest:replay <suite>` según `e2e/playtest-matrix.json` (`catalog-replay`, `p6-regression`, `gm-partidas`, …).

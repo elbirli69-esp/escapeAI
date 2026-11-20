@@ -14,6 +14,7 @@ import { createEventFromLobby, joinEventAsTeam } from "../fixtures/events.js";
 import { playSaraEventToWin, SARA_EVENT_WIN } from "../fixtures/event-win-path.js";
 import { playGeoLabToWin } from "../fixtures/geo-lab-win.js";
 import { playLighthouseToWin } from "../fixtures/lighthouse-win.js";
+import { playOfficeToWin } from "../fixtures/office-win.js";
 import { playPilotToWin } from "../fixtures/pilot-win.js";
 import { captureCameraThroughUi, mockCameraForPlaywright } from "../fixtures/media-mock.js";
 import { stubMediaRoutes } from "../fixtures/routes.js";
@@ -63,6 +64,29 @@ test.describe("experience metrics (objective scoring)", () => {
       victoryBodyChars: body.length,
       victoryIncludesTagline: body.includes("«"),
       victoryIncludesRoomName: body.toLowerCase().includes("conserje") || body.length > 40,
+      scenesVisitedInWinSpec: 4,
+    });
+  });
+
+  test("catalog-office runtime", async ({ page }) => {
+    test.setTimeout(120_000);
+    const t0 = Date.now();
+    await startClassicRoom(page, "office");
+    const gmBefore = await gmCountBeforeSolve(page);
+
+    await playOfficeToWin(page, { withWrongAuditYear: true });
+    const body = await page.getByTestId("escape-game-status").locator("p").last().innerText();
+    mergeProfileMetrics("catalog-office", {
+      timeToFirstPuzzleMs: Date.now() - t0,
+      gmLinesBeforeFirstSolve: gmBefore,
+      wrongAttemptFeedback: true,
+      wrongAttemptNoFlash: true,
+      wonInE2e: true,
+      partialWin: false,
+      victoryBodyChars: body.length,
+      victoryIncludesTagline: body.length > 20,
+      victoryIncludesRoomName:
+        body.toLowerCase().includes("oficina") || body.toLowerCase().includes("interno") || body.length > 30,
       scenesVisitedInWinSpec: 4,
     });
   });
