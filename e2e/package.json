@@ -10,7 +10,8 @@
     "experience:score": "tsx scripts/experience-score.ts",
     "experience:report": "tsx scripts/experience-report.ts",
     "playtest:replay": "tsx scripts/playtest-replay.ts",
-    "playtest:snapshot": "tsx scripts/playtest-snapshot.ts"
+    "playtest:snapshot": "tsx scripts/playtest-snapshot.ts",
+    "playtest:community-stress": "tsx scripts/community-stress-smoke.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.1",
