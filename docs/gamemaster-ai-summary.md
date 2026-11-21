@@ -80,6 +80,8 @@ Los contadores son **por instancia de proceso** (serverless: no agregan entre r�
 ## Beta cerrada
 
 - [beta-cerrada-guia.md](./beta-cerrada-guia.md) — flujo organizador y límites multijugador.
+- [community-playtest-informe-2026-11-20.md](./community-playtest-informe-2026-11-20.md) — QA autónomo 30 perfiles / modelo multiequipo.
+- [playtest-grupo-informe.md](./playtest-grupo-informe.md) — matriz catálogo y snapshot CI.
 
 ## Producto — plan de diálogo ER
 

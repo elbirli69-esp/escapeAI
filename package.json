@@ -11,6 +11,7 @@
     "playtest:partidas": "pnpm --filter @escapeai/e2e exec playwright test specs/partidas-reales-runner.spec.ts",
     "playtest:facts-diff": "pnpm --filter @escapeai/escape-content run facts-diff",
     "playtest:snapshot": "pnpm --filter @escapeai/e2e run playtest:snapshot",
+    "playtest:community-stress": "pnpm --filter @escapeai/shared build && pnpm --filter @escapeai/escape-content build && pnpm --filter @escapeai/e2e run playtest:community-stress",
     "experience-eval:signals": "pnpm --filter @escapeai/e2e run experience:signals",
     "experience-eval:score": "pnpm --filter @escapeai/e2e run experience:score",
     "experience-eval:report": "pnpm --filter @escapeai/e2e run experience:report",
