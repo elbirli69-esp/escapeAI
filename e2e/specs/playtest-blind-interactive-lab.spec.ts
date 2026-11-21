@@ -38,9 +38,21 @@ test.describe("playtest blind interactive-lab (Fase D)", () => {
     wrongAttempts += 1;
     const soundHints = await requestHintsUntil(page, 2);
     const soundCopy = await page.locator("main.game").innerText();
-    let digit =
-      inferSingleDigitFromHints(`${soundCopy}\n${soundHints.logText}\n${await readNarrativeLog(page)}`) ??
-      (await submitUntilPuzzleSolved(page, "sound_station", ["1", "2", "3", "4"]));
+    const combined = `${soundCopy}\n${soundHints.logText}\n${await readNarrativeLog(page)}`;
+    const hinted = inferSingleDigitFromHints(combined);
+    let digit: string | null = null;
+    if (hinted) {
+      await submitAnswer(page, hinted);
+      try {
+        await expectPuzzleSolvedMark(page, "sound_station");
+        digit = hinted;
+      } catch {
+        digit = null;
+      }
+    }
+    if (!digit) {
+      digit = await submitUntilPuzzleSolved(page, "sound_station", ["1", "2", "3", "4"]);
+    }
     expect(digit).toBeTruthy();
     await expectPuzzleSolvedMark(page, "sound_station");
     evidence.push("sound_station via pistas");
